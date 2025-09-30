@@ -1,17 +1,19 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { 
   MapPin, 
   Camera, 
-  FileText, 
   X, 
   Send, 
   LogOut, 
   Moon, 
   Sun,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Search,
+  History
 } from 'lucide-react';
 import { CreateRecordData } from '../../types';
 import { dbOperations } from '../../lib/supabase';
@@ -19,6 +21,7 @@ import { dbOperations } from '../../lib/supabase';
 export function FieldAgentApp() {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { addNotification } = useNotifications();
   
   const [gpsData, setGpsData] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -29,13 +32,23 @@ export function FieldAgentApp() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  
+  // Search functionality
+  const [searchAccount, setSearchAccount] = useState('');
+  const [existingRecords, setExistingRecords] = useState<any[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const meterPhotoRef = useRef<HTMLInputElement>(null);
   const invoicePhotoRef = useRef<HTMLInputElement>(null);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
-      alert('الموقع الجغرافي غير مدعوم في هذا المتصفح');
+      addNotification({
+        type: 'error',
+        title: 'خطأ في الموقع',
+        message: 'الموقع الجغرافي غير مدعوم في هذا المتصفح'
+      });
       return;
     }
 
@@ -48,10 +61,19 @@ export function FieldAgentApp() {
           lng: position.coords.longitude
         });
         setGpsLoading(false);
+        addNotification({
+          type: 'success',
+          title: 'تم تحديد الموقع',
+          message: 'تم تحديد الموقع الجغرافي بنجاح'
+        });
       },
       (error) => {
         console.error('خطأ في الحصول على الموقع:', error);
-        alert('تعذر الحصول على الموقع الحالي');
+        addNotification({
+          type: 'error',
+          title: 'خطأ في الموقع',
+          message: 'تعذر الحصول على الموقع الحالي'
+        });
         setGpsLoading(false);
       },
       { 
@@ -71,78 +93,191 @@ export function FieldAgentApp() {
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'meter' | 'invoice') => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('يرجى اختيار ملف صورة صحيح');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 2 * 1024 * 1024) {
-        alert('حجم الصورة كبير جداً. يرجى اختيار صورة أصغر من 2 ميجابايت');
-        return;
-      }
+    if (!file) return;
 
-      // Store file temporarily for upload
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        
-        // Compress image if needed
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          // Calculate new dimensions (max 800px width/height)
-          let { width, height } = img;
-          const maxSize = 800;
-          
-          if (width > height && width > maxSize) {
-            height = (height * maxSize) / width;
-            width = maxSize;
-          } else if (height > maxSize) {
-            width = (width * maxSize) / height;
-            height = maxSize;
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          // Convert to compressed JPEG
-          const compressedResult = canvas.toDataURL('image/jpeg', 0.8);
-          
-          if (type === 'meter') {
-            setMeterPhoto(compressedResult);
-          } else {
-            setInvoicePhoto(compressedResult);
-          }
-        };
-        img.src = result;
-      };
-      reader.readAsDataURL(file);
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      addNotification({
+        type: 'error',
+        title: 'نوع ملف غير صحيح',
+        message: 'يرجى اختيار ملف صورة صحيح'
+      });
+      return;
     }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      addNotification({
+        type: 'error',
+        title: 'حجم ملف كبير',
+        message: 'يرجى اختيار صورة أصغر من 5 ميجابايت'
+      });
+      return;
+    }
+
+    // Store file temporarily for upload
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      
+      // Compress image if needed
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Calculate new dimensions (max 800px width/height)
+        let { width, height } = img;
+        const maxSize = 800;
+        
+        if (width > height && width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convert to compressed JPEG
+        const compressedResult = canvas.toDataURL('image/jpeg', 0.8);
+        
+        if (type === 'meter') {
+          setMeterPhoto(compressedResult);
+        } else {
+          setInvoicePhoto(compressedResult);
+        }
+      };
+      img.src = result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleRefused = () => {
     setIsRefused(true);
-    setGpsData(null);
+    // Clear only meter photo when refusing (keep GPS and invoice photo)
     setMeterPhoto(null);
-    setInvoicePhoto(null);
-    setNotes('');
+    addNotification({
+      type: 'info',
+      title: 'تم تسجيل الامتناع',
+      message: 'تم تعطيل صورة المقياس - صورة الفاتورة إجبارية'
+    });
   };
 
-  const handleSubmit = async () => {
-    if (!isRefused && (!gpsData || !meterPhoto)) {
-      alert('يرجى التأكد من تحديد الموقع والتقاط صورة المقياس');
+  const handleUnrefuse = () => {
+    setIsRefused(false);
+    addNotification({
+      type: 'info',
+      title: 'تم إلغاء الامتناع',
+      message: 'تم إعادة تفعيل جميع الحقول'
+    });
+  };
+
+  const handleSearch = async () => {
+    if (!searchAccount.trim()) {
+      addNotification({
+        type: 'warning',
+        title: 'خطأ في البحث',
+        message: 'يرجى إدخال رقم الحساب'
+      });
       return;
     }
 
+    setIsSearching(true);
+    try {
+      const records = await dbOperations.getRecords();
+      const filteredRecords = records.filter(record => 
+        record.account_number && record.account_number.includes(searchAccount.trim())
+      );
+      setExistingRecords(filteredRecords);
+      
+      if (filteredRecords.length === 0) {
+        addNotification({
+          type: 'info',
+          title: 'لا توجد سجلات',
+          message: 'لم يتم العثور على سجلات لهذا رقم الحساب'
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      addNotification({
+        type: 'error',
+        title: 'خطأ في البحث',
+        message: 'حدث خطأ أثناء البحث عن السجلات'
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectRecord = (record: any) => {
+    setSelectedRecord(record);
+    setSearchAccount('');
+    setExistingRecords([]);
+    addNotification({
+      type: 'success',
+      title: 'تم اختيار السجل',
+      message: `تم اختيار سجل ${record.subscriber_name || record.account_number}`
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedRecord(null);
+    setSearchAccount('');
+    setExistingRecords([]);
+  };
+
+  const validateForm = () => {
     if (!user?.id) {
-      alert('خطأ في تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى');
+      addNotification({
+        type: 'error',
+        title: 'خطأ في المصادقة',
+        message: 'خطأ في تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى'
+      });
+      return false;
+    }
+
+    // الموقع الجغرافي إجباري في جميع الحالات
+    if (!gpsData) {
+      addNotification({
+        type: 'warning',
+        title: 'خطأ في البيانات',
+        message: 'يرجى تحديد الموقع الجغرافي'
+      });
+      return false;
+    }
+
+    // صورة الفاتورة إجبارية في جميع الحالات
+    if (!invoicePhoto) {
+      addNotification({
+        type: 'warning',
+        title: 'خطأ في البيانات',
+        message: 'يرجى التقاط صورة الفاتورة'
+      });
+      return false;
+    }
+
+    if (!isRefused) {
+      // الحالة العادية: صورة المقياس إجبارية
+      if (!meterPhoto) {
+        addNotification({
+          type: 'warning',
+          title: 'خطأ في البيانات',
+          message: 'يرجى التقاط صورة المقياس'
+        });
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) {
       return;
     }
 
@@ -150,16 +285,23 @@ export function FieldAgentApp() {
     setSubmitError(null);
 
     try {
+      // If we have a selected record, add photos to it instead of creating new record
+      if (selectedRecord) {
+        await handleAddPhotosToExistingRecord();
+        return;
+      }
+
       let meterPhotoUrl = null;
       let invoicePhotoUrl = null;
 
-      // Initialize storage first and wait for it
-      const storageInitialized = await dbOperations.initializeStorage();
-      if (!storageInitialized) {
-        throw new Error('فشل في تهيئة نظام التخزين. تأكد من تشغيل migration التخزين أولاً');
+      // Try to initialize storage (but don't fail if it doesn't work)
+      try {
+        await dbOperations.initializeStorage();
+      } catch (storageError) {
+        console.warn('Storage initialization failed, proceeding anyway:', storageError);
       }
 
-      // Upload meter photo if exists
+      // Upload meter photo if exists (only in normal case, not in refused case)
       if (meterPhoto && !isRefused) {
         const imageId = dbOperations.generateImageId();
         const fileName = `M_${imageId}.jpg`;
@@ -177,7 +319,7 @@ export function FieldAgentApp() {
         }
       }
 
-      // Upload invoice photo if exists
+      // Upload invoice photo if exists (required in refused case, optional in normal case)
       if (invoicePhoto) {
         const imageId = dbOperations.generateImageId();
         const fileName = `I_${imageId}.jpg`;
@@ -195,10 +337,8 @@ export function FieldAgentApp() {
         }
       }
 
-
-
       const record: CreateRecordData = {
-        field_agent_id: user.id,
+        field_agent_id: user!.id,
         gps_latitude: gpsData?.lat || null,
         gps_longitude: gpsData?.lng || null,
         meter_photo_url: meterPhotoUrl,
@@ -210,20 +350,24 @@ export function FieldAgentApp() {
       const result = await dbOperations.createRecord(record);
       
       if (result) {
-        // Log record creation activity
-        const logResult = await dbOperations.createActivityLog({
-          user_id: user.id,
-          action: 'create_record',
-          target_type: 'record',
-          target_id: result.id,
-          target_name: result.subscriber_name || result.account_number || 'سجل جديد',
-          details: { 
-            is_refused: isRefused,
-            has_gps: !!gpsData,
-            has_meter_photo: !!meterPhotoUrl,
-            has_invoice_photo: !!invoicePhotoUrl
-          }
-        });
+        // Log record creation activity (don't fail if it doesn't work)
+        try {
+          await dbOperations.createActivityLog({
+            user_id: user!.id,
+            action: 'create_record',
+            target_type: 'record',
+            target_id: result.id,
+            target_name: result.subscriber_name || result.account_number || 'سجل جديد',
+            details: { 
+              is_refused: isRefused,
+              has_gps: !!gpsData,
+              has_meter_photo: !!meterPhotoUrl,
+              has_invoice_photo: !!invoicePhotoUrl
+            }
+          });
+        } catch (logError) {
+          console.warn('Failed to log record creation activity:', logError);
+        }
         
         setSubmitted(true);
         
@@ -245,8 +389,106 @@ export function FieldAgentApp() {
       console.error('خطأ في إرسال البيانات:', error);
       setSubmitError(error instanceof Error ? error.message : 'حدث خطأ أثناء إرسال البيانات');
       setIsSubmitting(false);
-    } finally {
-      // Remove this finally block since we handle setIsSubmitting in each case above
+    }
+  };
+
+  const handleAddPhotosToExistingRecord = async () => {
+    if (!user?.id || !selectedRecord) return;
+
+    let meterPhotoUrl = null;
+    let invoicePhotoUrl = null;
+
+    // Try to initialize storage
+    try {
+      await dbOperations.initializeStorage();
+    } catch (storageError) {
+      console.warn('Storage initialization failed, proceeding anyway:', storageError);
+    }
+
+    // Upload meter photo if exists (only in normal case, not in refused case)
+    if (meterPhoto && !isRefused) {
+      const imageId = dbOperations.generateImageId();
+      const fileName = `M_${imageId}.jpg`;
+      const filePath = `meter_photos/${fileName}`;
+      
+      const response = await fetch(meterPhoto);
+      const blob = await response.blob();
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      
+      meterPhotoUrl = await dbOperations.uploadPhoto(file, filePath);
+      
+      if (meterPhotoUrl) {
+        await dbOperations.addPhotoToRecord(selectedRecord.id, 'meter', meterPhotoUrl, user.id);
+      }
+    }
+
+    // Upload invoice photo if exists
+    if (invoicePhoto) {
+      const imageId = dbOperations.generateImageId();
+      const fileName = `I_${imageId}.jpg`;
+      const filePath = `invoice_photos/${fileName}`;
+      
+      const response = await fetch(invoicePhoto);
+      const blob = await response.blob();
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      
+      invoicePhotoUrl = await dbOperations.uploadPhoto(file, filePath);
+      
+      if (invoicePhotoUrl) {
+        await dbOperations.addPhotoToRecord(selectedRecord.id, 'invoice', invoicePhotoUrl, user.id);
+      }
+    }
+
+    // Update the record with new data
+    const updateData = {
+      subscriber_name: selectedRecord.subscriber_name,
+      account_number: selectedRecord.account_number,
+      meter_number: selectedRecord.meter_number,
+      address: selectedRecord.address,
+      last_reading: selectedRecord.last_reading,
+      status: selectedRecord.status,
+      gps_latitude: gpsData?.lat || selectedRecord.gps_latitude,
+      gps_longitude: gpsData?.lng || selectedRecord.gps_longitude,
+      notes: notes || selectedRecord.notes,
+      is_refused: isRefused
+    };
+
+    const success = await dbOperations.updateRecord(selectedRecord.id, updateData);
+    
+    if (success) {
+      // Log activity
+      try {
+        await dbOperations.createActivityLog({
+          user_id: user.id,
+          action: 'add_photos_to_record',
+          target_type: 'record',
+          target_id: selectedRecord.id,
+          target_name: selectedRecord.subscriber_name || selectedRecord.account_number || 'سجل محدث',
+          details: { 
+            added_meter_photo: !!meterPhotoUrl,
+            added_invoice_photo: !!invoicePhotoUrl,
+            is_refused: isRefused
+          }
+        });
+      } catch (logError) {
+        console.warn('Failed to log activity:', logError);
+      }
+      
+      setSubmitted(true);
+      
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setSubmitted(false);
+        setGpsData(null);
+        setMeterPhoto(null);
+        setInvoicePhoto(null);
+        setNotes('');
+        setIsRefused(false);
+        setSelectedRecord(null);
+      }, 2000);
+    } else {
+      setSubmitError('فشل في إضافة الصور. يرجى المحاولة مرة أخرى');
+      setIsSubmitting(false);
     }
   };
 
@@ -329,6 +571,89 @@ export function FieldAgentApp() {
 
       {/* Main Content */}
       <div className="p-4 space-y-6">
+        {/* Search for Existing Records */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            البحث عن سجلات موجودة
+          </h3>
+          
+          {!selectedRecord ? (
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={searchAccount}
+                  onChange={(e) => setSearchAccount(e.target.value)}
+                  placeholder="أدخل رقم الحساب للبحث..."
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                />
+                <button
+                  onClick={handleSearch}
+                  disabled={isSearching}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium flex items-center"
+                >
+                  <Search className="w-4 h-4 ml-2" />
+                  {isSearching ? 'جاري البحث...' : 'بحث'}
+                </button>
+              </div>
+              
+              {existingRecords.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    السجلات الموجودة:
+                  </h4>
+                  {existingRecords.map((record) => (
+                    <div
+                      key={record.id}
+                      className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                      onClick={() => handleSelectRecord(record)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {record.subscriber_name || 'غير محدد'}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            رقم الحساب: {record.account_number}
+                          </p>
+                          {record.meter_number && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              رقم المقياس: {record.meter_number}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                            آخر تحديث: {new Date(record.updated_at).toLocaleDateString('en-GB')}
+                          </p>
+                        </div>
+                        <History className="w-5 h-5 text-gray-400" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-blue-900 dark:text-blue-200">
+                    السجل المحدد: {selectedRecord.subscriber_name || 'غير محدد'}
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    رقم الحساب: {selectedRecord.account_number}
+                  </p>
+                </div>
+                <button
+                  onClick={handleClearSelection}
+                  className="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* GPS Location */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -345,8 +670,7 @@ export function FieldAgentApp() {
               </div>
               <button
                 onClick={() => setGpsData(null)}
-                disabled={isRefused}
-                className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-red-600 hover:text-red-700"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -354,7 +678,7 @@ export function FieldAgentApp() {
           ) : (
             <button
               onClick={handleGetLocation}
-              disabled={gpsLoading || isRefused}
+              disabled={gpsLoading}
               className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
             >
               <MapPin className="w-5 h-5 ml-2" />
@@ -366,10 +690,16 @@ export function FieldAgentApp() {
         {/* Meter Photo */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            صورة المقياس
+            صورة المقياس {!isRefused && <span className="text-red-500">*</span>}
           </h3>
           
-          {meterPhoto ? (
+          {isRefused ? (
+            <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-center">
+              <p className="text-gray-600 dark:text-gray-400">
+                صورة المقياس غير مطلوبة في حالة الامتناع
+              </p>
+            </div>
+          ) : meterPhoto ? (
             <div className="relative">
               <img 
                 src={meterPhoto} 
@@ -378,8 +708,7 @@ export function FieldAgentApp() {
               />
               <button
                 onClick={() => setMeterPhoto(null)}
-                disabled={isRefused}
-                className="absolute top-2 left-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute top-2 left-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -387,8 +716,7 @@ export function FieldAgentApp() {
           ) : (
             <button
               onClick={() => handlePhotoCapture('meter')}
-              disabled={isRefused}
-              className="w-full flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
+              className="w-full flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
             >
               <Camera className="w-5 h-5 ml-2" />
               التقاط صورة المقياس
@@ -408,7 +736,7 @@ export function FieldAgentApp() {
         {/* Invoice Photo */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            صورة الفاتورة
+            صورة الفاتورة <span className="text-red-500">*</span>
           </h3>
           
           {invoicePhoto ? (
@@ -461,19 +789,22 @@ export function FieldAgentApp() {
 
         {/* Refused Button */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-          <button
-            onClick={handleRefused}
-            disabled={isRefused}
-            className="w-full flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
-          >
-            <AlertCircle className="w-5 h-5 ml-2" />
-            {isRefused ? 'تم تسجيل الامتناع' : 'امتنع عن الدفع'}
-          </button>
-          
-          {isRefused && (
-            <p className="text-center text-red-600 dark:text-red-400 text-sm mt-2">
-              تم تعطيل جميع الحقول بسبب امتناع العميل
-            </p>
+          {!isRefused ? (
+            <button
+              onClick={handleRefused}
+              className="w-full flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+            >
+              <AlertCircle className="w-5 h-5 ml-2" />
+              امتنع عن الدفع
+            </button>
+          ) : (
+            <button
+              onClick={handleUnrefuse}
+              className="w-full flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+            >
+              <CheckCircle className="w-5 h-5 ml-2" />
+              إلغاء الامتناع
+            </button>
           )}
         </div>
 
@@ -489,7 +820,7 @@ export function FieldAgentApp() {
             ) : (
               <Send className="w-5 h-5 ml-2" />
             )}
-            {isSubmitting ? 'جاري الإرسال...' : 'إرسال البيانات'}
+            {isSubmitting ? 'جاري الإرسال...' : selectedRecord ? 'إضافة الصور للسجل الموجود' : 'إرسال البيانات'}
           </button>
         </div>
       </div>

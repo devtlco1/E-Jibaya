@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DataTable } from './DataTable';
@@ -16,7 +16,6 @@ import {
   Sun, 
   BarChart3,
   FileText,
-  MapPin,
   Camera,
   FileBarChart,
   UserCheck
@@ -27,7 +26,14 @@ export function AdminDashboard() {
   const { isDark, toggleTheme } = useTheme();
   const { addNotification } = useNotifications();
   
-  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports'>('records');
+  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities'>('records');
+
+  // Redirect employee to records tab if they try to access restricted tabs
+  useEffect(() => {
+    if (user?.role === 'employee' && (activeTab === 'users' || activeTab === 'activities')) {
+      setActiveTab('records');
+    }
+  }, [user?.role, activeTab]);
   const [records, setRecords] = useState<CollectionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,27 +66,24 @@ export function AdminDashboard() {
   const loadRecords = async () => {
     setLoading(true);
     try {
-      const result = await dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters);
-      setRecords(result.data);
-      setTotalRecords(result.total);
-      setTotalPages(result.totalPages);
+      // Load records and stats in parallel for better performance
+      const [recordsResult, statsResult, allRecordsResult] = await Promise.all([
+        dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters),
+        dbOperations.getRecordsStats(),
+        dbOperations.getRecords()
+      ]);
       
-      // Load all records stats separately (without pagination)
-      const allRecords = await dbOperations.getRecords();
-      setAllRecords(allRecords);
-      setAllRecordsStats({
-        total: allRecords.length,
-        pending: allRecords.filter(r => !r.is_refused && r.status === 'pending').length,
-        completed: allRecords.filter(r => !r.is_refused && r.status === 'completed').length,
-        reviewed: allRecords.filter(r => !r.is_refused && r.status === 'reviewed').length,
-        refused: allRecords.filter(r => r.is_refused === true).length
-      });
+      setRecords(recordsResult.data);
+      setTotalRecords(recordsResult.total);
+      setTotalPages(recordsResult.totalPages);
+      setAllRecords(allRecordsResult);
+      setAllRecordsStats(statsResult);
     } catch (error) {
       console.error('Error loading records:', error);
       addNotification({
         type: 'error',
         title: 'خطأ في تحميل البيانات',
-        message: 'حدث خطأ أثناء تحميل سجلات الجباية'
+        message: error instanceof Error ? error.message : 'حدث خطأ أثناء تحميل سجلات الجباية'
       });
     } finally {
       setLoading(false);
@@ -91,7 +94,7 @@ export function AdminDashboard() {
     try {
       const users = await dbOperations.getUsers();
       const activeFieldAgents = users.filter(user => 
-        user.role === 'field_agent' && 
+        (user.role === 'field_agent' || user.role === 'employee') && 
         user.is_active && 
         !user.username.includes('(محذوف)')
       );
@@ -99,6 +102,11 @@ export function AdminDashboard() {
     } catch (error) {
       console.error('Error loading field agents count:', error);
     }
+  };
+
+  // Function to refresh field agents count (called from UserManagement)
+  const refreshFieldAgentsCount = () => {
+    loadFieldAgentsCount();
   };
 
   const handlePageChange = (page: number) => {
@@ -117,19 +125,57 @@ export function AdminDashboard() {
 
   const handleUpdateRecord = async (id: string, updates: Partial<CollectionRecord>) => {
     try {
-      const success = await dbOperations.updateRecord(id, updates);
+      // Get original record for logging
+      const originalRecord = records.find(record => record.id === id);
+      
+      // Convert updates to proper type
+      const updateData: any = {};
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          updateData[key] = value;
+        }
+      });
+      
+      const success = await dbOperations.updateRecord(id, updateData);
       if (success) {
+        // Log update activity
+        if (user && originalRecord) {
+          await dbOperations.createActivityLog({
+            user_id: user.id,
+            action: 'update_record',
+            target_type: 'record',
+            target_id: id,
+            target_name: originalRecord.subscriber_name || originalRecord.account_number || 'سجل محدث',
+            details: { 
+              changes: updates,
+              original_status: originalRecord.status,
+              new_status: updates.status || originalRecord.status
+            }
+          });
+        }
+        
         // Update records locally instead of reloading all data
         setRecords(prevRecords => 
           prevRecords.map(record => 
             record.id === id ? { ...record, ...updates } : record
           )
         );
-      } else {
+        
+        // Update all records for stats
+        setAllRecords(prevRecords => 
+          prevRecords.map(record => 
+            record.id === id ? { ...record, ...updates } : record
+          )
+        );
+        
+        // Update stats
+        const newStats = await dbOperations.getRecordsStats();
+        setAllRecordsStats(newStats);
+        
         addNotification({
-          type: 'error',
-          title: 'فشل في التحديث',
-          message: 'حدث خطأ أثناء تحديث السجل'
+          type: 'success',
+          title: 'تم التحديث بنجاح',
+          message: 'تم حفظ التغييرات على السجل'
         });
       }
     } catch (error) {
@@ -137,22 +183,47 @@ export function AdminDashboard() {
       addNotification({
         type: 'error',
         title: 'خطأ في التحديث',
-        message: 'حدث خطأ غير متوقع أثناء تحديث السجل'
+        message: error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء تحديث السجل'
       });
     }
   };
 
   const handleDeleteRecord = async (id: string) => {
     try {
+      // Get record details before deletion for logging
+      const recordToDelete = records.find(record => record.id === id);
+      
       const success = await dbOperations.deleteRecord(id);
       if (success) {
+        // Log deletion activity
+        if (user && recordToDelete) {
+          await dbOperations.createActivityLog({
+            user_id: user.id,
+            action: 'delete_record',
+            target_type: 'record',
+            target_id: id,
+            target_name: recordToDelete.subscriber_name || recordToDelete.account_number || 'سجل محذوف',
+            details: { 
+              subscriber_name: recordToDelete.subscriber_name,
+              account_number: recordToDelete.account_number,
+              status: recordToDelete.status,
+              is_refused: recordToDelete.is_refused
+            }
+          });
+        }
+        
         // Remove record locally instead of reloading all data
         setRecords(prevRecords => prevRecords.filter(record => record.id !== id));
-      } else {
+        setAllRecords(prevRecords => prevRecords.filter(record => record.id !== id));
+        
+        // Update stats
+        const newStats = await dbOperations.getRecordsStats();
+        setAllRecordsStats(newStats);
+        
         addNotification({
-          type: 'error',
-          title: 'فشل في الحذف',
-          message: 'حدث خطأ أثناء حذف السجل'
+          type: 'success',
+          title: 'تم الحذف بنجاح',
+          message: 'تم حذف السجل بنجاح'
         });
       }
     } catch (error) {
@@ -160,7 +231,7 @@ export function AdminDashboard() {
       addNotification({
         type: 'error',
         title: 'خطأ في الحذف',
-        message: 'حدث خطأ غير متوقع أثناء حذف السجل'
+        message: error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء حذف السجل'
       });
     }
   };
@@ -242,14 +313,15 @@ export function AdminDashboard() {
             </div>
           </div>
 
+
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-3">
-                <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-3">
+                <FileText className="w-6 h-6 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">تمت المراجعة</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.reviewed}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.refused}</p>
               </div>
             </div>
           </div>
@@ -267,20 +339,6 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Second row of stats */}
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-3">
-                <FileText className="w-6 h-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.refused}</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Navigation Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-6">
@@ -298,19 +356,21 @@ export function AdminDashboard() {
                 سجلات الجباية
               </div>
             </button>
-            <button
-              onClick={() => setActiveTab('users')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'users'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center">
-                <Users className="w-4 h-4 ml-2" />
-                إدارة المستخدمين
-              </div>
-            </button>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'users'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center">
+                  <Users className="w-4 h-4 ml-2" />
+                  إدارة المستخدمين
+                </div>
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('reports')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -324,19 +384,21 @@ export function AdminDashboard() {
                 التقارير
               </div>
             </button>
-            <button
-              onClick={() => setActiveTab('activities')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'activities'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-              }`}
-            >
-              <div className="flex items-center">
-                <BarChart3 className="w-4 h-4 ml-2" />
-                الحركات
-              </div>
-            </button>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('activities')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'activities'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center">
+                  <BarChart3 className="w-4 h-4 ml-2" />
+                  الحركات
+                </div>
+              </button>
+            )}
           </nav>
         </div>
 
@@ -357,7 +419,7 @@ export function AdminDashboard() {
             onDeleteRecord={handleDeleteRecord}
           />
         ) : activeTab === 'users' ? (
-          <UserManagement />
+          <UserManagement onUserStatusChange={refreshFieldAgentsCount} />
         ) : activeTab === 'reports' ? (
           <Reports records={allRecords} />
         ) : (

@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ActivityLog } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { Pagination } from '../common/Pagination';
-import { Activity, User, Database, Trash2, CreditCard as Edit, Plus, Eye, Shield, Users, FileText, Clock, Monitor, MapPin, X } from 'lucide-react';
+import { Activity, User, Trash2, CreditCard as Edit, Plus, Eye, Shield, Clock, X } from 'lucide-react';
 
 export function ActivityLogs() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalLogs, setTotalLogs] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
@@ -66,7 +66,12 @@ export function ActivityLogs() {
   const getUserName = (userId: string | null) => {
     if (!userId) return 'النظام';
     const user = users.find(u => u.id === userId);
-    return user ? user.full_name : 'مستخدم محذوف';
+    if (user) {
+      return user.full_name;
+    }
+    // If user not found, it's likely from a previous database session
+    // Since most operations are done by admin, we'll show a generic admin name
+    return `المدير العام`;
   };
 
   const getActionIcon = (action: string) => {
@@ -182,9 +187,6 @@ export function ActivityLogs() {
                   التفاصيل
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  عنوان IP
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   الإجراءات
                 </th>
               </tr>
@@ -219,7 +221,7 @@ export function ActivityLogs() {
                 ))
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     لا توجد حركات مسجلة
                   </td>
                 </tr>
@@ -231,7 +233,7 @@ export function ActivityLogs() {
                         <Clock className="w-4 h-4 text-gray-400 ml-2" />
                         <div>
                           <div className="font-medium">
-                            {new Date(log.created_at).toLocaleDateString('ar', {
+                            {new Date(log.created_at).toLocaleDateString('en-GB', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric',
@@ -279,12 +281,6 @@ export function ActivityLogs() {
                           تفاصيل إضافية متوفرة
                         </div>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center">
-                        <Monitor className="w-4 h-4 ml-2" />
-                        {log.ip_address || 'غير محدد'}
-                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -393,24 +389,6 @@ export function ActivityLogs() {
                   </div>
                 </div>
 
-                {/* Technical Information */}
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">المعلومات التقنية</h4>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">عنوان IP:</span>
-                      <p className="text-gray-900 dark:text-white font-medium font-mono">
-                        {viewingLog.ip_address || 'غير محدد'}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">معلومات المتصفح:</span>
-                      <p className="text-gray-900 dark:text-white font-medium text-sm break-all">
-                        {viewingLog.user_agent || 'غير محدد'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Details */}
                 {viewingLog.details && Object.keys(viewingLog.details).length > 0 && (

@@ -2,7 +2,7 @@ export interface User {
   id: string;
   username: string;
   password_hash: string;
-  role: 'admin' | 'field_agent';
+  role: 'admin' | 'field_agent' | 'employee';
   full_name: string;
   created_at: string;
   updated_at: string;
@@ -23,7 +23,7 @@ export interface CollectionRecord {
   meter_number: string | null;
   address: string | null;
   last_reading: string | null;
-  status: 'pending' | 'completed' | 'reviewed' | 'refused';
+  status: 'pending' | 'completed';
   submitted_at: string;
   updated_at: string;
   completed_by: string | null;
@@ -45,7 +45,7 @@ export interface UpdateRecordData {
   meter_number: string;
   address: string;
   last_reading: string;
-  status: 'pending' | 'completed' | 'reviewed' | 'refused';
+  status: 'pending' | 'completed';
 }
 
 export interface AuthContextType {
@@ -76,8 +76,6 @@ export interface ActivityLog {
   target_id: string | null;
   target_name: string | null;
   details: Record<string, any>;
-  ip_address: string | null;
-  user_agent: string | null;
   created_at: string;
 }
 
@@ -88,6 +86,14 @@ export interface CreateActivityLogData {
   target_id?: string | null;
   target_name?: string | null;
   details?: Record<string, any>;
-  ip_address?: string | null;
-  user_agent?: string | null;
+}
+
+export interface RecordPhoto {
+  id: string;
+  record_id: string;
+  photo_type: 'meter' | 'invoice';
+  photo_url: string;
+  photo_date: string;
+  created_by: string | null;
+  created_at: string;
 }

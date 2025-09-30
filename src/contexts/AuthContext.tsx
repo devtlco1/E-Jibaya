@@ -20,11 +20,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Session timeout: 24 hours
+  const SESSION_TIMEOUT = 24 * 60 * 60 * 1000;
+
   useEffect(() => {
     setLoading(true);
     const currentUser = dbOperations.getCurrentUser();
+    const loginTime = localStorage.getItem('ejibaya_login_time');
+    
+    // Check if session has expired
+    if (currentUser && loginTime) {
+      const timeDiff = Date.now() - parseInt(loginTime);
+      if (timeDiff > SESSION_TIMEOUT) {
+        // Session expired, logout user
+        dbOperations.logout();
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+    }
+    
     setUser(currentUser);
     setLoading(false);
+  }, []);
+
+  // Check session validity periodically
+  useEffect(() => {
+    const checkSession = () => {
+      const currentUser = dbOperations.getCurrentUser();
+      const loginTime = localStorage.getItem('ejibaya_login_time');
+      
+      if (currentUser && loginTime) {
+        const timeDiff = Date.now() - parseInt(loginTime);
+        if (timeDiff > SESSION_TIMEOUT) {
+          logout();
+        }
+      }
+    };
+
+    const interval = setInterval(checkSession, 60000); // Check every minute
+    return () => clearInterval(interval);
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
@@ -64,7 +99,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           details: { username: currentUser.username }
         });
       } catch (error) {
-        console.error('Error logging logout activity:', error);
+        console.warn('Failed to log logout activity:', error);
       }
     }
     

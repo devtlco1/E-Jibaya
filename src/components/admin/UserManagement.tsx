@@ -5,7 +5,11 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users } from 'lucide-react';
 
-export function UserManagement() {
+interface UserManagementProps {
+  onUserStatusChange?: () => void;
+}
+
+export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -15,7 +19,7 @@ export function UserManagement() {
     username: '',
     password: '',
     full_name: '',
-    role: 'field_agent' as 'admin' | 'field_agent'
+    role: 'field_agent' as 'admin' | 'field_agent' | 'employee'
   });
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; userId: string; userName: string }>({
     isOpen: false,
@@ -47,11 +51,29 @@ export function UserManagement() {
     }
   };
 
+  const validateUserData = (userData: any) => {
+    if (!userData.username || userData.username.length < 3) {
+      throw new Error('اسم المستخدم يجب أن يكون 3 أحرف على الأقل');
+    }
+    
+    if (!userData.password || userData.password.length < 6) {
+      throw new Error('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    }
+    
+    if (!userData.full_name || userData.full_name.length < 2) {
+      throw new Error('الاسم الكامل مطلوب');
+    }
+    
+    return true;
+  };
+
   const handleCreateUser = async () => {
     try {
+      validateUserData(newUser);
+      
       const userData = {
         username: newUser.username,
-        password_hash: newUser.password, // In production, hash this properly
+        password_hash: newUser.password,
         full_name: newUser.full_name,
         role: newUser.role,
         is_active: true
@@ -82,6 +104,11 @@ export function UserManagement() {
           title: 'تم إنشاء المستخدم',
           message: `تم إنشاء المستخدم ${newUser.full_name} بنجاح`
         });
+
+        // Refresh field agents count in dashboard if it's a field agent or employee
+        if (onUserStatusChange && (newUser.role === 'field_agent' || newUser.role === 'employee')) {
+          onUserStatusChange();
+        }
       } else {
         addNotification({
           type: 'error',
@@ -94,7 +121,7 @@ export function UserManagement() {
       addNotification({
         type: 'error',
         title: 'خطأ في الإنشاء',
-        message: 'حدث خطأ غير متوقع أثناء إنشاء المستخدم'
+        message: error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء إنشاء المستخدم'
       });
     }
   };
@@ -213,27 +240,13 @@ export function UserManagement() {
         // Log user deactivation activity
         const currentUser = dbOperations.getCurrentUser();
         if (currentUser && user) {
-          // Get user's IP address
-          const getClientIP = async () => {
-            try {
-              const response = await fetch('https://api.ipify.org?format=json');
-              const data = await response.json();
-              return data.ip;
-            } catch (error) {
-              return null;
-            }
-          };
-          
-          const clientIP = await getClientIP();
-          
           await dbOperations.createActivityLog({
             user_id: currentUser.id,
             action: 'delete_user',
             target_type: 'user',
             target_id: user.id,
             target_name: user.full_name,
-            details: { reason: 'deactivated', original_username: user.username },
-            ip_address: clientIP
+            details: { reason: 'deactivated', original_username: user.username }
           });
         }
         
@@ -242,6 +255,11 @@ export function UserManagement() {
           title: 'تم إلغاء تفعيل المستخدم',
           message: `تم إلغاء تفعيل المستخدم ${deleteConfirm.userName} مع الحفاظ على البيانات المرتبطة به`
         });
+
+        // Refresh field agents count in dashboard if it was a field agent or employee
+        if (onUserStatusChange && user && (user.role === 'field_agent' || user.role === 'employee')) {
+          onUserStatusChange();
+        }
       } else {
         addNotification({
           type: 'error',
@@ -294,6 +312,11 @@ export function UserManagement() {
             title: user.is_active ? 'تم تعطيل المستخدم' : 'تم تفعيل المستخدم',
             message: `تم ${user.is_active ? 'تعطيل' : 'تفعيل'} ${user.full_name} بنجاح`
           });
+
+          // Refresh field agents count in dashboard
+          if (onUserStatusChange) {
+            onUserStatusChange();
+          }
         } else {
           addNotification({
             type: 'error',
@@ -389,7 +412,7 @@ export function UserManagement() {
                       ) : (
                         <Users className="w-3 h-3 ml-1" />
                       )}
-                      {user.role === 'admin' ? 'مدير' : 'محصل ميداني'}
+                      {user.role === 'admin' ? 'مدير' : user.role === 'employee' ? 'موظف' : 'محصل ميداني'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -417,7 +440,7 @@ export function UserManagement() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(user.created_at).toLocaleDateString('ar', {
+                    {new Date(user.created_at).toLocaleDateString('en-GB', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -524,6 +547,7 @@ export function UserManagement() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                   >
                     <option value="field_agent">محصل ميداني</option>
+                    <option value="employee">موظف</option>
                     <option value="admin">مدير</option>
                   </select>
                 </div>
@@ -601,7 +625,7 @@ export function UserManagement() {
                       ) : (
                         <Users className="w-3 h-3 ml-1" />
                       )}
-                      {viewingUser.role === 'admin' ? 'مدير' : 'محصل ميداني'}
+                      {viewingUser.role === 'admin' ? 'مدير' : viewingUser.role === 'employee' ? 'موظف' : 'محصل ميداني'}
                     </span>
                   </div>
                 </div>
@@ -638,7 +662,7 @@ export function UserManagement() {
                     تاريخ الإنشاء
                   </label>
                   <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    {new Date(viewingUser.created_at).toLocaleDateString('ar', {
+                    {new Date(viewingUser.created_at).toLocaleDateString('en-GB', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -652,7 +676,7 @@ export function UserManagement() {
                     آخر تحديث
                   </label>
                   <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    {new Date(viewingUser.updated_at).toLocaleDateString('ar', {
+                    {new Date(viewingUser.updated_at).toLocaleDateString('en-GB', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -743,6 +767,7 @@ export function UserManagement() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="field_agent">محصل ميداني</option>
+                    <option value="employee">موظف</option>
                     <option value="admin">مدير</option>
                   </select>
                 </div>

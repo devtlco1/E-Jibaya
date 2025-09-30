@@ -104,7 +104,6 @@ export function Reports({ records }: ReportsProps) {
     switch (record.status) {
       case 'pending': return 'قيد المراجعة';
       case 'completed': return 'مكتمل';
-      case 'reviewed': return 'تمت المراجعة';
       default: return record.status;
     }
   };
@@ -173,7 +172,7 @@ export function Reports({ records }: ReportsProps) {
   };
 
   const generateReportHTML = () => {
-    const currentDate = new Date().toLocaleDateString('ar', {
+    const currentDate = new Date().toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -184,7 +183,6 @@ export function Reports({ records }: ReportsProps) {
       total: filteredRecords.length,
       pending: filteredRecords.filter(r => !r.is_refused && r.status === 'pending').length,
       completed: filteredRecords.filter(r => !r.is_refused && r.status === 'completed').length,
-      reviewed: filteredRecords.filter(r => !r.is_refused && r.status === 'reviewed').length,
       refused: filteredRecords.filter(r => r.is_refused).length
     };
 
@@ -215,7 +213,6 @@ export function Reports({ records }: ReportsProps) {
         .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .status-pending { background: #fef3c7; color: #92400e; }
         .status-completed { background: #d1fae5; color: #065f46; }
-        .status-reviewed { background: #dbeafe; color: #1e40af; }
         .status-refused { background: #fee2e2; color: #991b1b; }
         .image-ref { background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 11px; }
         .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #d1d5db; text-align: center; color: #6b7280; font-size: 14px; }
@@ -243,10 +240,6 @@ export function Reports({ records }: ReportsProps) {
                 <p>مكتملة</p>
             </div>
             <div class="stat-card">
-                <h3>${stats.reviewed}</h3>
-                <p>تمت المراجعة</p>
-            </div>
-            <div class="stat-card">
                 <h3>${stats.refused}</h3>
                 <p>امتناع</p>
             </div>
@@ -255,8 +248,8 @@ export function Reports({ records }: ReportsProps) {
         ${filters.startDate || filters.endDate || filters.status || filters.fieldAgent ? `
         <div class="filters-info">
             <h3>مرشحات التقرير:</h3>
-            ${filters.startDate ? `<p><strong>من تاريخ:</strong> ${new Date(filters.startDate).toLocaleDateString('ar', { calendar: 'gregory' })}</p>` : ''}
-            ${filters.endDate ? `<p><strong>إلى تاريخ:</strong> ${new Date(filters.endDate).toLocaleDateString('ar', { calendar: 'gregory' })}</p>` : ''}
+            ${filters.startDate ? `<p><strong>من تاريخ:</strong> ${new Date(filters.startDate).toLocaleDateString('en-GB', { calendar: 'gregory' })}</p>` : ''}
+            ${filters.endDate ? `<p><strong>إلى تاريخ:</strong> ${new Date(filters.endDate).toLocaleDateString('en-GB', { calendar: 'gregory' })}</p>` : ''}
             ${filters.status ? `<p><strong>الحالة:</strong> ${filters.status === 'refused' ? 'امتنع' : filters.status === 'pending' ? 'قيد المراجعة' : filters.status === 'completed' ? 'مكتمل' : 'تمت المراجعة'}</p>` : ''}
             ${filters.fieldAgent ? `<p><strong>المحصل الميداني:</strong> ${getUserName(filters.fieldAgent)}</p>` : ''}
         </div>
@@ -282,7 +275,7 @@ export function Reports({ records }: ReportsProps) {
                 ${filteredRecords.map((record, index) => `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${new Date(record.submitted_at).toLocaleDateString('ar', { 
+                    <td>${new Date(record.submitted_at).toLocaleDateString('en-GB', { 
                       year: 'numeric', 
                       month: 'short', 
                       day: 'numeric',
@@ -331,7 +324,6 @@ export function Reports({ records }: ReportsProps) {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'reviewed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'refused': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
@@ -407,7 +399,6 @@ export function Reports({ records }: ReportsProps) {
               <option value="">جميع الحالات</option>
               <option value="pending">قيد المراجعة</option>
               <option value="completed">مكتمل</option>
-              <option value="reviewed">تمت المراجعة</option>
               <option value="refused">امتنع</option>
             </select>
           </div>

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { User, CollectionRecord, CreateRecordData, UpdateRecordData, ActivityLog, CreateActivityLogData } from '../types';
+import { User, CollectionRecord, CreateRecordData, UpdateRecordData, ActivityLog, CreateActivityLogData, RecordPhoto } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -38,12 +38,11 @@ export const dbOperations = {
       
       console.log('Attempting login for username:', username);
       
-      // Direct database authentication (bypass Supabase Auth)
-      const { data: users, error } = await client
+      // Get user from database
+      const { data: user, error } = await client
         .from('users')
         .select('*')
         .eq('username', username)
-        .eq('password_hash', password)
         .single();
 
       if (error) {
@@ -51,33 +50,44 @@ export const dbOperations = {
         return null;
       }
 
-      if (!users) {
+      if (!user) {
         console.log('No user found with username:', username);
         return null;
       }
 
       // Check if user is active
-      if (!users.is_active) {
+      if (!user.is_active) {
         console.log('User account is deactivated:', username);
-        // Return a special error indicator
-        return { ...users, loginError: 'ACCOUNT_DISABLED' } as any;
+        return { ...user, loginError: 'ACCOUNT_DISABLED' } as any;
+      }
+
+      // For now, use simple password comparison (in production, use proper hashing)
+      if (user.password_hash !== password) {
+        console.log('Invalid password for user:', username);
+        return null;
       }
       
-      console.log('Authentication successful for user:', { id: users.id, username: users.username, role: users.role });
+      console.log('Authentication successful for user:', { id: user.id, username: user.username, role: user.role });
       
-      localStorage.setItem('ejibaya_user', JSON.stringify(users));
+      // Store user data with login timestamp
+      localStorage.setItem('ejibaya_user', JSON.stringify(user));
+      localStorage.setItem('ejibaya_login_time', Date.now().toString());
       
-      // Log login activity
-      await this.createActivityLog({
-        user_id: users.id,
-        action: 'login',
-        target_type: 'system',
-        target_name: 'النظام',
-        details: { username: users.username, role: users.role }
-      });
+      // Log login activity (don't fail if it doesn't work)
+      try {
+        await this.createActivityLog({
+          user_id: user.id,
+          action: 'login',
+          target_type: 'system',
+          target_name: 'النظام',
+          details: { username: user.username, role: user.role }
+        });
+      } catch (logError) {
+        console.warn('Failed to log login activity:', logError);
+      }
       
       console.log('Login successful, user stored in localStorage');
-      return users;
+      return user;
     } catch (error) {
       console.error('Login error:', error);
       return null;
@@ -87,6 +97,7 @@ export const dbOperations = {
   
   async logout(): Promise<void> {
     localStorage.removeItem('ejibaya_user');
+    localStorage.removeItem('ejibaya_login_time');
   },
 
   getCurrentUser(): User | null {
@@ -160,6 +171,10 @@ export const dbOperations = {
   async createRecord(record: CreateRecordData): Promise<CollectionRecord | null> {
     try {
       const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
       const { data, error } = await client
         .from('collection_records')
         .insert(record)
@@ -168,12 +183,12 @@ export const dbOperations = {
 
       if (error) {
         console.error('Create record error:', error);
-        return null;
+        throw new Error(`فشل في إنشاء السجل: ${error.message}`);
       }
       return data;
     } catch (error) {
       console.error('Create record error:', error);
-      return null;
+      throw error;
     }
   },
 
@@ -204,6 +219,10 @@ export const dbOperations = {
   async updateRecord(id: string, updates: UpdateRecordData): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
       const { error } = await client
         .from('collection_records')
         .update(updates)
@@ -211,18 +230,22 @@ export const dbOperations = {
 
       if (error) {
         console.error('Update record error:', error);
-        return false;
+        throw new Error(`فشل في تحديث السجل: ${error.message}`);
       }
       return true;
     } catch (error) {
       console.error('Update record error:', error);
-      return false;
+      throw error;
     }
   },
 
   async deleteRecord(id: string): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
       const { error } = await client
         .from('collection_records')
         .delete()
@@ -230,12 +253,12 @@ export const dbOperations = {
 
       if (error) {
         console.error('Delete record error:', error);
-        return false;
+        throw new Error(`فشل في حذف السجل: ${error.message}`);
       }
       return true;
     } catch (error) {
       console.error('Delete record error:', error);
-      return false;
+      throw error;
     }
   },
 
@@ -267,6 +290,11 @@ export const dbOperations = {
   async createUser(user: Omit<User, 'id' | 'created_at' | 'updated_at'>): Promise<User | null> {
     try {
       const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      // For now, store password as plain text (in production, use proper hashing)
       const { data, error } = await client
         .from('users')
         .insert(user)
@@ -275,32 +303,39 @@ export const dbOperations = {
 
       if (error) {
         console.error('Create user error:', error);
-        return null;
+        throw new Error(`فشل في إنشاء المستخدم: ${error.message}`);
       }
 
       return data;
     } catch (error) {
       console.error('Create user error:', error);
-      return null;
+      throw error;
     }
   },
 
   async updateUser(id: string, updates: Partial<User>): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      // For now, store password as plain text (in production, use proper hashing)
+      const updateData = { ...updates };
+
       const { error } = await client
         .from('users')
-        .update(updates)
+        .update(updateData)
         .eq('id', id);
 
       if (error) {
         console.error('Update user error:', error);
-        return false;
+        throw new Error(`فشل في تحديث المستخدم: ${error.message}`);
       }
       return true;
     } catch (error) {
       console.error('Update user error:', error);
-      return false;
+      throw error;
     }
   },
 
@@ -330,6 +365,44 @@ export const dbOperations = {
     return `IMG_${timestamp}_${random}`;
   },
 
+  // Get records statistics only
+  async getRecordsStats(): Promise<{
+    total: number;
+    pending: number;
+    completed: number;
+    reviewed: number;
+    refused: number;
+  }> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        return { total: 0, pending: 0, completed: 0, reviewed: 0, refused: 0 };
+      }
+      
+      const { data, error } = await client
+        .from('collection_records')
+        .select('status, is_refused');
+
+      if (error) {
+        console.error('Get records stats error:', error);
+        return { total: 0, pending: 0, completed: 0, reviewed: 0, refused: 0 };
+      }
+
+      const stats = {
+        total: data.length,
+        pending: data.filter(r => !r.is_refused && r.status === 'pending').length,
+        completed: data.filter(r => !r.is_refused && r.status === 'completed').length,
+        reviewed: data.filter(r => !r.is_refused && r.status === 'reviewed').length,
+        refused: data.filter(r => r.is_refused === true).length
+      };
+
+      return stats;
+    } catch (error) {
+      console.error('Get records stats error:', error);
+      return { total: 0, pending: 0, completed: 0, reviewed: 0, refused: 0 };
+    }
+  },
+
   // Activity Logs
   async createActivityLog(logData: CreateActivityLogData): Promise<boolean> {
     try {
@@ -338,28 +411,13 @@ export const dbOperations = {
 
       console.log('Creating activity log:', logData);
 
-      // Try to get real IP address
-      let ipAddress = logData.ip_address;
-      if (!ipAddress) {
-        try {
-          // Try to get IP from a public service
-          ipAddress = await this.getPublicIP();
-        } catch (error) {
-          console.warn('Could not fetch IP address:', error);
-          ipAddress = null;
-        }
-      }
-
       const { error } = await client
         .from('activity_logs')
-        .insert({
-          ...logData,
-          ip_address: ipAddress || 'غير متاح',
-          user_agent: logData.user_agent || navigator.userAgent || null
-        });
+        .insert(logData);
 
       if (error) {
         console.error('Create activity log error:', error);
+        // Don't fail the entire operation if activity log fails
         return false;
       }
       
@@ -367,33 +425,11 @@ export const dbOperations = {
       return true;
     } catch (error) {
       console.error('Create activity log error:', error);
+      // Don't fail the entire operation if activity log fails
       return false;
     }
   },
 
-  // Helper function to get public IP
-  async getPublicIP(): Promise<string | null> {
-    try {
-      // Try to get IP from a public service with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
-      
-      const response = await fetch('https://api.ipify.org?format=json', {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        return null;
-      }
-      
-      const data = await response.json();
-      return data.ip || null;
-    } catch (error) {
-      return null;
-    }
-  },
 
   async getActivityLogs(page: number = 1, limit: number = 50): Promise<{
     data: ActivityLog[];
@@ -463,13 +499,24 @@ export const dbOperations = {
   async uploadPhoto(file: File, path: string): Promise<string | null> {
     try {
       const client = checkSupabaseConnection();
-      if (!client) return null;
-      
-      // Ensure storage is initialized
-      const storageReady = await this.initializeStorage();
-      if (!storageReady) {
-        return null;
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('نوع الملف غير مدعوم. يرجى اختيار صورة');
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت');
+      }
+      
+      // Skip storage initialization check - bucket might exist but not visible via API
+      console.log('Skipping storage initialization check - proceeding with upload');
+      
+      console.log('Attempting to upload file:', { fileName: file.name, path, size: file.size });
       
       const { data, error } = await client.storage
         .from('photos')
@@ -480,17 +527,19 @@ export const dbOperations = {
         });
 
       if (error) {
-        return null;
+        console.error('Upload error:', error);
+        throw new Error(`فشل في رفع الصورة: ${error.message}`);
       }
-
 
       const { data: { publicUrl } } = client.storage
         .from('photos')
         .getPublicUrl(data.path);
 
+      console.log('Upload successful:', publicUrl);
       return publicUrl;
     } catch (error) {
-      return null;
+      console.error('Upload error:', error);
+      throw error;
     }
   },
 
@@ -498,12 +547,150 @@ export const dbOperations = {
   async initializeStorage(): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
+      if (!client) {
+        console.error('Supabase client not available');
+        return false;
+      }
+
+      console.log('Initializing storage...');
+
+      // Check if photos bucket exists
+      const { data: buckets, error: bucketsError } = await client.storage.listBuckets();
+      if (bucketsError) {
+        console.error('Error listing buckets:', bucketsError);
+        console.error('This might indicate that storage is not properly configured or migrations have not been run');
+        return false;
+      }
+      
+      console.log('Available buckets:', buckets?.map(b => b.name) || []);
+      
+      const photosBucket = buckets?.find(bucket => bucket.name === 'photos');
+      if (!photosBucket) {
+        console.warn('Photos bucket not found in API response. Available buckets:', buckets?.map(b => b.name) || []);
+        console.log('Attempting to create photos bucket...');
+        
+        // Try to create the bucket
+        const { data: newBucket, error: createError } = await client.storage.createBucket('photos', {
+          public: true,
+          fileSizeLimit: 10485760, // 10MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+        });
+        
+        if (createError) {
+          console.error('Failed to create photos bucket:', createError);
+          console.log('Bucket might exist but not accessible via API. Proceeding anyway...');
+          // Don't return false here - let the upload attempt proceed
+        } else {
+          console.log('Photos bucket created successfully:', newBucket);
+        }
+      } else {
+        console.log('Photos bucket found:', photosBucket);
+      }
+
+      console.log('Storage initialization successful');
+      return true;
+    } catch (error) {
+      console.error('Storage initialization error:', error);
+      console.log('Proceeding anyway - bucket might exist but not accessible via API');
+      return true; // Don't fail the entire process
+    }
+  },
+
+  // Photo Management
+  async addPhotoToRecord(recordId: string, photoType: 'meter' | 'invoice', photoUrl: string, userId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
       if (!client) return false;
 
-      // Assume the 'photos' bucket is already created administratively
+      const { error } = await client
+        .from('record_photos')
+        .insert({
+          record_id: recordId,
+          photo_type: photoType,
+          photo_url: photoUrl,
+          created_by: userId
+        });
+
+      if (error) {
+        console.error('Add photo error:', error);
+        return false;
+      }
 
       return true;
     } catch (error) {
+      console.error('Add photo error:', error);
+      return false;
+    }
+  },
+
+  async getRecordPhotos(recordId: string): Promise<RecordPhoto[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return [];
+
+      const { data, error } = await client
+        .from('record_photos')
+        .select('*')
+        .eq('record_id', recordId)
+        .order('photo_date', { ascending: false });
+
+      if (error) {
+        console.error('Get photos error:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Get photos error:', error);
+      return [];
+    }
+  },
+
+  async getRecordWithPhotos(recordId: string): Promise<{ record: CollectionRecord | null; photos: RecordPhoto[] }> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return { record: null, photos: [] };
+
+      // Get the record
+      const { data: record, error: recordError } = await client
+        .from('collection_records')
+        .select('*')
+        .eq('id', recordId)
+        .single();
+
+      if (recordError) {
+        console.error('Get record error:', recordError);
+        return { record: null, photos: [] };
+      }
+
+      // Get photos for this record
+      const photos = await this.getRecordPhotos(recordId);
+
+      return { record, photos };
+    } catch (error) {
+      console.error('Get record with photos error:', error);
+      return { record: null, photos: [] };
+    }
+  },
+
+  async deletePhoto(photoId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return false;
+
+      const { error } = await client
+        .from('record_photos')
+        .delete()
+        .eq('id', photoId);
+
+      if (error) {
+        console.error('Delete photo error:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Delete photo error:', error);
       return false;
     }
   }

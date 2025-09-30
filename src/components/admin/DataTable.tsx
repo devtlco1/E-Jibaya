@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { CollectionRecord, FilterState } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { dbOperations } from '../../lib/supabase';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
-import { Eye, CreditCard as Edit, Trash2, MapPin, Camera, FileText, X, Save, ExternalLink, Filter, Search, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { PhotoComparison } from './PhotoComparison';
+import { Eye, CreditCard as Edit, Trash2, MapPin, Camera, FileText, X, Save, ExternalLink, Filter, Search, ZoomIn, ZoomOut, RotateCcw, Images } from 'lucide-react';
 
 interface DataTableProps {
   records: CollectionRecord[];
@@ -43,10 +45,12 @@ export function DataTable({
     meter_number: '',
     address: '',
     last_reading: '',
-    status: 'pending' as 'pending' | 'completed' | 'reviewed'
+    status: 'pending' as 'pending' | 'completed'
   });
   const [showFilters, setShowFilters] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
+  const [showPhotoComparison, setShowPhotoComparison] = useState(false);
+  const [selectedRecordForPhotos, setSelectedRecordForPhotos] = useState<string | null>(null);
   const [imageZoom, setImageZoom] = useState(1);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -59,6 +63,7 @@ export function DataTable({
   const [users, setUsers] = useState<any[]>([]);
 
   const { addNotification } = useNotifications();
+  const { user: currentUser } = useAuth();
 
   // Load users for displaying names
   React.useEffect(() => {
@@ -97,17 +102,29 @@ export function DataTable({
       meter_number: record.meter_number || '',
       address: record.address || '',
       last_reading: record.last_reading || '',
-      status: record.status
+      status: getRecordStatus(record) as 'pending' | 'completed' | 'refused'
     });
   };
 
   const handleSaveEdit = () => {
     if (editingRecord) {
-      onUpdateRecord(editingRecord.id, {
+      // Handle status and is_refused logic
+      let updateData: any = {
         ...editForm,
-        status: editForm.status,
-        completed_by: editingRecord.completed_by // Keep existing completed_by or set it
-      });
+        completed_by: currentUser?.id || editingRecord.completed_by
+      };
+
+      if (editForm.status === 'refused') {
+        // If setting to refused, set is_refused = true and status = pending
+        updateData.status = 'pending';
+        updateData.is_refused = true;
+      } else {
+        // If setting to any other status, set is_refused = false and the actual status
+        updateData.status = editForm.status;
+        updateData.is_refused = false;
+      }
+      
+      onUpdateRecord(editingRecord.id, updateData);
       addNotification({
         type: 'success',
         title: 'تم التحديث بنجاح',
@@ -119,6 +136,11 @@ export function DataTable({
 
   const handleView = (record: CollectionRecord) => {
     setViewingRecord(record);
+  };
+
+  const handlePhotoComparison = (record: CollectionRecord) => {
+    setSelectedRecordForPhotos(record.id);
+    setShowPhotoComparison(true);
   };
 
   const handleDelete = (id: string) => {
@@ -187,7 +209,6 @@ export function DataTable({
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'reviewed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
       case 'refused': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
@@ -197,7 +218,6 @@ export function DataTable({
     switch (status) {
       case 'pending': return 'قيد المراجعة';
       case 'completed': return 'مكتمل';
-      case 'reviewed': return 'تمت المراجعة';
       case 'refused': return 'امتنع';
       default: return status;
     }
@@ -296,7 +316,6 @@ export function DataTable({
                 <option value="">جميع الحالات</option>
                 <option value="pending">قيد المراجعة</option>
                 <option value="completed">مكتمل</option>
-                <option value="reviewed">تمت المراجعة</option>
                 <option value="refused">امتنع</option>
               </select>
             </div>
@@ -496,6 +515,16 @@ export function DataTable({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          handlePhotoComparison(record);
+                        }}
+                        className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
+                        title="مقارنة الصور"
+                      >
+                        <Images className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleEdit(record);
                         }}
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
@@ -615,7 +644,10 @@ export function DataTable({
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">تم التعديل بواسطة:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
-                        {getUserName(viewingRecord.completed_by)}
+                        {viewingRecord.completed_by ? getUserName(viewingRecord.completed_by) : 
+                         (viewingRecord.updated_at !== viewingRecord.submitted_at ? 
+                          (currentUser ? `${currentUser.full_name}` : 'مستخدم غير محدد') : 
+                          'لم يتم التعديل')}
                       </p>
                     </div>
                   </div>
@@ -993,17 +1025,6 @@ export function DataTable({
                     >
                       امتنع
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditForm({ ...editForm, status: 'reviewed' })}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        editForm.status === 'reviewed'
-                          ? 'bg-blue-500 text-white shadow-lg'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800'
-                      }`}
-                    >
-                      تمت المراجعة
-                    </button>
                   </div>
                 </div>
 
@@ -1026,6 +1047,17 @@ export function DataTable({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Photo Comparison Modal */}
+      {showPhotoComparison && selectedRecordForPhotos && (
+        <PhotoComparison
+          recordId={selectedRecordForPhotos}
+          onClose={() => {
+            setShowPhotoComparison(false);
+            setSelectedRecordForPhotos(null);
+          }}
+        />
       )}
     </div>
   );
