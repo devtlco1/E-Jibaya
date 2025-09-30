@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apply Cairo font globally */
+* {
+  font-family: 'Cairo', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+}
+
+/* Ensure smooth transitions for dark mode */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Force dark mode styles when dark class is present */
+.dark {
+  color-scheme: dark;
+}
+
+/* Ensure proper RTL support */
+[dir="rtl"] {
+  direction: rtl;
+}
