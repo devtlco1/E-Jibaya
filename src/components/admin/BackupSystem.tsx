@@ -10,11 +10,13 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  HardDrive
+  HardDrive,
+  Archive
 } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
+import JSZip from 'jszip';
 
 interface BackupData {
   users: any[];
@@ -91,42 +93,105 @@ export function BackupSystem() {
 
       // 2. نسخ السجلات
       setBackupStatus('جاري نسخ سجلات الجباية...');
-      setBackupProgress(30);
+      setBackupProgress(20);
       const records = await dbOperations.getAllRecords();
       backupData.collection_records = records;
       backupData.metadata.total_records = records.length;
 
       // 3. نسخ سجل الأنشطة
       setBackupStatus('جاري نسخ سجل الأنشطة...');
-      setBackupProgress(50);
+      setBackupProgress(30);
       const activityLogs = await dbOperations.getAllActivityLogs();
       backupData.activity_logs = activityLogs;
 
-      // 4. نسخ الصور
+      // 4. نسخ بيانات الصور
       setBackupStatus('جاري نسخ بيانات الصور...');
-      setBackupProgress(70);
+      setBackupProgress(40);
       const photos = await dbOperations.getAllRecordPhotos();
       backupData.record_photos = photos;
       backupData.metadata.total_photos = photos.length;
 
       // 5. نسخ الجلسات
       setBackupStatus('جاري نسخ الجلسات...');
-      setBackupProgress(85);
+      setBackupProgress(50);
       const sessions = await dbOperations.getAllUserSessions();
       backupData.user_sessions = sessions;
 
-      // 6. إنشاء ملف النسخة الاحتياطية
-      setBackupStatus('جاري إنشاء الملف...');
-      setBackupProgress(95);
+      // 6. إنشاء ملف ZIP
+      setBackupStatus('جاري إنشاء ملف ZIP...');
+      setBackupProgress(60);
       
+      const zip = new JSZip();
+      
+      // إضافة ملف البيانات JSON
       const backupJson = JSON.stringify(backupData, null, 2);
-      const blob = new Blob([backupJson], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+      zip.file('backup_data.json', backupJson);
+
+      // 7. تحميل الصور كملفات عادية
+      setBackupStatus('جاري تحميل الصور...');
+      setBackupProgress(70);
+      
+      let photoCounter = 1;
+      
+      // تحميل صور السجلات
+      for (const record of records) {
+        if (record.meter_photo_url) {
+          try {
+            const response = await fetch(record.meter_photo_url);
+            if (response.ok) {
+              const blob = await response.blob();
+              const fileName = `photos/record_${record.id}_meter_${photoCounter.toString().padStart(3, '0')}.jpg`;
+              zip.file(fileName, blob);
+              photoCounter++;
+            }
+          } catch (error) {
+            console.warn(`Failed to download meter photo for record ${record.id}:`, error);
+          }
+        }
+        
+        if (record.invoice_photo_url) {
+          try {
+            const response = await fetch(record.invoice_photo_url);
+            if (response.ok) {
+              const blob = await response.blob();
+              const fileName = `photos/record_${record.id}_invoice_${photoCounter.toString().padStart(3, '0')}.jpg`;
+              zip.file(fileName, blob);
+              photoCounter++;
+            }
+          } catch (error) {
+            console.warn(`Failed to download invoice photo for record ${record.id}:`, error);
+          }
+        }
+      }
+
+      // تحميل صور السجلات الإضافية
+      for (const photo of photos) {
+        if (photo.photo_url) {
+          try {
+            const response = await fetch(photo.photo_url);
+            if (response.ok) {
+              const blob = await response.blob();
+              const fileName = `photos/record_${photo.record_id}_${photo.photo_type}_${photoCounter.toString().padStart(3, '0')}.jpg`;
+              zip.file(fileName, blob);
+              photoCounter++;
+            }
+          } catch (error) {
+            console.warn(`Failed to download photo ${photo.id}:`, error);
+          }
+        }
+      }
+
+      // 8. إنشاء ملف ZIP النهائي
+      setBackupStatus('جاري ضغط الملفات...');
+      setBackupProgress(90);
+      
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
       
       // تحميل الملف
       const link = document.createElement('a');
       link.href = url;
-      link.download = `ejibaya_backup_${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `ejibaya_backup_complete_${new Date().toISOString().split('T')[0]}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -139,7 +204,7 @@ export function BackupSystem() {
       addNotification({
         type: 'success',
         title: 'نسخة احتياطية',
-        message: 'تم إنشاء النسخة الاحتياطية بنجاح'
+        message: `تم إنشاء النسخة الاحتياطية بنجاح مع ${photoCounter - 1} صورة`
       });
 
       // تسجيل النشاط
@@ -148,11 +213,12 @@ export function BackupSystem() {
           user_id: user.id,
           action: 'backup_data',
           target_type: 'backup',
-          target_name: 'نسخة احتياطية كاملة',
+          target_name: 'نسخة احتياطية كاملة مع الصور',
           details: {
             total_records: backupData.metadata.total_records,
-            total_photos: backupData.metadata.total_photos,
-            total_users: backupData.metadata.total_users
+            total_photos: photoCounter - 1,
+            total_users: backupData.metadata.total_users,
+            backup_type: 'complete_with_images'
           }
         });
       }
@@ -179,8 +245,43 @@ export function BackupSystem() {
       setBackupStatus('جاري قراءة ملف النسخة الاحتياطية...');
       setBackupProgress(10);
 
-      const text = await file.text();
-      const backupData: BackupData = JSON.parse(text);
+      let backupData: BackupData;
+
+      // التحقق من نوع الملف
+      if (file.name.endsWith('.zip')) {
+        // ملف ZIP
+        setBackupStatus('جاري فك ضغط الملف...');
+        setBackupProgress(20);
+        
+        const zip = new JSZip();
+        const zipContent = await zip.loadAsync(file);
+        
+        // البحث عن ملف البيانات
+        const dataFile = zipContent.file('backup_data.json');
+        if (!dataFile) {
+          throw new Error('ملف البيانات غير موجود في الأرشيف');
+        }
+        
+        const text = await dataFile.async('text');
+        backupData = JSON.parse(text);
+        
+        setBackupStatus('تم العثور على الصور في الأرشيف...');
+        setBackupProgress(30);
+        
+        // عرض معلومات الصور الموجودة
+        const photoFiles = Object.keys(zipContent.files).filter(name => 
+          name.startsWith('photos/') && !name.endsWith('/')
+        );
+        
+        console.log(`Found ${photoFiles.length} photos in backup:`, photoFiles);
+        
+      } else if (file.name.endsWith('.json')) {
+        // ملف JSON عادي
+        const text = await file.text();
+        backupData = JSON.parse(text);
+      } else {
+        throw new Error('نوع الملف غير مدعوم. يجب أن يكون .zip أو .json');
+      }
 
       // التحقق من صحة الملف
       if (!backupData.metadata || !backupData.users) {
@@ -188,7 +289,7 @@ export function BackupSystem() {
       }
 
       setBackupStatus('جاري استعادة البيانات...');
-      setBackupProgress(30);
+      setBackupProgress(50);
 
       // استعادة البيانات (هذا يتطلب إضافة دوال في supabase.ts)
       // await dbOperations.restoreBackup(backupData);
@@ -199,7 +300,7 @@ export function BackupSystem() {
       addNotification({
         type: 'success',
         title: 'استعادة النسخة الاحتياطية',
-        message: 'تم استعادة النسخة الاحتياطية بنجاح'
+        message: `تم استعادة النسخة الاحتياطية بنجاح مع ${backupData.metadata.total_photos} صورة`
       });
 
     } catch (error) {
@@ -314,7 +415,7 @@ export function BackupSystem() {
           </div>
           
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            قم بإنشاء نسخة احتياطية كاملة من جميع البيانات والصور
+            قم بإنشاء نسخة احتياطية كاملة من جميع البيانات والصور كملفات عادية
           </p>
 
           <button
@@ -329,8 +430,8 @@ export function BackupSystem() {
               </>
             ) : (
               <>
-                <Download className="w-4 h-4 ml-2" />
-                إنشاء نسخة احتياطية
+                <Archive className="w-4 h-4 ml-2" />
+                إنشاء نسخة احتياطية كاملة
               </>
             )}
           </button>
@@ -365,7 +466,7 @@ export function BackupSystem() {
             اختيار ملف النسخة الاحتياطية
             <input
               type="file"
-              accept=".json"
+              accept=".zip,.json"
               onChange={restoreBackup}
               className="hidden"
               disabled={loading}
@@ -419,7 +520,9 @@ export function BackupSystem() {
         
         <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
           <p>• النسخة الاحتياطية تشمل جميع البيانات: المستخدمين، السجلات، الصور، وسجل الأنشطة</p>
-          <p>• يتم حفظ النسخة الاحتياطية كملف JSON قابل للقراءة</p>
+          <p>• يتم حفظ النسخة الاحتياطية كملف ZIP يحتوي على JSON + الصور كملفات عادية</p>
+          <p>• الصور محفوظة بصيغة JPG مع ترقيم نظامي (001, 002, 003...)</p>
+          <p>• يمكن فتح الصور مباشرة من الحاسبة بدون الحاجة لبرامج خاصة</p>
           <p>• يمكن استعادة النسخة الاحتياطية في أي وقت</p>
           <p>• يُنصح بإنشاء نسخة احتياطية دورية</p>
         </div>
