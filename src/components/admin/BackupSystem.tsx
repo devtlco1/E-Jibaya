@@ -131,7 +131,31 @@ export function BackupSystem() {
       setBackupStatus('جاري تحميل الصور...');
       setBackupProgress(70);
       
-      let photoCounter = 1;
+      let downloadedPhotos = 0;
+      
+      // دالة لاستخراج اسم الملف الأصلي من URL
+      const getOriginalFileName = (url: string, recordId: string, photoType: string) => {
+        try {
+          // استخراج اسم الملف من URL
+          const urlParts = url.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          
+          // إذا كان الاسم يحتوي على التنسيق المطلوب، استخدمه
+          if (fileName.includes('_IMG_') || fileName.includes('_')) {
+            return `photos/record_${recordId}_${photoType}_${fileName}`;
+          }
+          
+          // إذا لم يكن كذلك، أنشئ اسم بناءً على timestamp
+          const timestamp = Date.now();
+          const randomId = Math.random().toString(36).substring(2, 7);
+          return `photos/record_${recordId}_${photoType}_${photoType.toUpperCase()}_IMG_${timestamp}_${randomId}.jpg`;
+        } catch (error) {
+          // في حالة الخطأ، استخدم timestamp
+          const timestamp = Date.now();
+          const randomId = Math.random().toString(36).substring(2, 7);
+          return `photos/record_${recordId}_${photoType}_${photoType.toUpperCase()}_IMG_${timestamp}_${randomId}.jpg`;
+        }
+      };
       
       // تحميل صور السجلات
       for (const record of records) {
@@ -140,9 +164,9 @@ export function BackupSystem() {
             const response = await fetch(record.meter_photo_url);
             if (response.ok) {
               const blob = await response.blob();
-              const fileName = `photos/record_${record.id}_meter_${photoCounter.toString().padStart(3, '0')}.jpg`;
+              const fileName = getOriginalFileName(record.meter_photo_url, record.id, 'meter');
               zip.file(fileName, blob);
-              photoCounter++;
+              downloadedPhotos++;
             }
           } catch (error) {
             console.warn(`Failed to download meter photo for record ${record.id}:`, error);
@@ -154,9 +178,9 @@ export function BackupSystem() {
             const response = await fetch(record.invoice_photo_url);
             if (response.ok) {
               const blob = await response.blob();
-              const fileName = `photos/record_${record.id}_invoice_${photoCounter.toString().padStart(3, '0')}.jpg`;
+              const fileName = getOriginalFileName(record.invoice_photo_url, record.id, 'invoice');
               zip.file(fileName, blob);
-              photoCounter++;
+              downloadedPhotos++;
             }
           } catch (error) {
             console.warn(`Failed to download invoice photo for record ${record.id}:`, error);
@@ -171,9 +195,9 @@ export function BackupSystem() {
             const response = await fetch(photo.photo_url);
             if (response.ok) {
               const blob = await response.blob();
-              const fileName = `photos/record_${photo.record_id}_${photo.photo_type}_${photoCounter.toString().padStart(3, '0')}.jpg`;
+              const fileName = getOriginalFileName(photo.photo_url, photo.record_id, photo.photo_type);
               zip.file(fileName, blob);
-              photoCounter++;
+              downloadedPhotos++;
             }
           } catch (error) {
             console.warn(`Failed to download photo ${photo.id}:`, error);
@@ -204,7 +228,7 @@ export function BackupSystem() {
       addNotification({
         type: 'success',
         title: 'نسخة احتياطية',
-        message: `تم إنشاء النسخة الاحتياطية بنجاح مع ${photoCounter - 1} صورة`
+        message: `تم إنشاء النسخة الاحتياطية بنجاح مع ${downloadedPhotos} صورة`
       });
 
       // تسجيل النشاط
@@ -216,7 +240,7 @@ export function BackupSystem() {
           target_name: 'نسخة احتياطية كاملة مع الصور',
           details: {
             total_records: backupData.metadata.total_records,
-            total_photos: photoCounter - 1,
+            total_photos: downloadedPhotos,
             total_users: backupData.metadata.total_users,
             backup_type: 'complete_with_images'
           }
@@ -521,8 +545,9 @@ export function BackupSystem() {
         <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
           <p>• النسخة الاحتياطية تشمل جميع البيانات: المستخدمين، السجلات، الصور، وسجل الأنشطة</p>
           <p>• يتم حفظ النسخة الاحتياطية كملف ZIP يحتوي على JSON + الصور كملفات عادية</p>
-          <p>• الصور محفوظة بصيغة JPG مع ترقيم نظامي (001, 002, 003...)</p>
+          <p>• الصور محفوظة بأسمائها الأصلية من قاعدة البيانات (مثل: I_IMG_1759418703702_tnp1o)</p>
           <p>• يمكن فتح الصور مباشرة من الحاسبة بدون الحاجة لبرامج خاصة</p>
+          <p>• أسماء الصور تطابق الترقيم الأصلي في قاعدة البيانات بالضبط</p>
           <p>• يمكن استعادة النسخة الاحتياطية في أي وقت</p>
           <p>• يُنصح بإنشاء نسخة احتياطية دورية</p>
         </div>
