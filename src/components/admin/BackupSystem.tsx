@@ -10,7 +10,6 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  HardDrive,
   Archive
 } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
@@ -549,26 +548,6 @@ export function BackupSystem() {
         </div>
       )}
 
-      {/* Backup Info */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center mb-4">
-          <HardDrive className="w-6 h-6 text-gray-600 dark:text-gray-400 ml-3" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            معلومات النسخ الاحتياطي
-          </h3>
-        </div>
-        
-        <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
-          <p>• النسخة الاحتياطية تشمل جميع البيانات: المستخدمين، السجلات، الصور، وسجل الأنشطة</p>
-          <p>• يتم حفظ النسخة الاحتياطية كملف ZIP يحتوي على JSON + الصور كملفات عادية</p>
-          <p>• الصور محفوظة بأسمائها الأصلية من قاعدة البيانات (مثل: M_IMG_1759417181003_wt6sm.jpg)</p>
-          <p>• يمكن فتح الصور مباشرة من الحاسبة بدون الحاجة لبرامج خاصة</p>
-          <p>• أسماء الصور تطابق الترقيم الأصلي في قاعدة البيانات بالضبط</p>
-          <p>• اسم الملف يتضمن التاريخ والوقت (مثل: ejibaya_backup_complete_2025-01-02_14-30-45.zip)</p>
-          <p>• يمكن استعادة النسخة الاحتياطية في أي وقت</p>
-          <p>• يُنصح بإنشاء نسخة احتياطية دورية</p>
-        </div>
-      </div>
     </div>
   );
 }
