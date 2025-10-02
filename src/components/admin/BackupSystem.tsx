@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface BackupData {
   users: any[];
@@ -43,6 +44,7 @@ export function BackupSystem() {
     activityLogs: 0
   });
   const { addNotification } = useNotifications();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadSystemStats();
@@ -141,16 +143,19 @@ export function BackupSystem() {
       });
 
       // تسجيل النشاط
-      await dbOperations.createActivityLog({
-        action: 'backup_data',
-        target_type: 'backup',
-        target_name: 'نسخة احتياطية كاملة',
-        details: {
-          total_records: backupData.metadata.total_records,
-          total_photos: backupData.metadata.total_photos,
-          total_users: backupData.metadata.total_users
-        }
-      });
+      if (user?.id) {
+        await dbOperations.createActivityLog({
+          user_id: user.id,
+          action: 'backup_data',
+          target_type: 'backup',
+          target_name: 'نسخة احتياطية كاملة',
+          details: {
+            total_records: backupData.metadata.total_records,
+            total_photos: backupData.metadata.total_photos,
+            total_users: backupData.metadata.total_users
+          }
+        });
+      }
 
     } catch (error) {
       console.error('Backup error:', error);
