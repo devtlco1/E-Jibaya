@@ -215,7 +215,14 @@ export function BackupSystem() {
       // تحميل الملف
       const link = document.createElement('a');
       link.href = url;
-      link.download = `ejibaya_backup_complete_${new Date().toISOString().split('T')[0]}.zip`;
+      
+      // إنشاء اسم الملف مع التاريخ والوقت
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+      const fileName = `ejibaya_backup_complete_${dateStr}_${timeStr}.zip`;
+      
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -548,6 +555,7 @@ export function BackupSystem() {
           <p>• الصور محفوظة بأسمائها الأصلية من قاعدة البيانات (مثل: I_IMG_1759418703702_tnp1o)</p>
           <p>• يمكن فتح الصور مباشرة من الحاسبة بدون الحاجة لبرامج خاصة</p>
           <p>• أسماء الصور تطابق الترقيم الأصلي في قاعدة البيانات بالضبط</p>
+          <p>• اسم الملف يتضمن التاريخ والوقت (مثل: ejibaya_backup_complete_2025-01-02_14-30-45.zip)</p>
           <p>• يمكن استعادة النسخة الاحتياطية في أي وقت</p>
           <p>• يُنصح بإنشاء نسخة احتياطية دورية</p>
         </div>
