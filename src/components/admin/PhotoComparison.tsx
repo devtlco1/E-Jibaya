@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, Eye, Calendar, User, MapPin, FileText } from 'lucide-react';
+import { X, Download, Eye, Calendar, User, MapPin, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
 
@@ -84,6 +84,43 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
     });
   };
 
+  const getAllPhotos = () => {
+    const allPhotos: (RecordPhoto & { isOriginal?: boolean })[] = [];
+    
+    // Add original photos
+    if (originalPhotos.meter) {
+      allPhotos.push({ ...originalPhotos.meter, isOriginal: true });
+    }
+    if (originalPhotos.invoice) {
+      allPhotos.push({ ...originalPhotos.invoice, isOriginal: true });
+    }
+    
+    // Add additional photos
+    allPhotos.push(...photos);
+    
+    return allPhotos;
+  };
+
+  const navigateToNextPhoto = () => {
+    const allPhotos = getAllPhotos();
+    const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
+    if (currentIndex < allPhotos.length - 1) {
+      const nextPhoto = allPhotos[currentIndex + 1];
+      setSelectedPhoto(nextPhoto);
+      setSelectedPhotoType(nextPhoto.photo_type);
+    }
+  };
+
+  const navigateToPreviousPhoto = () => {
+    const allPhotos = getAllPhotos();
+    const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
+    if (currentIndex > 0) {
+      const prevPhoto = allPhotos[currentIndex - 1];
+      setSelectedPhoto(prevPhoto);
+      setSelectedPhotoType(prevPhoto.photo_type);
+    }
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" dir="rtl">
@@ -149,7 +186,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
         {/* Content */}
         <div className="flex h-[calc(90vh-120px)]">
           {/* Left Sidebar - Photo Types */}
-          <div className="w-64 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 p-4">
+          <div className="w-64 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
             <div className="space-y-4">
               {/* Meter Photos */}
               <div>
@@ -270,21 +307,44 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                         </div>
                       )}
                     </div>
-                    <button
-                      onClick={() => downloadPhoto(
-                        selectedPhoto.photo_url,
-                        `${selectedPhoto.photo_type}_${selectedPhoto.id}.jpg`
-                      )}
-                      className="flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
-                    >
-                      <Download className="w-4 h-4 ml-1" />
-                      تحميل
-                    </button>
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <button
+                        onClick={navigateToPreviousPhoto}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        title="الصورة السابقة"
+                      >
+                        <ChevronRight className="w-4 h-4 text-gray-500" />
+                      </button>
+                      <button
+                        onClick={navigateToNextPhoto}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        title="الصورة التالية"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-gray-500" />
+                      </button>
+                      <span className="text-sm text-gray-500 px-2">
+                        {(() => {
+                          const allPhotos = getAllPhotos();
+                          const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
+                          return `${currentIndex + 1} / ${allPhotos.length}`;
+                        })()}
+                      </span>
+                      <button
+                        onClick={() => downloadPhoto(
+                          selectedPhoto.photo_url,
+                          `${selectedPhoto.photo_type}_${selectedPhoto.id}.jpg`
+                        )}
+                        className="flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                      >
+                        <Download className="w-4 h-4 ml-1" />
+                        تحميل
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 {/* Photo Display */}
-                <div className="flex-1 p-4 flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+                <div className="flex-1 p-4 flex items-center justify-center bg-gray-100 dark:bg-gray-900 overflow-auto">
                   <img
                     src={selectedPhoto.photo_url}
                     alt={`${selectedPhoto.photo_type === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة'}`}

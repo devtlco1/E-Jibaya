@@ -5,6 +5,7 @@ import { DataTable } from './DataTable';
 import { UserManagement } from './UserManagement';
 import { Reports } from './Reports';
 import { ActivityLogs } from './ActivityLogs';
+import { BackupSystem } from './BackupSystem';
 import { CollectionRecord, FilterState } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { dbOperations } from '../../lib/supabase';
@@ -18,7 +19,8 @@ import {
   FileText,
   Camera,
   FileBarChart,
-  UserCheck
+  UserCheck,
+  HardDrive
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -26,7 +28,7 @@ export function AdminDashboard() {
   const { isDark, toggleTheme } = useTheme();
   const { addNotification } = useNotifications();
   
-  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities'>('records');
+  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities' | 'backup'>('records');
 
   // Redirect employee to records tab if they try to access restricted tabs
   useEffect(() => {
@@ -399,6 +401,21 @@ export function AdminDashboard() {
                 </div>
               </button>
             )}
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('backup')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'backup'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center">
+                  <HardDrive className="w-4 h-4 ml-2" />
+                  النسخ الاحتياطي
+                </div>
+              </button>
+            )}
           </nav>
         </div>
 
@@ -422,8 +439,10 @@ export function AdminDashboard() {
           <UserManagement onUserStatusChange={refreshFieldAgentsCount} />
         ) : activeTab === 'reports' ? (
           <Reports records={allRecords} />
-        ) : (
+        ) : activeTab === 'activities' ? (
           <ActivityLogs />
+        ) : (
+          <BackupSystem />
         )}
       </div>
     </div>

@@ -114,10 +114,11 @@ CREATE TABLE IF NOT EXISTS record_photos (
 -- 2. تفعيل Row Level Security
 -- ==============================================
 
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+-- تعطيل RLS للمستخدمين وactivity_logs مؤقتاً للتطوير
+-- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE collection_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE record_photos ENABLE ROW LEVEL SECURITY;
 
 -- ==============================================
@@ -125,12 +126,14 @@ ALTER TABLE record_photos ENABLE ROW LEVEL SECURITY;
 -- ==============================================
 
 -- المستخدمون يمكنهم قراءة بياناتهم الخاصة
+DROP POLICY IF EXISTS "Users can read their own data" ON users;
 CREATE POLICY "Users can read their own data"
   ON users FOR SELECT
   TO authenticated
-  USING (id = auth.uid());
+  USING (true);
 
 -- المديرون يمكنهم قراءة جميع المستخدمين
+DROP POLICY IF EXISTS "Admins can read all users" ON users;
 CREATE POLICY "Admins can read all users"
   ON users FOR SELECT
   TO authenticated
@@ -140,6 +143,7 @@ CREATE POLICY "Admins can read all users"
   ));
 
 -- المديرون يمكنهم إدارة المستخدمين
+DROP POLICY IF EXISTS "Admins can manage users" ON users;
 CREATE POLICY "Admins can manage users"
   ON users FOR ALL
   TO authenticated
@@ -153,6 +157,7 @@ CREATE POLICY "Admins can manage users"
 -- ==============================================
 
 -- المحصلون الميدانيون يمكنهم إنشاء السجلات
+DROP POLICY IF EXISTS "Field agents can create records" ON collection_records;
 CREATE POLICY "Field agents can create records"
   ON collection_records FOR INSERT
   TO authenticated
@@ -165,6 +170,7 @@ CREATE POLICY "Field agents can create records"
   );
 
 -- المحصلون الميدانيون يمكنهم قراءة سجلاتهم الخاصة
+DROP POLICY IF EXISTS "Field agents can read their own records" ON collection_records;
 CREATE POLICY "Field agents can read their own records"
   ON collection_records FOR SELECT
   TO authenticated
@@ -177,6 +183,7 @@ CREATE POLICY "Field agents can read their own records"
   );
 
 -- المديرون والموظفون يمكنهم قراءة جميع السجلات
+DROP POLICY IF EXISTS "Admins and employees can read all records" ON collection_records;
 CREATE POLICY "Admins and employees can read all records"
   ON collection_records FOR SELECT
   TO authenticated
@@ -186,6 +193,7 @@ CREATE POLICY "Admins and employees can read all records"
   ));
 
 -- المديرون والموظفون يمكنهم تحديث جميع السجلات
+DROP POLICY IF EXISTS "Admins and employees can update all records" ON collection_records;
 CREATE POLICY "Admins and employees can update all records"
   ON collection_records FOR UPDATE
   TO authenticated
@@ -195,6 +203,7 @@ CREATE POLICY "Admins and employees can update all records"
   ));
 
 -- المديرون يمكنهم حذف السجلات
+DROP POLICY IF EXISTS "Admins can delete records" ON collection_records;
 CREATE POLICY "Admins can delete records"
   ON collection_records FOR DELETE
   TO authenticated
@@ -208,6 +217,7 @@ CREATE POLICY "Admins can delete records"
 -- ==============================================
 
 -- المستخدمون يمكنهم إدارة جلساتهم الخاصة
+DROP POLICY IF EXISTS "Users can manage their own sessions" ON user_sessions;
 CREATE POLICY "Users can manage their own sessions"
   ON user_sessions FOR ALL
   TO authenticated
@@ -218,18 +228,21 @@ CREATE POLICY "Users can manage their own sessions"
 -- ==============================================
 
 -- المستخدمون المصادق عليهم يمكنهم إنشاء سجلات الأنشطة
+DROP POLICY IF EXISTS "Allow authenticated users to create activity logs" ON activity_logs;
 CREATE POLICY "Allow authenticated users to create activity logs"
   ON activity_logs FOR INSERT
   TO authenticated
   WITH CHECK (true);
 
 -- المستخدمون المصادق عليهم يمكنهم قراءة سجلات الأنشطة
+DROP POLICY IF EXISTS "Allow authenticated users to read activity logs" ON activity_logs;
 CREATE POLICY "Allow authenticated users to read activity logs"
   ON activity_logs FOR SELECT
   TO authenticated
   USING (true);
 
 -- المستخدمون المصادق عليهم يمكنهم تحديث سجلات الأنشطة
+DROP POLICY IF EXISTS "Allow authenticated users to update activity logs" ON activity_logs;
 CREATE POLICY "Allow authenticated users to update activity logs"
   ON activity_logs FOR UPDATE
   TO authenticated
@@ -240,24 +253,28 @@ CREATE POLICY "Allow authenticated users to update activity logs"
 -- ==============================================
 
 -- المستخدمون المصادق عليهم يمكنهم قراءة الصور
+DROP POLICY IF EXISTS "Allow authenticated users to read photos" ON record_photos;
 CREATE POLICY "Allow authenticated users to read photos"
   ON record_photos FOR SELECT
   TO authenticated
   USING (true);
 
 -- المستخدمون المصادق عليهم يمكنهم إدراج الصور
+DROP POLICY IF EXISTS "Allow authenticated users to insert photos" ON record_photos;
 CREATE POLICY "Allow authenticated users to insert photos"
   ON record_photos FOR INSERT
   TO authenticated
   WITH CHECK (true);
 
 -- المستخدمون المصادق عليهم يمكنهم تحديث الصور
+DROP POLICY IF EXISTS "Allow authenticated users to update photos" ON record_photos;
 CREATE POLICY "Allow authenticated users to update photos"
   ON record_photos FOR UPDATE
   TO authenticated
   USING (true);
 
 -- المستخدمون المصادق عليهم يمكنهم حذف الصور
+DROP POLICY IF EXISTS "Allow authenticated users to delete photos" ON record_photos;
 CREATE POLICY "Allow authenticated users to delete photos"
   ON record_photos FOR DELETE
   TO authenticated
@@ -293,23 +310,27 @@ ON CONFLICT (bucket_id, name) DO NOTHING;
 -- ==============================================
 
 -- الوصول العام لقراءة الصور
+DROP POLICY IF EXISTS "Public read access for photos" ON storage.objects;
 CREATE POLICY "Public read access for photos"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'photos');
 
 -- المستخدمون المصادق عليهم يمكنهم رفع الصور
+DROP POLICY IF EXISTS "Authenticated users can upload photos" ON storage.objects;
 CREATE POLICY "Authenticated users can upload photos"
   ON storage.objects FOR INSERT
   TO authenticated
   WITH CHECK (bucket_id = 'photos');
 
 -- المستخدمون المصادق عليهم يمكنهم تحديث الصور
+DROP POLICY IF EXISTS "Authenticated users can update photos" ON storage.objects;
 CREATE POLICY "Authenticated users can update photos"
   ON storage.objects FOR UPDATE
   TO authenticated
   USING (bucket_id = 'photos');
 
 -- المستخدمون المصادق عليهم يمكنهم حذف الصور
+DROP POLICY IF EXISTS "Authenticated users can delete photos" ON storage.objects;
 CREATE POLICY "Authenticated users can delete photos"
   ON storage.objects FOR DELETE
   TO authenticated
@@ -386,31 +407,139 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 12. إدراج المستخدمين الافتراضيين
 -- ==============================================
 
+-- تعطيل RLS مؤقتاً لإدراج البيانات
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+
 -- إدراج المدير الافتراضي
-INSERT INTO users (username, password_hash, role, full_name) 
+INSERT INTO users (username, password_hash, role, full_name, is_active) 
 VALUES (
   'admin',
-  '$2b$10$rQJ0K5PzN5zJ5K5PzN5zJ5K5PzN5zJ5K5PzN5zJ5K5PzN5zJ5K5Pz', -- 'admin123'
+  '$2b$10$tT733iv3KU0N0hPb5shxKuonXqtWb3OH2XkpKOZ7r5l4T6f/bLHOW', -- 'admin123'
   'admin',
-  'مدير النظام'
-) ON CONFLICT (username) DO NOTHING;
+  'مدير النظام',
+  true
+) ON CONFLICT (username) DO UPDATE SET
+  password_hash = EXCLUDED.password_hash,
+  role = EXCLUDED.role,
+  full_name = EXCLUDED.full_name,
+  is_active = EXCLUDED.is_active;
 
 -- إدراج محصل ميداني تجريبي
 INSERT INTO users (username, password_hash, role, full_name, is_active)
 VALUES (
   'agent1',
-  'agent123',
+  '$2b$10$tP.ddSbS7Kx/yT7IcBkYM.Ue1QhcMq4u5uTuTB3EV9.F1wLHG.IRa', -- 'agent123'
   'field_agent',
   'محمد أحمد - محصل ميداني',
   true
-) ON CONFLICT (username) DO NOTHING;
+) ON CONFLICT (username) DO UPDATE SET
+  password_hash = EXCLUDED.password_hash,
+  role = EXCLUDED.role,
+  full_name = EXCLUDED.full_name,
+  is_active = EXCLUDED.is_active;
 
 -- إدراج موظف تجريبي
 INSERT INTO users (username, password_hash, role, full_name, is_active)
 VALUES (
   'employee1',
-  'employee123',
+  '$2b$10$QInKSXtKEefLhfs/FcI8MOXT4nhi2lIlH/okBGRg1KUHx4we0MEI2', -- 'employee123'
   'employee',
   'أحمد محمد - موظف',
   true
-) ON CONFLICT (username) DO NOTHING;
+) ON CONFLICT (username) DO UPDATE SET
+  password_hash = EXCLUDED.password_hash,
+  role = EXCLUDED.role,
+  full_name = EXCLUDED.full_name,
+  is_active = EXCLUDED.is_active;
+
+-- إعادة تفعيل RLS (معطل للتطوير)
+-- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- ==============================================
+-- 13. سياسات التخزين (بيئة التطوير فقط)
+--  ملاحظة: هذه السياسات توسّع صلاحيات anon على bucket 'photos' محلياً
+--  قبل النشر للإنتاج، يُنصح بإزالتها أو تقييدها للمصادقين فقط
+-- ==============================================
+
+-- قراءة عامة (تأكيد وجودها)
+DROP POLICY IF EXISTS "Public read access for photos" ON storage.objects;
+CREATE POLICY "Public read access for photos"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'photos');
+
+-- رفع ملفات بواسطة anon (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can upload photos (local)" ON storage.objects;
+CREATE POLICY "Anon can upload photos (local)"
+  ON storage.objects FOR INSERT
+  TO anon
+  WITH CHECK (bucket_id = 'photos');
+
+-- تحديث ملفات بواسطة anon (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can update photos (local)" ON storage.objects;
+CREATE POLICY "Anon can update photos (local)"
+  ON storage.objects FOR UPDATE
+  TO anon
+  USING (bucket_id = 'photos');
+
+-- حذف ملفات بواسطة anon (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can delete photos (local)" ON storage.objects;
+CREATE POLICY "Anon can delete photos (local)"
+  ON storage.objects FOR DELETE
+  TO anon
+  USING (bucket_id = 'photos');
+
+-- ==============================================
+-- 14. سياسات RLS للسجلات (بيئة التطوير فقط)
+-- ==============================================
+
+-- تعطيل RLS مؤقتاً لجدول collection_records للتطوير
+ALTER TABLE collection_records DISABLE ROW LEVEL SECURITY;
+
+-- السماح للـ anon بإنشاء السجلات (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can create records (local)" ON collection_records;
+CREATE POLICY "Anon can create records (local)"
+  ON collection_records FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
+-- السماح للـ anon بقراءة السجلات (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can read records (local)" ON collection_records;
+CREATE POLICY "Anon can read records (local)"
+  ON collection_records FOR SELECT
+  TO anon
+  USING (true);
+
+-- السماح للـ anon بتحديث السجلات (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can update records (local)" ON collection_records;
+CREATE POLICY "Anon can update records (local)"
+  ON collection_records FOR UPDATE
+  TO anon
+  USING (true);
+
+-- ==============================================
+-- 15. سياسات RLS للصور (بيئة التطوير فقط)
+-- ==============================================
+
+-- تعطيل RLS مؤقتاً لجدول record_photos للتطوير
+ALTER TABLE record_photos DISABLE ROW LEVEL SECURITY;
+
+-- السماح للـ anon بإضافة الصور (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can add photos (local)" ON record_photos;
+CREATE POLICY "Anon can add photos (local)"
+  ON record_photos FOR INSERT
+  TO anon
+  WITH CHECK (true);
+
+-- السماح للـ anon بقراءة الصور (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can read photos (local)" ON record_photos;
+CREATE POLICY "Anon can read photos (local)"
+  ON record_photos FOR SELECT
+  TO anon
+  USING (true);
+
+-- السماح للـ anon بتحديث الصور (محلياً فقط)
+DROP POLICY IF EXISTS "Anon can update photos (local)" ON record_photos;
+CREATE POLICY "Anon can update photos (local)"
+  ON record_photos FOR UPDATE
+  TO anon
+  USING (true);

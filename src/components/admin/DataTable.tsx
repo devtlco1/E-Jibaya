@@ -6,7 +6,7 @@ import { dbOperations } from '../../lib/supabase';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { PhotoComparison } from './PhotoComparison';
-import { Eye, CreditCard as Edit, Trash2, MapPin, Camera, FileText, X, Save, ExternalLink, Filter, Search, ZoomIn, ZoomOut, RotateCcw, Images } from 'lucide-react';
+import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images } from 'lucide-react';
 
 interface DataTableProps {
   records: CollectionRecord[];
@@ -102,7 +102,7 @@ export function DataTable({
       meter_number: record.meter_number || '',
       address: record.address || '',
       last_reading: record.last_reading || '',
-      status: getRecordStatus(record) as 'pending' | 'completed' | 'refused'
+      status: getRecordStatus(record) as 'pending' | 'completed'
     });
   };
 
@@ -114,15 +114,9 @@ export function DataTable({
         completed_by: currentUser?.id || editingRecord.completed_by
       };
 
-      if (editForm.status === 'refused') {
-        // If setting to refused, set is_refused = true and status = pending
-        updateData.status = 'pending';
-        updateData.is_refused = true;
-      } else {
-        // If setting to any other status, set is_refused = false and the actual status
-        updateData.status = editForm.status;
-        updateData.is_refused = false;
-      }
+      // Handle status logic
+      updateData.status = editForm.status;
+      updateData.is_refused = false;
       
       onUpdateRecord(editingRecord.id, updateData);
       addNotification({
@@ -1013,17 +1007,6 @@ export function DataTable({
                       }`}
                     >
                       مكتمل
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditForm({ ...editForm, status: 'refused' })}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        editForm.status === 'refused'
-                          ? 'bg-red-500 text-white shadow-lg'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800'
-                      }`}
-                    >
-                      امتنع
                     </button>
                   </div>
                 </div>

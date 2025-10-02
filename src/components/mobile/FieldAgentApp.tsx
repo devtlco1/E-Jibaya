@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { CreateRecordData } from '../../types';
 import { dbOperations } from '../../lib/supabase';
+import { compressImage, validateImageSize, validateImageType } from '../../utils/imageCompression';
 
 export function FieldAgentApp() {
   const { user, logout } = useAuth();
@@ -50,6 +51,20 @@ export function FieldAgentApp() {
         message: 'الموقع الجغرافي غير مدعوم في هذا المتصفح'
       });
       return;
+    }
+
+    // التحقق من إذن الموقع
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'denied') {
+          addNotification({
+            type: 'error',
+            title: 'خطأ في الموقع',
+            message: 'تم رفض إذن الموقع. يرجى تفعيله من إعدادات المتصفح'
+          });
+          return;
+        }
+      });
     }
 
     setGpsLoading(true);
@@ -91,22 +106,22 @@ export function FieldAgentApp() {
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'meter' | 'invoice') => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'meter' | 'invoice') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // التحقق من نوع الملف
+    if (!validateImageType(file)) {
       addNotification({
         type: 'error',
         title: 'نوع ملف غير صحيح',
-        message: 'يرجى اختيار ملف صورة صحيح'
+        message: 'يرجى اختيار ملف صورة صحيح (JPG, PNG, WebP, GIF)'
       });
       return;
     }
     
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // التحقق من حجم الملف
+    if (!validateImageSize(file, 5)) {
       addNotification({
         type: 'error',
         title: 'حجم ملف كبير',
@@ -115,46 +130,42 @@ export function FieldAgentApp() {
       return;
     }
 
-    // Store file temporarily for upload
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result as string;
-      
-      // Compress image if needed
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Calculate new dimensions (max 800px width/height)
-        let { width, height } = img;
-        const maxSize = 800;
-        
-        if (width > height && width > maxSize) {
-          height = (height * maxSize) / width;
-          width = maxSize;
-        } else if (height > maxSize) {
-          width = (width * maxSize) / height;
-          height = maxSize;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        // Convert to compressed JPEG
-        const compressedResult = canvas.toDataURL('image/jpeg', 0.8);
+    try {
+      // ضغط الصورة
+      const compressedFile = await compressImage(file, {
+        maxWidth: 800,
+        maxHeight: 600,
+        quality: 0.8,
+        format: 'jpeg'
+      });
+
+      // تحويل إلى base64 للعرض
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
         
         if (type === 'meter') {
-          setMeterPhoto(compressedResult);
+          setMeterPhoto(result);
         } else {
-          setInvoicePhoto(compressedResult);
+          setInvoicePhoto(result);
         }
       };
-      img.src = result;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(compressedFile);
+
+      addNotification({
+        type: 'success',
+        title: 'تم تحسين الصورة',
+        message: `تم ضغط الصورة من ${(file.size / 1024 / 1024).toFixed(2)}MB إلى ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`
+      });
+
+    } catch (error) {
+      console.error('Error compressing image:', error);
+      addNotification({
+        type: 'error',
+        title: 'خطأ في معالجة الصورة',
+        message: 'حدث خطأ أثناء ضغط الصورة'
+      });
+    }
   };
 
   const handleRefused = () => {

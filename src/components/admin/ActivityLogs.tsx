@@ -3,7 +3,23 @@ import { ActivityLog } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { Pagination } from '../common/Pagination';
-import { Activity, User, Trash2, CreditCard as Edit, Plus, Eye, Shield, Clock, X } from 'lucide-react';
+import { 
+  Activity, 
+  User, 
+  Trash2, 
+  CreditCard as Edit, 
+  Plus, 
+  Eye, 
+  Shield, 
+  Clock, 
+  X,
+  Upload,
+  CheckCircle,
+  XCircle,
+  Database,
+  Settings,
+  Download
+} from 'lucide-react';
 
 export function ActivityLogs() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
@@ -96,6 +112,36 @@ export function ActivityLogs() {
         return <Trash2 className="w-4 h-4 text-red-600" />;
       case 'view_record':
         return <Eye className="w-4 h-4 text-purple-600" />;
+      case 'add_photos_to_record':
+        return <Plus className="w-4 h-4 text-indigo-600" />;
+      case 'upload_photo':
+        return <Upload className="w-4 h-4 text-blue-600" />;
+      case 'delete_photo':
+        return <Trash2 className="w-4 h-4 text-red-600" />;
+      case 'view_photo':
+        return <Eye className="w-4 h-4 text-purple-600" />;
+      case 'download_photo':
+        return <Download className="w-4 h-4 text-green-600" />;
+      case 'approve_record':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'reject_record':
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      case 'complete_record':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'refuse_record':
+        return <XCircle className="w-4 h-4 text-red-600" />;
+      case 'export_data':
+        return <Download className="w-4 h-4 text-blue-600" />;
+      case 'import_data':
+        return <Upload className="w-4 h-4 text-blue-600" />;
+      case 'backup_data':
+        return <Database className="w-4 h-4 text-purple-600" />;
+      case 'restore_data':
+        return <Database className="w-4 h-4 text-orange-600" />;
+      case 'system_maintenance':
+        return <Settings className="w-4 h-4 text-gray-600" />;
+      case 'security_audit':
+        return <Shield className="w-4 h-4 text-red-600" />;
       default:
         return <Activity className="w-4 h-4 text-gray-600" />;
     }
@@ -113,6 +159,21 @@ export function ActivityLogs() {
       case 'update_record': return 'تعديل سجل';
       case 'delete_record': return 'حذف سجل';
       case 'view_record': return 'عرض سجل';
+      case 'add_photos_to_record': return 'إضافة صور للسجل';
+      case 'upload_photo': return 'رفع صورة';
+      case 'delete_photo': return 'حذف صورة';
+      case 'view_photo': return 'عرض صورة';
+      case 'download_photo': return 'تحميل صورة';
+      case 'approve_record': return 'الموافقة على السجل';
+      case 'reject_record': return 'رفض السجل';
+      case 'complete_record': return 'إكمال السجل';
+      case 'refuse_record': return 'رفض السجل';
+      case 'export_data': return 'تصدير البيانات';
+      case 'import_data': return 'استيراد البيانات';
+      case 'backup_data': return 'نسخ احتياطي';
+      case 'restore_data': return 'استعادة البيانات';
+      case 'system_maintenance': return 'صيانة النظام';
+      case 'security_audit': return 'مراجعة أمنية';
       default: return action;
     }
   };
@@ -122,6 +183,13 @@ export function ActivityLogs() {
       case 'user': return 'مستخدم';
       case 'record': return 'سجل جباية';
       case 'system': return 'النظام';
+      case 'photo': return 'صورة';
+      case 'database': return 'قاعدة البيانات';
+      case 'backup': return 'نسخة احتياطية';
+      case 'export': return 'تصدير';
+      case 'import': return 'استيراد';
+      case 'security': return 'أمان';
+      case 'maintenance': return 'صيانة';
       default: return targetType;
     }
   };
@@ -145,6 +213,50 @@ export function ActivityLogs() {
     
     if (log.action === 'logout') {
       return `${userName} سجل خروج من النظام`;
+    }
+    
+    if (log.action === 'add_photos_to_record') {
+      return `${userName} أضاف صور إضافية لـ ${targetType}: ${targetName}`;
+    }
+    
+    if (log.action === 'upload_photo') {
+      return `${userName} رفع ${targetType}: ${targetName}`;
+    }
+    
+    if (log.action === 'download_photo') {
+      return `${userName} قام بتحميل ${targetType}: ${targetName}`;
+    }
+    
+    if (log.action === 'approve_record' || log.action === 'complete_record') {
+      return `${userName} وافق على ${targetType}: ${targetName}`;
+    }
+    
+    if (log.action === 'reject_record' || log.action === 'refuse_record') {
+      return `${userName} رفض ${targetType}: ${targetName}`;
+    }
+    
+    if (log.action === 'export_data') {
+      return `${userName} قام بتصدير البيانات`;
+    }
+    
+    if (log.action === 'import_data') {
+      return `${userName} قام باستيراد البيانات`;
+    }
+    
+    if (log.action === 'backup_data') {
+      return `${userName} قام بإنشاء نسخة احتياطية`;
+    }
+    
+    if (log.action === 'restore_data') {
+      return `${userName} قام باستعادة البيانات`;
+    }
+    
+    if (log.action === 'system_maintenance') {
+      return `${userName} قام بصيانة النظام`;
+    }
+    
+    if (log.action === 'security_audit') {
+      return `${userName} قام بمراجعة أمنية للنظام`;
     }
     
     return `${userName} قام بـ ${actionText} ${targetType}: ${targetName}`;

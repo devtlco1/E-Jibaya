@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { User, CollectionRecord, CreateRecordData, UpdateRecordData, ActivityLog, CreateActivityLogData, RecordPhoto } from '../types';
+import { hashPassword, verifyPassword } from '../utils/hash';
+import { rateLimiter } from '../utils/rateLimiter';
+import { cacheService } from '../utils/cache';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -36,14 +39,27 @@ export const dbOperations = {
         return null;
       }
       
+      // Rate limiting للحماية من هجمات Brute Force
+      const rateLimitKey = `login_${username}`;
+      if (!rateLimiter.isAllowed(rateLimitKey, 5, 15 * 60 * 1000)) {
+        console.log('Too many login attempts for user:', username);
+        return { ...{} as User, loginError: 'TOO_MANY_ATTEMPTS' } as any;
+      }
+      
       console.log('Attempting login for username:', username);
+      
+      // التحقق من صحة البيانات المدخلة
+      if (!username || !password) {
+        console.log('Missing username or password');
+        return null;
+      }
       
       // Get user from database
       const { data: user, error } = await client
         .from('users')
         .select('*')
         .eq('username', username)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Login query error:', error.message);
@@ -61,8 +77,9 @@ export const dbOperations = {
         return { ...user, loginError: 'ACCOUNT_DISABLED' } as any;
       }
 
-      // For now, use simple password comparison (in production, use proper hashing)
-      if (user.password_hash !== password) {
+      // التحقق من كلمة المرور المشفرة
+      const isValidPassword = await verifyPassword(password, user.password_hash);
+      if (!isValidPassword) {
         console.log('Invalid password for user:', username);
         return null;
       }
@@ -85,6 +102,9 @@ export const dbOperations = {
       } catch (logError) {
         console.warn('Failed to log login activity:', logError);
       }
+      
+      // مسح محاولات تسجيل الدخول الفاشلة
+      rateLimiter.clearUser(rateLimitKey);
       
       console.log('Login successful, user stored in localStorage');
       return user;
@@ -200,6 +220,14 @@ export const dbOperations = {
         return [];
       }
       
+      // التحقق من التخزين المؤقت
+      const cacheKey = 'all_records';
+      const cached = cacheService.get(cacheKey);
+      if (cached) {
+        console.log('Returning cached records');
+        return cached;
+      }
+      
       const { data, error } = await client
         .from('collection_records')
         .select('*')
@@ -209,7 +237,12 @@ export const dbOperations = {
         console.error('Get records error:', error);
         return [];
       }
-      return data || [];
+      
+      const records = data || [];
+      // حفظ في التخزين المؤقت لمدة دقيقتين
+      cacheService.set(cacheKey, records, 2 * 60 * 1000);
+      
+      return records;
     } catch (error) {
       console.error('Get records error:', error);
       return [];
@@ -232,6 +265,11 @@ export const dbOperations = {
         console.error('Update record error:', error);
         throw new Error(`فشل في تحديث السجل: ${error.message}`);
       }
+      
+      // مسح التخزين المؤقت
+      cacheService.delete('all_records');
+      cacheService.delete('records_stats');
+      
       return true;
     } catch (error) {
       console.error('Update record error:', error);
@@ -294,10 +332,17 @@ export const dbOperations = {
         throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
 
-      // For now, store password as plain text (in production, use proper hashing)
+      // تشفير كلمة المرور
+      const hashedPassword = await hashPassword(user.password_hash);
+      
+      const userData = {
+        ...user,
+        password_hash: hashedPassword
+      };
+
       const { data, error } = await client
         .from('users')
-        .insert(user)
+        .insert(userData)
         .select()
         .single();
 
@@ -320,8 +365,12 @@ export const dbOperations = {
         throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
 
-      // For now, store password as plain text (in production, use proper hashing)
       const updateData = { ...updates };
+      
+      // تشفير كلمة المرور إذا تم تحديثها
+      if (updates.password_hash) {
+        updateData.password_hash = await hashPassword(updates.password_hash);
+      }
 
       const { error } = await client
         .from('users')
@@ -342,6 +391,10 @@ export const dbOperations = {
   async deleteUser(id: string): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+      
       const { error } = await client
         .from('users')
         .delete()
@@ -692,6 +745,95 @@ export const dbOperations = {
     } catch (error) {
       console.error('Delete photo error:', error);
       return false;
+    }
+  },
+
+  // ==============================================
+  // Backup Functions
+  // ==============================================
+
+  async getAllUsers(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      throw error;
+    }
+  },
+
+  async getAllRecords(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
+      const { data, error } = await supabase
+        .from('collection_records')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all records:', error);
+      throw error;
+    }
+  },
+
+  async getAllActivityLogs(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
+      const { data, error } = await supabase
+        .from('activity_logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all activity logs:', error);
+      throw error;
+    }
+  },
+
+  async getAllRecordPhotos(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
+      const { data, error } = await supabase
+        .from('record_photos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all record photos:', error);
+      throw error;
+    }
+  },
+
+  async getAllUserSessions(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
+      const { data, error } = await supabase
+        .from('user_sessions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching all user sessions:', error);
+      throw error;
     }
   }
 };
