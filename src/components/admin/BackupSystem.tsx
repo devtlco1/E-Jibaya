@@ -134,26 +134,35 @@ export function BackupSystem() {
       let downloadedPhotos = 0;
       
       // دالة لاستخراج اسم الملف الأصلي من URL
-      const getOriginalFileName = (url: string, recordId: string, photoType: string) => {
+      const getOriginalFileName = (url: string, _recordId: string, photoType: string) => {
         try {
           // استخراج اسم الملف من URL
           const urlParts = url.split('/');
           const fileName = urlParts[urlParts.length - 1];
           
-          // إذا كان الاسم يحتوي على التنسيق المطلوب، استخدمه
-          if (fileName.includes('_IMG_') || fileName.includes('_')) {
-            return `photos/record_${recordId}_${photoType}_${fileName}`;
+          console.log(`Original URL: ${url}`);
+          console.log(`Extracted filename: ${fileName}`);
+          
+          // إذا كان الاسم يحتوي على التنسيق المطلوب، استخدمه مباشرة
+          if (fileName && (fileName.includes('_IMG_') || fileName.includes('_'))) {
+            // إزالة أي معاملات إضافية من URL
+            const cleanFileName = fileName.split('?')[0];
+            console.log(`Using original filename: ${cleanFileName}`);
+            return `photos/${cleanFileName}`;
           }
           
           // إذا لم يكن كذلك، أنشئ اسم بناءً على timestamp
           const timestamp = Date.now();
           const randomId = Math.random().toString(36).substring(2, 7);
-          return `photos/record_${recordId}_${photoType}_${photoType.toUpperCase()}_IMG_${timestamp}_${randomId}.jpg`;
+          const generatedName = `${photoType.toUpperCase()}_IMG_${timestamp}_${randomId}.jpg`;
+          console.log(`Generated filename: ${generatedName}`);
+          return `photos/${generatedName}`;
         } catch (error) {
+          console.error('Error extracting filename:', error);
           // في حالة الخطأ، استخدم timestamp
           const timestamp = Date.now();
           const randomId = Math.random().toString(36).substring(2, 7);
-          return `photos/record_${recordId}_${photoType}_${photoType.toUpperCase()}_IMG_${timestamp}_${randomId}.jpg`;
+          return `photos/${photoType.toUpperCase()}_IMG_${timestamp}_${randomId}.jpg`;
         }
       };
       
@@ -552,7 +561,7 @@ export function BackupSystem() {
         <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
           <p>• النسخة الاحتياطية تشمل جميع البيانات: المستخدمين، السجلات، الصور، وسجل الأنشطة</p>
           <p>• يتم حفظ النسخة الاحتياطية كملف ZIP يحتوي على JSON + الصور كملفات عادية</p>
-          <p>• الصور محفوظة بأسمائها الأصلية من قاعدة البيانات (مثل: I_IMG_1759418703702_tnp1o)</p>
+          <p>• الصور محفوظة بأسمائها الأصلية من قاعدة البيانات (مثل: M_IMG_1759417181003_wt6sm.jpg)</p>
           <p>• يمكن فتح الصور مباشرة من الحاسبة بدون الحاجة لبرامج خاصة</p>
           <p>• أسماء الصور تطابق الترقيم الأصلي في قاعدة البيانات بالضبط</p>
           <p>• اسم الملف يتضمن التاريخ والوقت (مثل: ejibaya_backup_complete_2025-01-02_14-30-45.zip)</p>
