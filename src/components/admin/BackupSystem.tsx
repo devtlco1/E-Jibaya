@@ -49,7 +49,19 @@ export function BackupSystem() {
 
   useEffect(() => {
     loadSystemStats();
+    loadLastBackupDate();
   }, []);
+
+  const loadLastBackupDate = () => {
+    try {
+      const savedDate = localStorage.getItem('ejibaya_last_backup_date');
+      if (savedDate) {
+        setLastBackup(new Date(savedDate));
+      }
+    } catch (error) {
+      console.error('Error loading last backup date:', error);
+    }
+  };
 
   const loadSystemStats = async () => {
     try {
@@ -238,7 +250,15 @@ export function BackupSystem() {
 
       setBackupProgress(100);
       setBackupStatus('تم إنشاء النسخة الاحتياطية بنجاح!');
-      setLastBackup(new Date());
+      
+      // حفظ تاريخ آخر نسخة احتياطية
+      const backupDate = new Date();
+      setLastBackup(backupDate);
+      try {
+        localStorage.setItem('ejibaya_last_backup_date', backupDate.toISOString());
+      } catch (error) {
+        console.error('Error saving last backup date:', error);
+      }
       
       addNotification({
         type: 'success',
