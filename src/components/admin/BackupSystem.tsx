@@ -52,11 +52,11 @@ export function BackupSystem() {
     loadLastBackupDate();
   }, []);
 
-  const loadLastBackupDate = () => {
+  const loadLastBackupDate = async () => {
     try {
-      const savedDate = localStorage.getItem('ejibaya_last_backup_date');
-      if (savedDate) {
-        setLastBackup(new Date(savedDate));
+      const backupInfo = await dbOperations.getBackupInfo();
+      if (backupInfo && backupInfo.backup_date) {
+        setLastBackup(new Date(backupInfo.backup_date));
       }
     } catch (error) {
       console.error('Error loading last backup date:', error);
@@ -251,13 +251,21 @@ export function BackupSystem() {
       setBackupProgress(100);
       setBackupStatus('تم إنشاء النسخة الاحتياطية بنجاح!');
       
-      // حفظ تاريخ آخر نسخة احتياطية
+      // حفظ معلومات آخر نسخة احتياطية في قاعدة البيانات
       const backupDate = new Date();
       setLastBackup(backupDate);
+      
       try {
-        localStorage.setItem('ejibaya_last_backup_date', backupDate.toISOString());
+        await dbOperations.saveBackupInfo({
+          backup_date: backupDate.toISOString(),
+          total_records: backupData.metadata.total_records,
+          total_photos: downloadedPhotos,
+          total_users: backupData.metadata.total_users,
+          backup_type: 'complete_with_images',
+          file_name: fileName
+        });
       } catch (error) {
-        console.error('Error saving last backup date:', error);
+        console.error('Error saving backup info to database:', error);
       }
       
       addNotification({

@@ -835,5 +835,53 @@ export const dbOperations = {
       console.error('Error fetching all user sessions:', error);
       throw error;
     }
+  },
+
+  // ==============================================
+  // Backup Info Functions
+  // ==============================================
+
+  async saveBackupInfo(backupInfo: {
+    backup_date: string;
+    total_records: number;
+    total_photos: number;
+    total_users: number;
+    backup_type: string;
+    file_name: string;
+  }): Promise<void> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
+      const { error } = await supabase
+        .from('backup_info')
+        .upsert({
+          id: 1, // Always use ID 1 for the latest backup info
+          ...backupInfo,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving backup info:', error);
+      throw error;
+    }
+  },
+
+  async getBackupInfo(): Promise<any | null> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
+      const { data, error } = await supabase
+        .from('backup_info')
+        .select('*')
+        .eq('id', 1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
+      return data;
+    } catch (error) {
+      console.error('Error fetching backup info:', error);
+      return null;
+    }
   }
 };
