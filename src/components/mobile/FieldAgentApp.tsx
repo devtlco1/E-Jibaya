@@ -29,8 +29,7 @@ export function FieldAgentApp() {
   const [meterPhoto, setMeterPhoto] = useState<string | null>(null);
   const [invoicePhoto, setInvoicePhoto] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
-  const [meterPhotoNotes, setMeterPhotoNotes] = useState('');
-  const [invoicePhotoNotes, setInvoicePhotoNotes] = useState('');
+  const [additionalPhotosNotes, setAdditionalPhotosNotes] = useState('');
   const [isRefused, setIsRefused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -392,8 +391,7 @@ export function FieldAgentApp() {
           setMeterPhoto(null);
           setInvoicePhoto(null);
           setNotes('');
-          setMeterPhotoNotes('');
-          setInvoicePhotoNotes('');
+          setAdditionalPhotosNotes('');
           setIsRefused(false);
         }, 2000);
       } else {
@@ -433,7 +431,7 @@ export function FieldAgentApp() {
       meterPhotoUrl = await dbOperations.uploadPhoto(file, filePath);
       
       if (meterPhotoUrl) {
-        await dbOperations.addPhotoToRecord(selectedRecord.id, 'meter', meterPhotoUrl, user.id, meterPhotoNotes);
+        await dbOperations.addPhotoToRecord(selectedRecord.id, 'meter', meterPhotoUrl, user.id, additionalPhotosNotes);
       }
     }
 
@@ -450,7 +448,7 @@ export function FieldAgentApp() {
       invoicePhotoUrl = await dbOperations.uploadPhoto(file, filePath);
       
       if (invoicePhotoUrl) {
-        await dbOperations.addPhotoToRecord(selectedRecord.id, 'invoice', invoicePhotoUrl, user.id, invoicePhotoNotes);
+        await dbOperations.addPhotoToRecord(selectedRecord.id, 'invoice', invoicePhotoUrl, user.id, additionalPhotosNotes);
       }
     }
 
@@ -498,8 +496,7 @@ export function FieldAgentApp() {
         setMeterPhoto(null);
         setInvoicePhoto(null);
         setNotes('');
-        setMeterPhotoNotes('');
-        setInvoicePhotoNotes('');
+        setAdditionalPhotosNotes('');
         setIsRefused(false);
         setSelectedRecord(null);
       }, 2000);
@@ -749,21 +746,6 @@ export function FieldAgentApp() {
             className="hidden"
           />
           
-          {/* Meter Photo Notes */}
-          {meterPhoto && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                ملاحظات صورة المقياس
-              </label>
-              <textarea
-                value={meterPhotoNotes}
-                onChange={(e) => setMeterPhotoNotes(e.target.value)}
-                placeholder="اكتب ملاحظاتك حول صورة المقياس..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                rows={3}
-              />
-            </div>
-          )}
         </div>
 
         {/* Invoice Photo */}
@@ -805,21 +787,6 @@ export function FieldAgentApp() {
             className="hidden"
           />
           
-          {/* Invoice Photo Notes */}
-          {invoicePhoto && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                ملاحظات صورة الفاتورة
-              </label>
-              <textarea
-                value={invoicePhotoNotes}
-                onChange={(e) => setInvoicePhotoNotes(e.target.value)}
-                placeholder="اكتب ملاحظاتك حول صورة الفاتورة..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                rows={3}
-              />
-            </div>
-          )}
         </div>
 
         {/* Notes */}
@@ -835,6 +802,25 @@ export function FieldAgentApp() {
             placeholder="أضف أي ملاحظات..."
           />
         </div>
+
+        {/* Additional Photos Notes - Only show when adding photos to existing record */}
+        {selectedRecord && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 shadow-sm border border-blue-200 dark:border-blue-800">
+            <label className="block text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">
+              ملاحظات الصور الإضافية
+            </label>
+            <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+              هذه الملاحظة ستظهر مع جميع الصور الجديدة التي ستضيفها
+            </p>
+            <textarea
+              value={additionalPhotosNotes}
+              onChange={(e) => setAdditionalPhotosNotes(e.target.value)}
+              placeholder="اكتب ملاحظة واحدة ستظهر مع جميع الصور الجديدة..."
+              className="w-full px-4 py-3 border border-blue-300 dark:border-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white transition-colors"
+              rows={3}
+            />
+          </div>
+        )}
 
         {/* Refused Button */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">

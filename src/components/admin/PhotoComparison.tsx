@@ -236,7 +236,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                         {formatDate(photo.photo_date)}
                       </div>
                       {photo.notes && (
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
                           {photo.notes}
                         </div>
                       )}
@@ -293,7 +293,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                         {formatDate(photo.photo_date)}
                       </div>
                       {photo.notes && (
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
                           {photo.notes}
                         </div>
                       )}
@@ -374,14 +374,14 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
 
                 {/* Photo Notes */}
                 {selectedPhoto.notes && (
-                  <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                  <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20">
                     <div className="flex items-start gap-3">
                       <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                          ملاحظات الصورة
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                          ملاحظة المحصل
                         </h4>
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                        <p className="text-blue-800 dark:text-blue-200 leading-relaxed font-medium">
                           {selectedPhoto.notes}
                         </p>
                       </div>
