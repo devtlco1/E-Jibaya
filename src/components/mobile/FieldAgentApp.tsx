@@ -789,19 +789,21 @@ export function FieldAgentApp() {
           
         </div>
 
-        {/* Notes */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-          <label className="block text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            الملاحظات
-          </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={4}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white transition-colors"
-            placeholder="أضف أي ملاحظات..."
-          />
-        </div>
+        {/* Notes - Only show when creating new record */}
+        {!selectedRecord && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <label className="block text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              الملاحظات
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white transition-colors"
+              placeholder="أضف أي ملاحظات..."
+            />
+          </div>
+        )}
 
         {/* Additional Photos Notes - Only show when adding photos to existing record */}
         {selectedRecord && (
