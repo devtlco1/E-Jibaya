@@ -671,7 +671,7 @@ export function FieldAgentApp() {
         {/* GPS Location */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            تحديد الموقع الحالي
+            تحديد الموقع الحالي <span className="text-red-500">*</span>
           </h3>
           
           {gpsData ? (
