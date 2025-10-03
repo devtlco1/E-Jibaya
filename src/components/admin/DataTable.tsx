@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { PhotoComparison } from './PhotoComparison';
 import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images } from 'lucide-react';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 interface DataTableProps {
   records: CollectionRecord[];
@@ -606,27 +607,13 @@ export function DataTable({
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">تاريخ الإنشاء:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
-                        {new Date(viewingRecord.submitted_at).toLocaleString('ar', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          calendar: 'gregory'
-                        })}
+                        {formatDateTime(viewingRecord.submitted_at)}
                       </p>
                     </div>
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">آخر تحديث:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
-                        {new Date(viewingRecord.updated_at).toLocaleString('ar', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          calendar: 'gregory'
-                        })}
+                        {formatDateTime(viewingRecord.updated_at)}
                       </p>
                     </div>
                     <div>

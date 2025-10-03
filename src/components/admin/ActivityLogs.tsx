@@ -20,6 +20,7 @@ import {
   Settings,
   Download
 } from 'lucide-react';
+import { formatDateTime, formatDate, formatTime } from '../../utils/dateFormatter';
 
 export function ActivityLogs() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
@@ -345,19 +346,10 @@ export function ActivityLogs() {
                         <Clock className="w-4 h-4 text-gray-400 ml-2" />
                         <div>
                           <div className="font-medium">
-                            {new Date(log.created_at).toLocaleDateString('en-GB', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              calendar: 'gregory'
-                            })}
+                            {formatDate(log.created_at)}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(log.created_at).toLocaleTimeString('ar', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit'
-                            })}
+                            {formatTime(log.created_at)}
                           </div>
                         </div>
                       </div>
@@ -447,15 +439,7 @@ export function ActivityLogs() {
                     <div>
                       <span className="text-gray-600 dark:text-gray-400">التوقيت:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
-                        {new Date(viewingLog.created_at).toLocaleString('ar', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          second: '2-digit',
-                          calendar: 'gregory'
-                        })}
+                        {formatDateTime(viewingLog.created_at)}
                       </p>
                     </div>
                     <div>

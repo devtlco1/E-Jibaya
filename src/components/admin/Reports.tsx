@@ -15,6 +15,7 @@ import {
   Eye,
   Image as ImageIcon
 } from 'lucide-react';
+import { formatDateTime, formatDate, formatDateTimeForFilename } from '../../utils/dateFormatter';
 
 interface ReportsProps {
   records: CollectionRecord[];
@@ -148,7 +149,7 @@ export function Reports({ records }: ReportsProps) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `تقرير_الجباية_${new Date().toISOString().split('T')[0]}.html`;
+      link.download = `تقرير_الجباية_${formatDateTimeForFilename(new Date())}.html`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -172,12 +173,7 @@ export function Reports({ records }: ReportsProps) {
   };
 
   const generateReportHTML = () => {
-    const currentDate = new Date().toLocaleDateString('en-GB', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      calendar: 'gregory'
-    });
+    const currentDate = formatDate(new Date());
 
     const stats = {
       total: filteredRecords.length,
@@ -248,8 +244,8 @@ export function Reports({ records }: ReportsProps) {
         ${filters.startDate || filters.endDate || filters.status || filters.fieldAgent ? `
         <div class="filters-info">
             <h3>مرشحات التقرير:</h3>
-            ${filters.startDate ? `<p><strong>من تاريخ:</strong> ${new Date(filters.startDate).toLocaleDateString('en-GB', { calendar: 'gregory' })}</p>` : ''}
-            ${filters.endDate ? `<p><strong>إلى تاريخ:</strong> ${new Date(filters.endDate).toLocaleDateString('en-GB', { calendar: 'gregory' })}</p>` : ''}
+            ${filters.startDate ? `<p><strong>من تاريخ:</strong> ${formatDate(filters.startDate)}</p>` : ''}
+            ${filters.endDate ? `<p><strong>إلى تاريخ:</strong> ${formatDate(filters.endDate)}</p>` : ''}
             ${filters.status ? `<p><strong>الحالة:</strong> ${filters.status === 'refused' ? 'امتنع' : filters.status === 'pending' ? 'قيد المراجعة' : filters.status === 'completed' ? 'مكتمل' : 'تمت المراجعة'}</p>` : ''}
             ${filters.fieldAgent ? `<p><strong>المحصل الميداني:</strong> ${getUserName(filters.fieldAgent)}</p>` : ''}
         </div>
@@ -275,12 +271,7 @@ export function Reports({ records }: ReportsProps) {
                 ${filteredRecords.map((record, index) => `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${new Date(record.submitted_at).toLocaleDateString('en-GB', { 
-                      year: 'numeric', 
-                      month: 'short', 
-                      day: 'numeric',
-                      calendar: 'gregory'
-                    })}</td>
+                    <td>${formatDate(record.submitted_at)}</td>
                     <td>${getUserName(record.field_agent_id)}</td>
                     <td>${record.subscriber_name || 'غير محدد'}</td>
                     <td>${record.account_number || 'غير محدد'}</td>

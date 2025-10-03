@@ -16,6 +16,7 @@ import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import JSZip from 'jszip';
+import { formatDateTime, formatDateTimeForFilename } from '../../utils/dateFormatter';
 
 interface BackupData {
   users: any[];
@@ -238,9 +239,7 @@ export function BackupSystem() {
       
       // إنشاء اسم الملف مع التاريخ والوقت
       const now = new Date();
-      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
-      const fileName = `ejibaya_backup_complete_${dateStr}_${timeStr}.zip`;
+      const fileName = `ejibaya_backup_complete_${formatDateTimeForFilename(now)}.zip`;
       
       link.download = fileName;
       document.body.appendChild(link);
@@ -508,7 +507,7 @@ export function BackupSystem() {
               <div className="flex items-center">
                 <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
                 <span className="text-sm text-green-800 dark:text-green-200">
-                  آخر نسخة احتياطية: {lastBackup.toLocaleString('ar')}
+                  آخر نسخة احتياطية: {formatDateTime(lastBackup)}
                 </span>
               </div>
             </div>

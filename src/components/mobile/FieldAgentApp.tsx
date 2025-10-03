@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { CreateRecordData } from '../../types';
 import { dbOperations } from '../../lib/supabase';
+import { formatDate } from '../../utils/dateFormatter';
 import { compressImage, validateImageSize, validateImageType } from '../../utils/imageCompression';
 
 export function FieldAgentApp() {
@@ -636,7 +637,7 @@ export function FieldAgentApp() {
                             </p>
                           )}
                           <p className="text-xs text-gray-500 dark:text-gray-500">
-                            آخر تحديث: {new Date(record.updated_at).toLocaleDateString('en-GB')}
+                            آخر تحديث: {formatDate(record.updated_at)}
                           </p>
                         </div>
                         <History className="w-5 h-5 text-gray-400" />

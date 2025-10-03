@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X, Download, Eye, Calendar, User, MapPin, FileText, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Download, Eye, Calendar, User, FileText, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
 
@@ -74,14 +75,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ar', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      calendar: 'gregory'
-    });
+    return formatDateTime(dateString);
   };
 
   const getAllPhotos = () => {
@@ -89,10 +83,22 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
     
     // Add original photos
     if (originalPhotos.meter) {
-      allPhotos.push({ ...originalPhotos.meter, isOriginal: true });
+      allPhotos.push({ 
+        ...originalPhotos.meter, 
+        record_id: recordId,
+        created_at: originalPhotos.meter.photo_date,
+        notes: null,
+        isOriginal: true 
+      });
     }
     if (originalPhotos.invoice) {
-      allPhotos.push({ ...originalPhotos.invoice, isOriginal: true });
+      allPhotos.push({ 
+        ...originalPhotos.invoice, 
+        record_id: recordId,
+        created_at: originalPhotos.invoice.photo_date,
+        notes: null,
+        isOriginal: true 
+      });
     }
     
     // Add additional photos
@@ -199,7 +205,12 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                     <button
                       onClick={() => {
                         setSelectedPhotoType('meter');
-                        setSelectedPhoto(originalPhotos.meter);
+                        setSelectedPhoto(originalPhotos.meter ? {
+                          ...originalPhotos.meter,
+                          record_id: recordId,
+                          created_at: originalPhotos.meter.photo_date,
+                          notes: null
+                        } : null);
                       }}
                       className={`w-full text-right p-2 rounded-lg text-sm transition-colors ${
                         selectedPhotoType === 'meter' && selectedPhoto?.id === 'original-meter'
@@ -256,7 +267,12 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                     <button
                       onClick={() => {
                         setSelectedPhotoType('invoice');
-                        setSelectedPhoto(originalPhotos.invoice);
+                        setSelectedPhoto(originalPhotos.invoice ? {
+                          ...originalPhotos.invoice,
+                          record_id: recordId,
+                          created_at: originalPhotos.invoice.photo_date,
+                          notes: null
+                        } : null);
                       }}
                       className={`w-full text-right p-2 rounded-lg text-sm transition-colors ${
                         selectedPhotoType === 'invoice' && selectedPhoto?.id === 'original-invoice'

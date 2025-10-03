@@ -4,6 +4,7 @@ import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users } from 'lucide-react';
+import { formatDate } from '../../utils/dateFormatter';
 
 interface UserManagementProps {
   onUserStatusChange?: () => void;
@@ -440,12 +441,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(user.created_at).toLocaleDateString('en-GB', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      calendar: 'gregory'
-                    })}
+                    {formatDate(user.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2 space-x-reverse">
@@ -662,12 +658,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     تاريخ الإنشاء
                   </label>
                   <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    {new Date(viewingUser.created_at).toLocaleDateString('en-GB', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      calendar: 'gregory'
-                    })}
+                    {formatDate(viewingUser.created_at)}
                   </p>
                 </div>
 
@@ -676,12 +667,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     آخر تحديث
                   </label>
                   <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    {new Date(viewingUser.updated_at).toLocaleDateString('en-GB', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      calendar: 'gregory'
-                    })}
+                    {formatDate(viewingUser.updated_at)}
                   </p>
                 </div>
 
