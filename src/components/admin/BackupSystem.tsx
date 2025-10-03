@@ -581,11 +581,11 @@ export function BackupSystem() {
             />
           </label>
 
-          <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
             <div className="flex items-center">
-              <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 ml-2" />
-              <span className="text-sm text-yellow-800 dark:text-yellow-200">
-                تحذير: الاستعادة ستحل محل جميع البيانات الحالية
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 ml-2" />
+              <span className="text-sm text-red-800 dark:text-red-200">
+                ⚠️ تحذير: الاستعادة ستحذف جميع البيانات الحالية وتستبدلها بالبيانات من النسخة الاحتياطية
               </span>
             </div>
           </div>

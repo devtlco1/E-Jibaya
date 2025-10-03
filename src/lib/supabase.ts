@@ -902,11 +902,29 @@ export const dbOperations = {
         sessions: 0
       };
 
+      // مسح جميع البيانات الموجودة لتجنب التضارب
+      console.log('Clearing existing data before restore...');
+      
+      // مسح الجلسات
+      await supabase.from('user_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      // مسح سجل الأنشطة
+      await supabase.from('activity_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      // مسح الصور
+      await supabase.from('record_photos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      // مسح السجلات
+      await supabase.from('collection_records').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      // مسح المستخدمين (بما في ذلك المحذوفين)
+      await supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
       // 1. استعادة المستخدمين
       if (backupData.users && backupData.users.length > 0) {
         const { error: usersError } = await supabase
           .from('users')
-          .upsert(backupData.users, { onConflict: 'username' });
+          .insert(backupData.users);
         
         if (usersError) throw usersError;
         restoredCounts.users = backupData.users.length;
@@ -916,7 +934,7 @@ export const dbOperations = {
       if (backupData.collection_records && backupData.collection_records.length > 0) {
         const { error: recordsError } = await supabase
           .from('collection_records')
-          .upsert(backupData.collection_records, { onConflict: 'id' });
+          .insert(backupData.collection_records);
         
         if (recordsError) throw recordsError;
         restoredCounts.records = backupData.collection_records.length;
@@ -926,7 +944,7 @@ export const dbOperations = {
       if (backupData.record_photos && backupData.record_photos.length > 0) {
         const { error: photosError } = await supabase
           .from('record_photos')
-          .upsert(backupData.record_photos, { onConflict: 'id' });
+          .insert(backupData.record_photos);
         
         if (photosError) throw photosError;
         restoredCounts.photos = backupData.record_photos.length;
@@ -936,7 +954,7 @@ export const dbOperations = {
       if (backupData.activity_logs && backupData.activity_logs.length > 0) {
         const { error: logsError } = await supabase
           .from('activity_logs')
-          .upsert(backupData.activity_logs, { onConflict: 'id' });
+          .insert(backupData.activity_logs);
         
         if (logsError) throw logsError;
         restoredCounts.activityLogs = backupData.activity_logs.length;
@@ -946,7 +964,7 @@ export const dbOperations = {
       if (backupData.user_sessions && backupData.user_sessions.length > 0) {
         const { error: sessionsError } = await supabase
           .from('user_sessions')
-          .upsert(backupData.user_sessions, { onConflict: 'id' });
+          .insert(backupData.user_sessions);
         
         if (sessionsError) throw sessionsError;
         restoredCounts.sessions = backupData.user_sessions.length;
@@ -960,9 +978,24 @@ export const dbOperations = {
 
     } catch (error) {
       console.error('Error restoring backup:', error);
+      
+      let errorMessage = 'فشل في استعادة النسخة الاحتياطية';
+      
+      if (error instanceof Error) {
+        errorMessage = `فشل في استعادة النسخة الاحتياطية: ${error.message}`;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle Supabase errors
+        const supabaseError = error as any;
+        if (supabaseError.message) {
+          errorMessage = `فشل في استعادة النسخة الاحتياطية: ${supabaseError.message}`;
+        } else if (supabaseError.details) {
+          errorMessage = `فشل في استعادة النسخة الاحتياطية: ${supabaseError.details}`;
+        }
+      }
+      
       return {
         success: false,
-        message: `فشل في استعادة النسخة الاحتياطية: ${error}`,
+        message: errorMessage,
         restoredCounts: {}
       };
     }
