@@ -96,4 +96,5 @@ export interface RecordPhoto {
   photo_date: string;
   created_by: string | null;
   created_at: string;
+  notes: string | null;
 }

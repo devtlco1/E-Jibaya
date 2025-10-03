@@ -650,7 +650,7 @@ export const dbOperations = {
   },
 
   // Photo Management
-  async addPhotoToRecord(recordId: string, photoType: 'meter' | 'invoice', photoUrl: string, userId: string): Promise<boolean> {
+  async addPhotoToRecord(recordId: string, photoType: 'meter' | 'invoice', photoUrl: string, userId: string, notes?: string): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
       if (!client) return false;
@@ -661,7 +661,8 @@ export const dbOperations = {
           record_id: recordId,
           photo_type: photoType,
           photo_url: photoUrl,
-          created_by: userId
+          created_by: userId,
+          notes: notes || null
         });
 
       if (error) {

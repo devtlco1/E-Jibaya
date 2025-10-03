@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Download, Eye, Calendar, User, MapPin, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Download, Eye, Calendar, User, MapPin, FileText, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
 
@@ -226,10 +226,20 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                           : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
-                      <div className="font-medium">صورة إضافية</div>
+                      <div className="font-medium flex items-center gap-1">
+                        صورة إضافية
+                        {photo.notes && (
+                          <MessageSquare className="w-3 h-3 text-blue-500" />
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500">
                         {formatDate(photo.photo_date)}
                       </div>
+                      {photo.notes && (
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                          {photo.notes}
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -273,10 +283,20 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                           : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
-                      <div className="font-medium">صورة إضافية</div>
+                      <div className="font-medium flex items-center gap-1">
+                        صورة إضافية
+                        {photo.notes && (
+                          <MessageSquare className="w-3 h-3 text-blue-500" />
+                        )}
+                      </div>
                       <div className="text-xs text-gray-500">
                         {formatDate(photo.photo_date)}
                       </div>
+                      {photo.notes && (
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                          {photo.notes}
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -351,6 +371,23 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                     className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
                   />
                 </div>
+
+                {/* Photo Notes */}
+                {selectedPhoto.notes && (
+                  <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                    <div className="flex items-start gap-3">
+                      <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                          ملاحظات الصورة
+                        </h4>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {selectedPhoto.notes}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center">

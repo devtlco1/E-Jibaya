@@ -29,6 +29,8 @@ export function FieldAgentApp() {
   const [meterPhoto, setMeterPhoto] = useState<string | null>(null);
   const [invoicePhoto, setInvoicePhoto] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
+  const [meterPhotoNotes, setMeterPhotoNotes] = useState('');
+  const [invoicePhotoNotes, setInvoicePhotoNotes] = useState('');
   const [isRefused, setIsRefused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -390,6 +392,8 @@ export function FieldAgentApp() {
           setMeterPhoto(null);
           setInvoicePhoto(null);
           setNotes('');
+          setMeterPhotoNotes('');
+          setInvoicePhotoNotes('');
           setIsRefused(false);
         }, 2000);
       } else {
@@ -429,7 +433,7 @@ export function FieldAgentApp() {
       meterPhotoUrl = await dbOperations.uploadPhoto(file, filePath);
       
       if (meterPhotoUrl) {
-        await dbOperations.addPhotoToRecord(selectedRecord.id, 'meter', meterPhotoUrl, user.id);
+        await dbOperations.addPhotoToRecord(selectedRecord.id, 'meter', meterPhotoUrl, user.id, meterPhotoNotes);
       }
     }
 
@@ -446,7 +450,7 @@ export function FieldAgentApp() {
       invoicePhotoUrl = await dbOperations.uploadPhoto(file, filePath);
       
       if (invoicePhotoUrl) {
-        await dbOperations.addPhotoToRecord(selectedRecord.id, 'invoice', invoicePhotoUrl, user.id);
+        await dbOperations.addPhotoToRecord(selectedRecord.id, 'invoice', invoicePhotoUrl, user.id, invoicePhotoNotes);
       }
     }
 
@@ -494,6 +498,8 @@ export function FieldAgentApp() {
         setMeterPhoto(null);
         setInvoicePhoto(null);
         setNotes('');
+        setMeterPhotoNotes('');
+        setInvoicePhotoNotes('');
         setIsRefused(false);
         setSelectedRecord(null);
       }, 2000);
@@ -742,6 +748,22 @@ export function FieldAgentApp() {
             onChange={(e) => handlePhotoChange(e, 'meter')}
             className="hidden"
           />
+          
+          {/* Meter Photo Notes */}
+          {meterPhoto && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                ملاحظات صورة المقياس
+              </label>
+              <textarea
+                value={meterPhotoNotes}
+                onChange={(e) => setMeterPhotoNotes(e.target.value)}
+                placeholder="اكتب ملاحظاتك حول صورة المقياس..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                rows={3}
+              />
+            </div>
+          )}
         </div>
 
         {/* Invoice Photo */}
@@ -782,6 +804,22 @@ export function FieldAgentApp() {
             onChange={(e) => handlePhotoChange(e, 'invoice')}
             className="hidden"
           />
+          
+          {/* Invoice Photo Notes */}
+          {invoicePhoto && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                ملاحظات صورة الفاتورة
+              </label>
+              <textarea
+                value={invoicePhotoNotes}
+                onChange={(e) => setInvoicePhotoNotes(e.target.value)}
+                placeholder="اكتب ملاحظاتك حول صورة الفاتورة..."
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                rows={3}
+              />
+            </div>
+          )}
         </div>
 
         {/* Notes */}
