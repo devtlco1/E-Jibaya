@@ -811,9 +811,6 @@ export function FieldAgentApp() {
             <label className="block text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">
               ملاحظات الصور الإضافية
             </label>
-            <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-              هذه الملاحظة ستظهر مع جميع الصور الجديدة التي ستضيفها
-            </p>
             <textarea
               value={additionalPhotosNotes}
               onChange={(e) => setAdditionalPhotosNotes(e.target.value)}
