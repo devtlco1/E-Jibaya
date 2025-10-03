@@ -884,5 +884,87 @@ export const dbOperations = {
       console.error('Error fetching backup info:', error);
       return null;
     }
+  },
+
+  // ==============================================
+  // Restore Backup Functions
+  // ==============================================
+
+  async restoreBackup(backupData: any): Promise<{ success: boolean; message: string; restoredCounts: any }> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+
+      const restoredCounts = {
+        users: 0,
+        records: 0,
+        photos: 0,
+        activityLogs: 0,
+        sessions: 0
+      };
+
+      // 1. استعادة المستخدمين
+      if (backupData.users && backupData.users.length > 0) {
+        const { error: usersError } = await supabase
+          .from('users')
+          .upsert(backupData.users, { onConflict: 'username' });
+        
+        if (usersError) throw usersError;
+        restoredCounts.users = backupData.users.length;
+      }
+
+      // 2. استعادة السجلات
+      if (backupData.collection_records && backupData.collection_records.length > 0) {
+        const { error: recordsError } = await supabase
+          .from('collection_records')
+          .upsert(backupData.collection_records, { onConflict: 'id' });
+        
+        if (recordsError) throw recordsError;
+        restoredCounts.records = backupData.collection_records.length;
+      }
+
+      // 3. استعادة الصور
+      if (backupData.record_photos && backupData.record_photos.length > 0) {
+        const { error: photosError } = await supabase
+          .from('record_photos')
+          .upsert(backupData.record_photos, { onConflict: 'id' });
+        
+        if (photosError) throw photosError;
+        restoredCounts.photos = backupData.record_photos.length;
+      }
+
+      // 4. استعادة سجل الأنشطة
+      if (backupData.activity_logs && backupData.activity_logs.length > 0) {
+        const { error: logsError } = await supabase
+          .from('activity_logs')
+          .upsert(backupData.activity_logs, { onConflict: 'id' });
+        
+        if (logsError) throw logsError;
+        restoredCounts.activityLogs = backupData.activity_logs.length;
+      }
+
+      // 5. استعادة الجلسات
+      if (backupData.user_sessions && backupData.user_sessions.length > 0) {
+        const { error: sessionsError } = await supabase
+          .from('user_sessions')
+          .upsert(backupData.user_sessions, { onConflict: 'id' });
+        
+        if (sessionsError) throw sessionsError;
+        restoredCounts.sessions = backupData.user_sessions.length;
+      }
+
+      return {
+        success: true,
+        message: 'تم استعادة النسخة الاحتياطية بنجاح',
+        restoredCounts
+      };
+
+    } catch (error) {
+      console.error('Error restoring backup:', error);
+      return {
+        success: false,
+        message: `فشل في استعادة النسخة الاحتياطية: ${error}`,
+        restoredCounts: {}
+      };
+    }
   }
 };

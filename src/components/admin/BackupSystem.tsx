@@ -178,7 +178,7 @@ export function BackupSystem() {
         }
       };
       
-      // تحميل صور السجلات
+      // تحميل صور السجلات الأصلية فقط (لتجنب التكرار)
       for (const record of records) {
         if (record.meter_photo_url) {
           try {
@@ -209,7 +209,7 @@ export function BackupSystem() {
         }
       }
 
-      // تحميل صور السجلات الإضافية
+      // تحميل صور السجلات الإضافية (الصور المضافة لاحقاً)
       for (const photo of photos) {
         if (photo.photo_url) {
           try {
@@ -270,7 +270,7 @@ export function BackupSystem() {
       addNotification({
         type: 'success',
         title: 'نسخة احتياطية',
-        message: `تم إنشاء النسخة الاحتياطية بنجاح مع ${downloadedPhotos} صورة`
+        message: `تم إنشاء النسخة الاحتياطية بنجاح: ${backupData.metadata.total_records} سجل، ${downloadedPhotos} صورة، ${backupData.metadata.total_users} مستخدم`
       });
 
       // تسجيل النشاط
@@ -357,17 +357,41 @@ export function BackupSystem() {
       setBackupStatus('جاري استعادة البيانات...');
       setBackupProgress(50);
 
-      // استعادة البيانات (هذا يتطلب إضافة دوال في supabase.ts)
-      // await dbOperations.restoreBackup(backupData);
+      // استعادة البيانات
+      const restoreResult = await dbOperations.restoreBackup(backupData);
 
-      setBackupProgress(100);
-      setBackupStatus('تم استعادة النسخة الاحتياطية بنجاح!');
-      
-      addNotification({
-        type: 'success',
-        title: 'استعادة النسخة الاحتياطية',
-        message: `تم استعادة النسخة الاحتياطية بنجاح مع ${backupData.metadata.total_photos} صورة`
-      });
+      if (restoreResult.success) {
+        setBackupProgress(100);
+        setBackupStatus('تم استعادة النسخة الاحتياطية بنجاح!');
+        
+        // تحديث إحصائيات النظام
+        await loadSystemStats();
+        
+        addNotification({
+          type: 'success',
+          title: 'استعادة النسخة الاحتياطية',
+          message: `تم استعادة النسخة الاحتياطية بنجاح: ${restoreResult.restoredCounts.records} سجل، ${restoreResult.restoredCounts.photos} صورة، ${restoreResult.restoredCounts.users} مستخدم`
+        });
+
+        // تسجيل النشاط
+        if (user?.id) {
+          await dbOperations.createActivityLog({
+            user_id: user.id,
+            action: 'restore_data',
+            target_type: 'backup',
+            target_name: 'استعادة نسخة احتياطية',
+            details: {
+              restored_records: restoreResult.restoredCounts.records,
+              restored_photos: restoreResult.restoredCounts.photos,
+              restored_users: restoreResult.restoredCounts.users,
+              restored_activity_logs: restoreResult.restoredCounts.activityLogs,
+              restored_sessions: restoreResult.restoredCounts.sessions
+            }
+          });
+        }
+      } else {
+        throw new Error(restoreResult.message);
+      }
 
     } catch (error) {
       console.error('Restore error:', error);
