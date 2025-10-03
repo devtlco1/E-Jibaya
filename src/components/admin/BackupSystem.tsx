@@ -45,6 +45,7 @@ export function BackupSystem() {
     photos: 0,
     activityLogs: 0
   });
+  const [isRestoring, setIsRestoring] = useState(false);
   const { addNotification } = useNotifications();
   const { user } = useAuth();
 
@@ -308,6 +309,7 @@ export function BackupSystem() {
 
     try {
       setLoading(true);
+      setIsRestoring(true);
       setBackupStatus('جاري قراءة ملف النسخة الاحتياطية...');
       setBackupProgress(10);
 
@@ -370,7 +372,7 @@ export function BackupSystem() {
         addNotification({
           type: 'success',
           title: 'استعادة النسخة الاحتياطية',
-          message: `تم استعادة النسخة الاحتياطية بنجاح: ${restoreResult.restoredCounts.records} سجل، ${restoreResult.restoredCounts.photos} صورة، ${restoreResult.restoredCounts.users} مستخدم`
+          message: `تم استعادة النسخة الاحتياطية بنجاح: ${restoreResult.restoredCounts.records} سجل، ${restoreResult.restoredCounts.photos} صورة، ${restoreResult.restoredCounts.users} مستخدم. يرجى إعادة تحميل الصفحة لرؤية التحديثات.`
         });
 
         // تسجيل النشاط
@@ -403,6 +405,9 @@ export function BackupSystem() {
       });
     } finally {
       setLoading(false);
+      setIsRestoring(false);
+      // Reset file input
+      event.target.value = '';
     }
   };
 
@@ -510,10 +515,10 @@ export function BackupSystem() {
 
           <button
             onClick={createBackup}
-            disabled={loading}
+            disabled={loading || isRestoring}
             className="w-full flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
           >
-            {loading ? (
+            {loading && !isRestoring ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
                 جاري الإنشاء...
@@ -551,9 +556,22 @@ export function BackupSystem() {
             قم بتحميل ملف النسخة الاحتياطية لاستعادة البيانات
           </p>
 
-          <label className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer">
-            <Upload className="w-4 h-4 ml-2" />
-            اختيار ملف النسخة الاحتياطية
+          <label className={`w-full flex items-center justify-center px-4 py-2 rounded-lg transition-colors cursor-pointer ${
+            loading && isRestoring 
+              ? 'bg-gray-400 cursor-not-allowed' 
+              : 'bg-blue-600 hover:bg-blue-700'
+          } text-white`}>
+            {loading && isRestoring ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+                جاري الاستعادة...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 ml-2" />
+                اختيار ملف النسخة الاحتياطية
+              </>
+            )}
             <input
               type="file"
               accept=".zip,.json"

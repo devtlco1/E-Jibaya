@@ -151,11 +151,7 @@ export function DataTable({
 
   const confirmDelete = () => {
     onDeleteRecord(deleteConfirm.recordId);
-    addNotification({
-      type: 'success',
-      title: 'تم الحذف بنجاح',
-      message: `تم حذف سجل ${deleteConfirm.recordName}`
-    });
+    setDeleteConfirm({ isOpen: false, recordId: '', recordName: '' });
   };
 
   const handleImageClick = (url: string, title: string) => {

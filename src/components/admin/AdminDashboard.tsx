@@ -225,7 +225,7 @@ export function AdminDashboard() {
         addNotification({
           type: 'success',
           title: 'تم الحذف بنجاح',
-          message: 'تم حذف السجل بنجاح'
+          message: `تم حذف سجل ${recordToDelete.subscriber_name || recordToDelete.account_number || 'السجل'} بنجاح`
         });
       }
     } catch (error) {
