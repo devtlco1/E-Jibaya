@@ -289,100 +289,100 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300" dir="rtl">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white ml-4">
-                لوحة التحكم الإدارية
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white ml-2 sm:ml-4">
+                <span className="hidden sm:inline">لوحة التحكم الإدارية</span>
+                <span className="sm:hidden">لوحة التحكم</span>
               </h1>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hidden sm:inline">
                 مرحباً، {user?.full_name}
               </span>
             </div>
-            <div className="flex items-center space-x-2 space-x-reverse">
+            <div className="flex items-center space-x-1 sm:space-x-2 space-x-reverse">
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"
+                className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"
                 aria-label={isDark ? 'تبديل إلى الوضع النهاري' : 'تبديل إلى الوضع الليلي'}
               >
                 {isDark ? (
-                  <Sun className="w-5 h-5 text-yellow-500" />
+                  <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
                 ) : (
-                  <Moon className="w-5 h-5 text-gray-600" />
+                  <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 )}
               </button>
               <button
                 onClick={logout}
-                className="p-2 rounded-lg bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                className="p-1.5 sm:p-2 rounded-lg bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
                 title="تسجيل الخروج"
               >
-                <LogOut className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 dark:text-red-400" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-3">
-                <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-2 sm:ml-3">
+                <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">المجموع</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.total}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">المجموع</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.total}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg ml-3">
-                <FileText className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg ml-2 sm:ml-3">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">قيد المراجعة</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.pending}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">قيد المراجعة</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.pending}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg ml-3">
-                <Camera className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg ml-2 sm:ml-3">
+                <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">مكتملة</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.completed}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">مكتملة</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.completed}</p>
               </div>
             </div>
           </div>
 
-
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
             <div className="flex items-center">
-              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-3">
-                <FileText className="w-6 h-6 text-red-600 dark:text-red-400" />
+              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-2 sm:ml-3">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.refused}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">امتناع</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.refused}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg ml-3">
-                <UserCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg ml-2 sm:ml-3">
+                <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">المحصلين النشطين</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{fieldAgentsCount}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">المحصلين النشطين</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{fieldAgentsCount}</p>
               </div>
             </div>
           </div>
@@ -390,76 +390,81 @@ export function AdminDashboard() {
 
 
         {/* Navigation Tabs */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-6">
-          <nav className="flex space-x-8 space-x-reverse px-6" aria-label="Tabs">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4 sm:mb-6">
+          <nav className="flex flex-wrap space-x-2 sm:space-x-8 space-x-reverse px-2 sm:px-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('records')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                 activeTab === 'records'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
               }`}
             >
               <div className="flex items-center">
-                <Database className="w-4 h-4 ml-2" />
-                سجلات الجباية
+                <Database className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                <span className="hidden sm:inline">سجلات الجباية</span>
+                <span className="sm:hidden">السجلات</span>
               </div>
             </button>
             {user?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('users')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                   activeTab === 'users'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center">
-                  <Users className="w-4 h-4 ml-2" />
-                  إدارة المستخدمين
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                  <span className="hidden sm:inline">إدارة المستخدمين</span>
+                  <span className="sm:hidden">المستخدمين</span>
                 </div>
               </button>
             )}
             <button
               onClick={() => setActiveTab('reports')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                 activeTab === 'reports'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
               }`}
             >
               <div className="flex items-center">
-                <FileBarChart className="w-4 h-4 ml-2" />
-                التقارير
+                <FileBarChart className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                <span className="hidden sm:inline">التقارير</span>
+                <span className="sm:hidden">التقارير</span>
               </div>
             </button>
             {user?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('activities')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                   activeTab === 'activities'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center">
-                  <BarChart3 className="w-4 h-4 ml-2" />
-                  الحركات
+                  <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                  <span className="hidden sm:inline">الحركات</span>
+                  <span className="sm:hidden">الحركات</span>
                 </div>
               </button>
             )}
             {user?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('backup')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                   activeTab === 'backup'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center">
-                  <HardDrive className="w-4 h-4 ml-2" />
-                  النسخ الاحتياطي
+                  <HardDrive className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                  <span className="hidden sm:inline">النسخ الاحتياطي</span>
+                  <span className="sm:hidden">النسخ</span>
                 </div>
               </button>
             )}

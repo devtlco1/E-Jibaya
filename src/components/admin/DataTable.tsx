@@ -330,31 +330,31 @@ export function DataTable({
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   اسم المشترك
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
                   رقم الحساب
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                   رقم المقياس
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   العنوان
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                   آخر قراءة
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   صورة المقياس
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   صورة الفاتورة
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   الحالة
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   الإجراءات
                 </th>
               </tr>
@@ -408,15 +408,20 @@ export function DataTable({
                 records.map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td 
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer"
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer"
                     onClick={() => handleEdit(record)}
                   >
-                    {record.subscriber_name || (
-                      <span className="text-gray-400 italic">غير محدد</span>
-                    )}
+                    <div className="flex flex-col">
+                      <span>{record.subscriber_name || (
+                        <span className="text-gray-400 italic">غير محدد</span>
+                      )}</span>
+                      <span className="text-xs text-gray-500 sm:hidden">
+                        {record.account_number || 'غير محدد'}
+                      </span>
+                    </div>
                   </td>
                   <td 
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer"
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden sm:table-cell"
                     onClick={() => handleEdit(record)}
                   >
                     {record.account_number || (
@@ -424,7 +429,7 @@ export function DataTable({
                     )}
                   </td>
                   <td 
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer"
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden md:table-cell"
                     onClick={() => handleEdit(record)}
                   >
                     {record.meter_number || (
@@ -432,7 +437,7 @@ export function DataTable({
                     )}
                   </td>
                   <td 
-                    className="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate cursor-pointer"
+                    className="px-3 sm:px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate cursor-pointer hidden lg:table-cell"
                     onClick={() => handleEdit(record)}
                   >
                     {record.address || (
@@ -440,7 +445,7 @@ export function DataTable({
                     )}
                   </td>
                   <td 
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer"
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden md:table-cell"
                     onClick={() => handleEdit(record)}
                   >
                     {record.last_reading || (
@@ -448,7 +453,7 @@ export function DataTable({
                     )}
                   </td>
                   <td 
-                    className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap cursor-pointer hidden lg:table-cell"
                     onClick={() => handleEdit(record)}
                   >
                     {record.meter_photo_url ? (
@@ -471,7 +476,7 @@ export function DataTable({
                     )}
                   </td>
                   <td 
-                    className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap cursor-pointer hidden lg:table-cell"
                     onClick={() => handleEdit(record)}
                   >
                     {record.invoice_photo_url ? (
@@ -494,44 +499,44 @@ export function DataTable({
                     )}
                   </td>
                   <td 
-                    className="px-6 py-4 whitespace-nowrap cursor-pointer"
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap cursor-pointer"
                     onClick={() => handleEdit(record)}
                   >
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(getRecordStatus(record))}`}>
                       {getRecordStatusText(record)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2 space-x-reverse">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-1 sm:space-x-2 space-x-reverse">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleView(record);
                         }}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1"
                         title="عرض"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePhotoComparison(record);
                         }}
-                        className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
+                        className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1 hidden sm:block"
                         title="مقارنة الصور"
                       >
-                        <Images className="w-4 h-4" />
+                        <Images className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEdit(record);
                         }}
-                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1"
                         title="تعديل"
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       {record.gps_latitude && record.gps_longitude && (
                         <a
