@@ -523,7 +523,7 @@ export function DataTable({
                           e.stopPropagation();
                           handlePhotoComparison(record);
                         }}
-                        className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1 hidden sm:block"
+                        className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1"
                         title="مقارنة الصور"
                       >
                         <Images className="w-3 h-3 sm:w-4 sm:h-4" />
