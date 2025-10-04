@@ -208,6 +208,8 @@ export const dbOperations = {
       
       // مسح التخزين المؤقت بعد إنشاء سجل جديد
       cacheService.clearRecordsCache();
+      // مسح التخزين المؤقت فوراً
+      cacheService.delete('all_records');
       
       return data;
     } catch (error) {
@@ -224,13 +226,8 @@ export const dbOperations = {
         return [];
       }
       
-      // التحقق من التخزين المؤقت
-      const cacheKey = 'all_records';
-      const cached = cacheService.get(cacheKey);
-      if (cached) {
-        console.log('Returning cached records');
-        return cached;
-      }
+      // مسح التخزين المؤقت أولاً لضمان الحصول على أحدث البيانات
+      cacheService.delete('all_records');
       
       const { data, error } = await client
         .from('collection_records')
@@ -243,8 +240,8 @@ export const dbOperations = {
       }
       
       const records = data || [];
-      // حفظ في التخزين المؤقت لمدة دقيقتين
-      cacheService.set(cacheKey, records, 2 * 60 * 1000);
+      // حفظ في التخزين المؤقت لمدة 30 ثانية فقط
+      cacheService.set('all_records', records, 30 * 1000);
       
       return records;
     } catch (error) {
@@ -272,6 +269,8 @@ export const dbOperations = {
       
       // مسح التخزين المؤقت
       cacheService.clearRecordsCache();
+      // مسح التخزين المؤقت فوراً
+      cacheService.delete('all_records');
       
       return true;
     } catch (error) {
@@ -299,6 +298,8 @@ export const dbOperations = {
       
       // مسح التخزين المؤقت بعد الحذف
       cacheService.clearRecordsCache();
+      // مسح التخزين المؤقت فوراً
+      cacheService.delete('all_records');
       
       return true;
     } catch (error) {
@@ -907,11 +908,15 @@ export const dbOperations = {
         .from('backup_info')
         .select('*')
         .order('backup_date', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
 
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
-      return data;
+      if (error) {
+        console.error('Error fetching backup info:', error);
+        return null;
+      }
+      
+      // إرجاع أول سجل أو null إذا لم توجد سجلات
+      return data && data.length > 0 ? data[0] : null;
     } catch (error) {
       console.error('Error fetching backup info:', error);
       return null;
