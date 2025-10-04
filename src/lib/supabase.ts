@@ -206,8 +206,11 @@ export const dbOperations = {
         throw new Error(`فشل في إنشاء السجل: ${error.message}`);
       }
       
-      // تم تعطيل التخزين المؤقت مؤقتاً
-      console.log('Record created successfully');
+      // مسح التخزين المؤقت نهائياً
+      cacheService.clearRecordsCache();
+      cacheService.clearUsersCache();
+      localStorage.removeItem('ejibaya_cache');
+      console.log('Record created successfully - cache cleared');
       
       return data;
     } catch (error) {
@@ -224,8 +227,12 @@ export const dbOperations = {
         return [];
       }
       
-      // تعطيل التخزين المؤقت مؤقتاً لحل مشكلة البيانات
-      console.log('Fetching fresh data from database (cache disabled)');
+      // مسح التخزين المؤقت نهائياً
+      cacheService.clearRecordsCache();
+      cacheService.clearUsersCache();
+      localStorage.removeItem('ejibaya_cache');
+      
+      console.log('Fetching fresh data from database (cache completely disabled)');
       
       const { data, error } = await client
         .from('collection_records')
@@ -264,8 +271,11 @@ export const dbOperations = {
         throw new Error(`فشل في تحديث السجل: ${error.message}`);
       }
       
-      // تم تعطيل التخزين المؤقت مؤقتاً
-      console.log('Record updated successfully');
+      // مسح التخزين المؤقت نهائياً
+      cacheService.clearRecordsCache();
+      cacheService.clearUsersCache();
+      localStorage.removeItem('ejibaya_cache');
+      console.log('Record updated successfully - cache cleared');
       
       return true;
     } catch (error) {
@@ -291,8 +301,11 @@ export const dbOperations = {
         throw new Error(`فشل في حذف السجل: ${error.message}`);
       }
       
-      // تم تعطيل التخزين المؤقت مؤقتاً
-      console.log('Record deleted successfully');
+      // مسح التخزين المؤقت نهائياً
+      cacheService.clearRecordsCache();
+      cacheService.clearUsersCache();
+      localStorage.removeItem('ejibaya_cache');
+      console.log('Record deleted successfully - cache cleared');
       
       return true;
     } catch (error) {
@@ -884,9 +897,7 @@ export const dbOperations = {
           total_photos: backupInfo.total_photos,
           total_users: backupInfo.total_users,
           status: 'completed',
-          description: backupInfo.description,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          description: backupInfo.description
         });
 
       if (error) {
