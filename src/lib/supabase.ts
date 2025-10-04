@@ -68,6 +68,15 @@ export const dbOperations = {
       
       // Get user from database
       console.log('Querying users table...');
+      
+      // First, let's get all users to see what's in the database
+      const { data: allUsers, error: allUsersError } = await client
+        .from('users')
+        .select('*');
+      
+      console.log('All users in database:', allUsers);
+      
+      // Now try the specific query
       const { data: users, error } = await client
         .from('users')
         .select('*')
