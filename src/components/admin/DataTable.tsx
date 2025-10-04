@@ -507,7 +507,7 @@ export function DataTable({
                     </span>
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-1 sm:space-x-2 space-x-reverse">
+                    <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

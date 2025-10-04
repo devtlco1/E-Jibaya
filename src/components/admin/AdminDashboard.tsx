@@ -300,7 +300,7 @@ export function AdminDashboard() {
                 مرحباً، {user?.full_name}
               </span>
             </div>
-            <div className="flex items-center space-x-1 sm:space-x-2 space-x-reverse">
+            <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse">
               <button
                 onClick={toggleTheme}
                 className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"
@@ -391,10 +391,10 @@ export function AdminDashboard() {
 
         {/* Navigation Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-4 sm:mb-6">
-          <nav className="flex flex-wrap space-x-2 sm:space-x-8 space-x-reverse px-2 sm:px-6" aria-label="Tabs">
+          <nav className="flex flex-wrap space-x-4 sm:space-x-8 space-x-reverse px-2 sm:px-6" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('records')}
-              className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+              className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                 activeTab === 'records'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
@@ -409,7 +409,7 @@ export function AdminDashboard() {
             {user?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('users')}
-                className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                   activeTab === 'users'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
@@ -424,7 +424,7 @@ export function AdminDashboard() {
             )}
             <button
               onClick={() => setActiveTab('reports')}
-              className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+              className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                 activeTab === 'reports'
                   ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
@@ -439,7 +439,7 @@ export function AdminDashboard() {
             {user?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('activities')}
-                className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                   activeTab === 'activities'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
@@ -455,7 +455,7 @@ export function AdminDashboard() {
             {user?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('backup')}
-                className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                   activeTab === 'backup'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
