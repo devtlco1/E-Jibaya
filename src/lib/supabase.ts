@@ -964,104 +964,152 @@ export const dbOperations = {
       console.log('Clearing existing data before restore...');
       
       // مسح الجلسات أولاً (لأنها تعتمد على المستخدمين)
-      await supabase.from('user_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      try {
+        await supabase.from('user_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear user_sessions:', error);
+      }
       
       // مسح سجل الأنشطة (لأنها تعتمد على المستخدمين)
-      await supabase.from('activity_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      try {
+        await supabase.from('activity_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear activity_logs:', error);
+      }
       
       // مسح الصور (لأنها تعتمد على السجلات)
-      await supabase.from('record_photos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      try {
+        await supabase.from('record_photos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear record_photos:', error);
+      }
       
       // مسح السجلات (لأنها تعتمد على المستخدمين)
-      await supabase.from('collection_records').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      try {
+        await supabase.from('collection_records').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear collection_records:', error);
+      }
       
       // مسح المستخدمين (بعد مسح جميع الجداول التي تعتمد عليهم)
-      await supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      try {
+        await supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear users:', error);
+      }
 
       // 1. استعادة المستخدمين
       if (backupData.users && backupData.users.length > 0) {
-        // استخدام upsert لتجنب التضارب
-        const { error: usersError } = await supabase
-          .from('users')
-          .upsert(backupData.users, { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
-        
-        if (usersError) {
-          console.error('Error restoring users:', usersError);
-          throw usersError;
+        try {
+          // استخدام upsert لتجنب التضارب
+          const { error: usersError } = await supabase
+            .from('users')
+            .upsert(backupData.users, { 
+              onConflict: 'id',
+              ignoreDuplicates: false 
+            });
+          
+          if (usersError) {
+            console.error('Error restoring users:', usersError);
+            throw usersError;
+          }
+          restoredCounts.users = backupData.users.length;
+        } catch (error) {
+          console.error('Failed to restore users:', error);
+          // لا نرمي الخطأ، نكمل مع باقي البيانات
         }
-        restoredCounts.users = backupData.users.length;
       }
 
       // 2. استعادة السجلات
       if (backupData.collection_records && backupData.collection_records.length > 0) {
-        const { error: recordsError } = await supabase
-          .from('collection_records')
-          .upsert(backupData.collection_records, { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
-        
-        if (recordsError) {
-          console.error('Error restoring records:', recordsError);
-          throw recordsError;
+        try {
+          const { error: recordsError } = await supabase
+            .from('collection_records')
+            .upsert(backupData.collection_records, { 
+              onConflict: 'id',
+              ignoreDuplicates: false 
+            });
+          
+          if (recordsError) {
+            console.error('Error restoring records:', recordsError);
+            throw recordsError;
+          }
+          restoredCounts.records = backupData.collection_records.length;
+        } catch (error) {
+          console.error('Failed to restore records:', error);
+          // لا نرمي الخطأ، نكمل مع باقي البيانات
         }
-        restoredCounts.records = backupData.collection_records.length;
       }
 
       // 3. استعادة الصور
       if (backupData.record_photos && backupData.record_photos.length > 0) {
-        const { error: photosError } = await supabase
-          .from('record_photos')
-          .upsert(backupData.record_photos, { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
-        
-        if (photosError) {
-          console.error('Error restoring photos:', photosError);
-          throw photosError;
+        try {
+          const { error: photosError } = await supabase
+            .from('record_photos')
+            .upsert(backupData.record_photos, { 
+              onConflict: 'id',
+              ignoreDuplicates: false 
+            });
+          
+          if (photosError) {
+            console.error('Error restoring photos:', photosError);
+            throw photosError;
+          }
+          restoredCounts.photos = backupData.record_photos.length;
+        } catch (error) {
+          console.error('Failed to restore photos:', error);
+          // لا نرمي الخطأ، نكمل مع باقي البيانات
         }
-        restoredCounts.photos = backupData.record_photos.length;
       }
 
       // 4. استعادة سجل الأنشطة
       if (backupData.activity_logs && backupData.activity_logs.length > 0) {
-        const { error: logsError } = await supabase
-          .from('activity_logs')
-          .upsert(backupData.activity_logs, { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
-        
-        if (logsError) {
-          console.error('Error restoring activity logs:', logsError);
-          throw logsError;
+        try {
+          const { error: logsError } = await supabase
+            .from('activity_logs')
+            .upsert(backupData.activity_logs, { 
+              onConflict: 'id',
+              ignoreDuplicates: false 
+            });
+          
+          if (logsError) {
+            console.error('Error restoring activity logs:', logsError);
+            throw logsError;
+          }
+          restoredCounts.activityLogs = backupData.activity_logs.length;
+        } catch (error) {
+          console.error('Failed to restore activity logs:', error);
+          // لا نرمي الخطأ، نكمل مع باقي البيانات
         }
-        restoredCounts.activityLogs = backupData.activity_logs.length;
       }
 
       // 5. استعادة الجلسات
       if (backupData.user_sessions && backupData.user_sessions.length > 0) {
-        const { error: sessionsError } = await supabase
-          .from('user_sessions')
-          .upsert(backupData.user_sessions, { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
-        
-        if (sessionsError) {
-          console.error('Error restoring sessions:', sessionsError);
-          throw sessionsError;
+        try {
+          const { error: sessionsError } = await supabase
+            .from('user_sessions')
+            .upsert(backupData.user_sessions, { 
+              onConflict: 'id',
+              ignoreDuplicates: false 
+            });
+          
+          if (sessionsError) {
+            console.error('Error restoring sessions:', sessionsError);
+            throw sessionsError;
+          }
+          restoredCounts.sessions = backupData.user_sessions.length;
+        } catch (error) {
+          console.error('Failed to restore sessions:', error);
+          // لا نرمي الخطأ، نكمل مع باقي البيانات
         }
-        restoredCounts.sessions = backupData.user_sessions.length;
       }
 
+      // حساب إجمالي البيانات المستعادة
+      const totalRestored = Object.values(restoredCounts).reduce((sum, count) => sum + count, 0);
+      
       return {
         success: true,
-        message: 'تم استعادة النسخة الاحتياطية بنجاح',
+        message: `تم استعادة النسخة الاحتياطية بنجاح (${totalRestored} عنصر)`,
         restoredCounts
       };
 
