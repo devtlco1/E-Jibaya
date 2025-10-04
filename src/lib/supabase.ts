@@ -59,7 +59,7 @@ export const dbOperations = {
         .from('users')
         .select('*')
         .eq('username', username)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Login query error:', error.message);
