@@ -691,7 +691,9 @@ export const dbOperations = {
       const client = checkSupabaseConnection();
       if (!client) return false;
 
-      const { error } = await client
+      console.log('Adding photo to record:', { recordId, photoType, photoUrl, userId, notes });
+
+      const { data, error } = await client
         .from('record_photos')
         .insert({
           record_id: recordId,
@@ -699,13 +701,16 @@ export const dbOperations = {
           photo_url: photoUrl,
           created_by: userId,
           notes: notes || null
-        });
+        })
+        .select();
 
       if (error) {
         console.error('Add photo error:', error);
+        console.error('Error details:', error.message, error.details, error.hint);
         return false;
       }
 
+      console.log('Photo added successfully:', data);
       return true;
     } catch (error) {
       console.error('Add photo error:', error);
