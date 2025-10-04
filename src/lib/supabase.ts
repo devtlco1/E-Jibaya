@@ -267,15 +267,20 @@ export const dbOperations = {
         throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
 
-      const { error } = await client
+      console.log('Updating record:', { id, updates });
+
+      const { data, error } = await client
         .from('collection_records')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
         console.error('Update record error:', error);
         throw new Error(`فشل في تحديث السجل: ${error.message}`);
       }
+
+      console.log('Record updated successfully:', data);
       
       // مسح التخزين المؤقت نهائياً
       cacheService.clearRecordsCache();
@@ -717,7 +722,7 @@ export const dbOperations = {
         .from('record_photos')
         .select('*')
         .eq('record_id', recordId)
-        .order('photo_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Get photos error:', error);
