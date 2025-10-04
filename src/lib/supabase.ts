@@ -55,21 +55,27 @@ export const dbOperations = {
       }
       
       // Get user from database
-      const { data: user, error } = await client
+      const { data: users, error } = await client
         .from('users')
         .select('*')
-        .eq('username', username)
-        .single();
+        .eq('username', username);
 
       if (error) {
         console.error('Login query error:', error.message);
         return null;
       }
 
-      if (!user) {
+      if (!users || users.length === 0) {
         console.log('No user found with username:', username);
         return null;
       }
+
+      if (users.length > 1) {
+        console.log('Multiple users found with username:', username);
+        return null;
+      }
+
+      const user = users[0];
 
       // Check if user is active
       if (!user.is_active) {
