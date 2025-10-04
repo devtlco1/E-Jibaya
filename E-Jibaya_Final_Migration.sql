@@ -87,6 +87,8 @@ CREATE TABLE public.record_photos (
     photo_url TEXT NOT NULL,
     file_name VARCHAR(255),
     file_size INTEGER,
+    created_by UUID REFERENCES public.users(id),
+    notes TEXT,
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -225,6 +227,11 @@ CREATE POLICY "record_photos_select_policy" ON public.record_photos
 
 CREATE POLICY "record_photos_insert_policy" ON public.record_photos
     FOR INSERT TO anon, authenticated
+    WITH CHECK (true);
+
+CREATE POLICY "record_photos_update_policy" ON public.record_photos
+    FOR UPDATE TO anon, authenticated
+    USING (true)
     WITH CHECK (true);
 
 CREATE POLICY "record_photos_delete_policy" ON public.record_photos
