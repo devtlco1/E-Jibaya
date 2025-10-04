@@ -693,15 +693,21 @@ export const dbOperations = {
 
       console.log('Adding photo to record:', { recordId, photoType, photoUrl, userId, notes });
 
+      const insertData: any = {
+        record_id: recordId,
+        photo_type: photoType,
+        photo_url: photoUrl,
+        notes: notes || null
+      };
+
+      // إضافة created_by فقط إذا كان موجود في الجدول
+      if (userId) {
+        insertData.created_by = userId;
+      }
+
       const { data, error } = await client
         .from('record_photos')
-        .insert({
-          record_id: recordId,
-          photo_type: photoType,
-          photo_url: photoUrl,
-          created_by: userId,
-          notes: notes || null
-        })
+        .insert(insertData)
         .select();
 
       if (error) {
