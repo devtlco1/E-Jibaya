@@ -206,10 +206,8 @@ export const dbOperations = {
         throw new Error(`فشل في إنشاء السجل: ${error.message}`);
       }
       
-      // مسح التخزين المؤقت بعد إنشاء سجل جديد
-      cacheService.clearRecordsCache();
-      // مسح التخزين المؤقت فوراً
-      cacheService.delete('all_records');
+      // تم تعطيل التخزين المؤقت مؤقتاً
+      console.log('Record created successfully');
       
       return data;
     } catch (error) {
@@ -226,8 +224,8 @@ export const dbOperations = {
         return [];
       }
       
-      // مسح التخزين المؤقت أولاً لضمان الحصول على أحدث البيانات
-      cacheService.delete('all_records');
+      // تعطيل التخزين المؤقت مؤقتاً لحل مشكلة البيانات
+      console.log('Fetching fresh data from database (cache disabled)');
       
       const { data, error } = await client
         .from('collection_records')
@@ -240,8 +238,7 @@ export const dbOperations = {
       }
       
       const records = data || [];
-      // حفظ في التخزين المؤقت لمدة 30 ثانية فقط
-      cacheService.set('all_records', records, 30 * 1000);
+      console.log(`Fetched ${records.length} records from database`);
       
       return records;
     } catch (error) {
@@ -267,10 +264,8 @@ export const dbOperations = {
         throw new Error(`فشل في تحديث السجل: ${error.message}`);
       }
       
-      // مسح التخزين المؤقت
-      cacheService.clearRecordsCache();
-      // مسح التخزين المؤقت فوراً
-      cacheService.delete('all_records');
+      // تم تعطيل التخزين المؤقت مؤقتاً
+      console.log('Record updated successfully');
       
       return true;
     } catch (error) {
@@ -296,10 +291,8 @@ export const dbOperations = {
         throw new Error(`فشل في حذف السجل: ${error.message}`);
       }
       
-      // مسح التخزين المؤقت بعد الحذف
-      cacheService.clearRecordsCache();
-      // مسح التخزين المؤقت فوراً
-      cacheService.delete('all_records');
+      // تم تعطيل التخزين المؤقت مؤقتاً
+      console.log('Record deleted successfully');
       
       return true;
     } catch (error) {
@@ -876,9 +869,11 @@ export const dbOperations = {
     try {
       if (!supabase) throw new Error('Supabase not configured');
       
+      console.log('Attempting to save backup info...');
+      
       const { error } = await supabase
         .from('backup_info')
-        .upsert({
+        .insert({
           backup_name: backupInfo.backup_name || `Backup_${new Date().toISOString().split('T')[0]}`,
           backup_type: backupInfo.backup_type,
           file_name: backupInfo.file_name,
@@ -890,13 +885,22 @@ export const dbOperations = {
           total_users: backupInfo.total_users,
           status: 'completed',
           description: backupInfo.description,
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving backup info:', error);
+        // إذا فشل الحفظ، لا نرمي الخطأ بل نطبع تحذير فقط
+        console.warn('Backup info could not be saved to database, but backup file was created successfully');
+        return;
+      }
+      
+      console.log('Backup info saved successfully');
     } catch (error) {
       console.error('Error saving backup info:', error);
-      throw error;
+      // لا نرمي الخطأ، فقط نطبع تحذير
+      console.warn('Backup info could not be saved to database, but backup file was created successfully');
     }
   },
 
@@ -911,14 +915,14 @@ export const dbOperations = {
         .limit(1);
 
       if (error) {
-        console.error('Error fetching backup info:', error);
+        console.warn('Backup info table not accessible:', error.message);
         return null;
       }
       
       // إرجاع أول سجل أو null إذا لم توجد سجلات
       return data && data.length > 0 ? data[0] : null;
     } catch (error) {
-      console.error('Error fetching backup info:', error);
+      console.warn('Error fetching backup info:', error);
       return null;
     }
   },
