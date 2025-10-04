@@ -963,28 +963,35 @@ export const dbOperations = {
       // مسح جميع البيانات الموجودة لتجنب التضارب
       console.log('Clearing existing data before restore...');
       
-      // مسح الجلسات
+      // مسح الجلسات أولاً (لأنها تعتمد على المستخدمين)
       await supabase.from('user_sessions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       
-      // مسح سجل الأنشطة
+      // مسح سجل الأنشطة (لأنها تعتمد على المستخدمين)
       await supabase.from('activity_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       
-      // مسح الصور
+      // مسح الصور (لأنها تعتمد على السجلات)
       await supabase.from('record_photos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       
-      // مسح السجلات
+      // مسح السجلات (لأنها تعتمد على المستخدمين)
       await supabase.from('collection_records').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       
-      // مسح المستخدمين (بما في ذلك المحذوفين)
+      // مسح المستخدمين (بعد مسح جميع الجداول التي تعتمد عليهم)
       await supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
       // 1. استعادة المستخدمين
       if (backupData.users && backupData.users.length > 0) {
+        // استخدام upsert لتجنب التضارب
         const { error: usersError } = await supabase
           .from('users')
-          .insert(backupData.users);
+          .upsert(backupData.users, { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          });
         
-        if (usersError) throw usersError;
+        if (usersError) {
+          console.error('Error restoring users:', usersError);
+          throw usersError;
+        }
         restoredCounts.users = backupData.users.length;
       }
 
@@ -992,9 +999,15 @@ export const dbOperations = {
       if (backupData.collection_records && backupData.collection_records.length > 0) {
         const { error: recordsError } = await supabase
           .from('collection_records')
-          .insert(backupData.collection_records);
+          .upsert(backupData.collection_records, { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          });
         
-        if (recordsError) throw recordsError;
+        if (recordsError) {
+          console.error('Error restoring records:', recordsError);
+          throw recordsError;
+        }
         restoredCounts.records = backupData.collection_records.length;
       }
 
@@ -1002,9 +1015,15 @@ export const dbOperations = {
       if (backupData.record_photos && backupData.record_photos.length > 0) {
         const { error: photosError } = await supabase
           .from('record_photos')
-          .insert(backupData.record_photos);
+          .upsert(backupData.record_photos, { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          });
         
-        if (photosError) throw photosError;
+        if (photosError) {
+          console.error('Error restoring photos:', photosError);
+          throw photosError;
+        }
         restoredCounts.photos = backupData.record_photos.length;
       }
 
@@ -1012,9 +1031,15 @@ export const dbOperations = {
       if (backupData.activity_logs && backupData.activity_logs.length > 0) {
         const { error: logsError } = await supabase
           .from('activity_logs')
-          .insert(backupData.activity_logs);
+          .upsert(backupData.activity_logs, { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          });
         
-        if (logsError) throw logsError;
+        if (logsError) {
+          console.error('Error restoring activity logs:', logsError);
+          throw logsError;
+        }
         restoredCounts.activityLogs = backupData.activity_logs.length;
       }
 
@@ -1022,9 +1047,15 @@ export const dbOperations = {
       if (backupData.user_sessions && backupData.user_sessions.length > 0) {
         const { error: sessionsError } = await supabase
           .from('user_sessions')
-          .insert(backupData.user_sessions);
+          .upsert(backupData.user_sessions, { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          });
         
-        if (sessionsError) throw sessionsError;
+        if (sessionsError) {
+          console.error('Error restoring sessions:', sessionsError);
+          throw sessionsError;
+        }
         restoredCounts.sessions = backupData.user_sessions.length;
       }
 
