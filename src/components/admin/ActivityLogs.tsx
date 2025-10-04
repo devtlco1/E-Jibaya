@@ -26,7 +26,10 @@ export function ActivityLogs() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  // Optimize items per page for mobile
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    return window.innerWidth <= 768 ? 5 : 10;
+  });
   const [totalLogs, setTotalLogs] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
@@ -38,6 +41,15 @@ export function ActivityLogs() {
     loadLogs();
     loadUsers();
   }, [currentPage, itemsPerPage]);
+
+  // Optimize for mobile: load users only when needed
+  useEffect(() => {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      // Load users in background for mobile
+      loadUsers();
+    }
+  }, []);
 
   const loadLogs = async () => {
     console.log('Loading activity logs...');

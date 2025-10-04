@@ -39,7 +39,10 @@ export function AdminDashboard() {
   const [records, setRecords] = useState<CollectionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  // Optimize items per page for mobile
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    return window.innerWidth <= 768 ? 5 : 10;
+  });
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [allRecords, setAllRecords] = useState<CollectionRecord[]>([]);
@@ -65,21 +68,50 @@ export function AdminDashboard() {
     loadFieldAgentsCount();
   }, [currentPage, itemsPerPage, filters]);
 
+  // Load data only when tab is active (for mobile performance)
+  useEffect(() => {
+    if (activeTab === 'records') {
+      loadRecords();
+    }
+  }, [activeTab]);
+
   const loadRecords = async () => {
     setLoading(true);
     try {
-      // Load records and stats in parallel for better performance
-      const [recordsResult, statsResult, allRecordsResult] = await Promise.all([
-        dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters),
-        dbOperations.getRecordsStats(),
-        dbOperations.getRecords()
-      ]);
+      // Check if mobile device for optimized loading
+      const isMobile = window.innerWidth <= 768;
       
-      setRecords(recordsResult.data);
-      setTotalRecords(recordsResult.total);
-      setTotalPages(recordsResult.totalPages);
-      setAllRecords(allRecordsResult);
-      setAllRecordsStats(statsResult);
+      if (isMobile) {
+        // For mobile: load only essential data first
+        const recordsResult = await dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters);
+        setRecords(recordsResult.data);
+        setTotalRecords(recordsResult.total);
+        setTotalPages(recordsResult.totalPages);
+        
+        // Load stats and all records in background
+        Promise.all([
+          dbOperations.getRecordsStats(),
+          dbOperations.getRecords()
+        ]).then(([statsResult, allRecordsResult]) => {
+          setAllRecordsStats(statsResult);
+          setAllRecords(allRecordsResult);
+        }).catch(error => {
+          console.warn('Background data loading failed:', error);
+        });
+      } else {
+        // For desktop: load all data in parallel
+        const [recordsResult, statsResult, allRecordsResult] = await Promise.all([
+          dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters),
+          dbOperations.getRecordsStats(),
+          dbOperations.getRecords()
+        ]);
+        
+        setRecords(recordsResult.data);
+        setTotalRecords(recordsResult.total);
+        setTotalPages(recordsResult.totalPages);
+        setAllRecords(allRecordsResult);
+        setAllRecordsStats(statsResult);
+      }
     } catch (error) {
       console.error('Error loading records:', error);
       addNotification({
@@ -94,13 +126,28 @@ export function AdminDashboard() {
 
   const loadFieldAgentsCount = async () => {
     try {
-      const users = await dbOperations.getUsers();
-      const activeFieldAgents = users.filter(user => 
-        (user.role === 'field_agent' || user.role === 'employee') && 
-        user.is_active && 
-        !user.username.includes('(محذوف)')
-      );
-      setFieldAgentsCount(activeFieldAgents.length);
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        // For mobile: delay loading field agents count
+        setTimeout(async () => {
+          const users = await dbOperations.getUsers();
+          const activeFieldAgents = users.filter(user => 
+            (user.role === 'field_agent' || user.role === 'employee') && 
+            user.is_active && 
+            !user.username.includes('(محذوف)')
+          );
+          setFieldAgentsCount(activeFieldAgents.length);
+        }, 200);
+      } else {
+        // For desktop: load immediately
+        const users = await dbOperations.getUsers();
+        const activeFieldAgents = users.filter(user => 
+          (user.role === 'field_agent' || user.role === 'employee') && 
+          user.is_active && 
+          !user.username.includes('(محذوف)')
+        );
+        setFieldAgentsCount(activeFieldAgents.length);
+      }
     } catch (error) {
       console.error('Error loading field agents count:', error);
     }

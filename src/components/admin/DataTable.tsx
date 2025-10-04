@@ -70,8 +70,18 @@ export function DataTable({
   React.useEffect(() => {
     const loadUsers = async () => {
       try {
-        const userData = await dbOperations.getUsers();
-        setUsers(userData);
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+          // For mobile: load users in background with lower priority
+          setTimeout(async () => {
+            const userData = await dbOperations.getUsers();
+            setUsers(userData);
+          }, 100);
+        } else {
+          // For desktop: load immediately
+          const userData = await dbOperations.getUsers();
+          setUsers(userData);
+        }
       } catch (error) {
         console.error('Error loading users:', error);
       }
