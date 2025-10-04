@@ -244,7 +244,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                         )}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {formatDate(photo.photo_date)}
+                        {formatDate(photo.created_at)}
                       </div>
                       {photo.notes && (
                         <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
@@ -306,7 +306,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                         )}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {formatDate(photo.photo_date)}
+                        {formatDate(photo.created_at)}
                       </div>
                       {photo.notes && (
                         <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium">
