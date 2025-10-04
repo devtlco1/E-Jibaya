@@ -71,6 +71,32 @@ class CacheService {
   clear(): void {
     this.cache.clear();
   }
+
+  /**
+   * مسح التخزين المؤقت المتعلق بالسجلات
+   */
+  clearRecordsCache(): void {
+    const keysToDelete = [
+      'all_records',
+      'records_stats',
+      'records_with_pagination',
+      'field_agents_count'
+    ];
+    
+    keysToDelete.forEach(key => this.delete(key));
+  }
+
+  /**
+   * مسح التخزين المؤقت المتعلق بالمستخدمين
+   */
+  clearUsersCache(): void {
+    const keysToDelete = [
+      'all_users',
+      'field_agents_count'
+    ];
+    
+    keysToDelete.forEach(key => this.delete(key));
+  }
   
   /**
    * الحصول على إحصائيات التخزين المؤقت

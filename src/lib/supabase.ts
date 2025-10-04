@@ -205,6 +205,10 @@ export const dbOperations = {
         console.error('Create record error:', error);
         throw new Error(`فشل في إنشاء السجل: ${error.message}`);
       }
+      
+      // مسح التخزين المؤقت بعد إنشاء سجل جديد
+      cacheService.clearRecordsCache();
+      
       return data;
     } catch (error) {
       console.error('Create record error:', error);
@@ -267,8 +271,7 @@ export const dbOperations = {
       }
       
       // مسح التخزين المؤقت
-      cacheService.delete('all_records');
-      cacheService.delete('records_stats');
+      cacheService.clearRecordsCache();
       
       return true;
     } catch (error) {
@@ -293,6 +296,10 @@ export const dbOperations = {
         console.error('Delete record error:', error);
         throw new Error(`فشل في حذف السجل: ${error.message}`);
       }
+      
+      // مسح التخزين المؤقت بعد الحذف
+      cacheService.clearRecordsCache();
+      
       return true;
     } catch (error) {
       console.error('Delete record error:', error);
@@ -351,6 +358,9 @@ export const dbOperations = {
         throw new Error(`فشل في إنشاء المستخدم: ${error.message}`);
       }
 
+      // مسح التخزين المؤقت بعد إنشاء مستخدم جديد
+      cacheService.clearUsersCache();
+
       return data;
     } catch (error) {
       console.error('Create user error:', error);
@@ -381,6 +391,10 @@ export const dbOperations = {
         console.error('Update user error:', error);
         throw new Error(`فشل في تحديث المستخدم: ${error.message}`);
       }
+      
+      // مسح التخزين المؤقت بعد تحديث المستخدم
+      cacheService.clearUsersCache();
+      
       return true;
     } catch (error) {
       console.error('Update user error:', error);
@@ -404,6 +418,10 @@ export const dbOperations = {
         console.error('Delete user error:', error);
         return false;
       }
+      
+      // مسح التخزين المؤقت بعد حذف المستخدم
+      cacheService.clearUsersCache();
+      
       return true;
     } catch (error) {
       console.error('Delete user error:', error);
@@ -849,6 +867,10 @@ export const dbOperations = {
     total_users: number;
     backup_type: string;
     file_name: string;
+    backup_name?: string;
+    file_size?: number;
+    file_path?: string;
+    description?: string;
   }): Promise<void> {
     try {
       if (!supabase) throw new Error('Supabase not configured');
@@ -856,8 +878,17 @@ export const dbOperations = {
       const { error } = await supabase
         .from('backup_info')
         .upsert({
-          id: 1, // Always use ID 1 for the latest backup info
-          ...backupInfo,
+          backup_name: backupInfo.backup_name || `Backup_${new Date().toISOString().split('T')[0]}`,
+          backup_type: backupInfo.backup_type,
+          file_name: backupInfo.file_name,
+          file_size: backupInfo.file_size,
+          file_path: backupInfo.file_path,
+          backup_date: backupInfo.backup_date,
+          total_records: backupInfo.total_records,
+          total_photos: backupInfo.total_photos,
+          total_users: backupInfo.total_users,
+          status: 'completed',
+          description: backupInfo.description,
           updated_at: new Date().toISOString()
         });
 
@@ -875,7 +906,8 @@ export const dbOperations = {
       const { data, error } = await supabase
         .from('backup_info')
         .select('*')
-        .eq('id', 1)
+        .order('backup_date', { ascending: false })
+        .limit(1)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
