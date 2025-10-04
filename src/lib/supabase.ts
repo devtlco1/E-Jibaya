@@ -47,9 +47,6 @@ export const dbOperations = {
       }
       
       console.log('Attempting login for username:', username);
-      console.log('Supabase client:', client);
-      console.log('Supabase URL:', supabaseUrl);
-      console.log('Supabase configured:', isSupabaseConfigured);
       
       // التحقق من صحة البيانات المدخلة
       if (!username || !password) {
@@ -57,32 +54,11 @@ export const dbOperations = {
         return null;
       }
       
-      // Test connection first
-      console.log('Testing database connection...');
-      const { data: testData, error: testError } = await client
-        .from('users')
-        .select('count')
-        .limit(1);
-      
-      console.log('Connection test result:', { testData, testError });
-      
       // Get user from database
-      console.log('Querying users table...');
-      
-      // First, let's get all users to see what's in the database
-      const { data: allUsers, error: allUsersError } = await client
-        .from('users')
-        .select('*');
-      
-      console.log('All users in database:', allUsers);
-      
-      // Now try the specific query
       const { data: users, error } = await client
         .from('users')
         .select('*')
         .eq('username', username);
-      
-      console.log('Query result:', { users, error });
 
       if (error) {
         console.error('Login query error:', error.message);
