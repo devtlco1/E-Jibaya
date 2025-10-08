@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, MapPin, Clock, User, ExternalLink, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, MapPin, Clock, User, ExternalLink, Navigation, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { formatDateTime } from '../../utils/dateFormatter';
 
@@ -23,6 +23,8 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
   const [loading, setLoading] = useState(true);
   const [selectedLocationIndex, setSelectedLocationIndex] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
+  const [mapKey, setMapKey] = useState(0); // For refreshing the map
+  const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadLocationData();
@@ -95,6 +97,10 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
 
   const openInGoogleMapsDirections = (lat: number, lng: number) => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+  };
+
+  const refreshMap = () => {
+    setMapKey(prev => prev + 1);
   };
 
   const goToPreviousLocation = () => {
@@ -285,21 +291,26 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
             {selectedLocation && (
               <>
                 {/* خريطة Mapbox */}
-                <div className="w-full h-full">
-                  <iframe
-                    src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ`}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    title="خريطة الموقع"
-                    onError={(e) => {
-                      console.error('Mapbox iframe error:', e);
-                      // Fallback to Google Maps if Mapbox fails
-                      const iframe = e.target as HTMLIFrameElement;
-                      iframe.src = `https://www.google.com/maps/embed/v1/view?center=${selectedLocation.gps_latitude},${selectedLocation.gps_longitude}&zoom=18&maptype=satellite`;
-                    }}
-                  />
-                </div>
+                <div 
+                  key={mapKey}
+                  ref={mapRef}
+                  className="w-full h-full"
+                  style={{
+                    backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ)`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }}
+                />
+
+                {/* زر تحديث الخريطة */}
+                <button
+                  onClick={refreshMap}
+                  className="absolute top-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  title="تحديث الخريطة"
+                >
+                  <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                </button>
 
                 {/* أزرار التنقل */}
                 {locations.length > 1 && (
