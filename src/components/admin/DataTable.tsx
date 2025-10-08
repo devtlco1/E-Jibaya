@@ -47,7 +47,11 @@ export function DataTable({
     meter_number: '',
     address: '',
     last_reading: '',
-    status: 'pending' as 'pending' | 'completed'
+    status: 'pending' as 'pending' | 'completed',
+    // الترميز الجديد
+    new_zone: '',
+    new_block: '',
+    new_home: ''
   });
   const [showFilters, setShowFilters] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
@@ -116,7 +120,11 @@ export function DataTable({
       meter_number: record.meter_number || '',
       address: record.address || '',
       last_reading: record.last_reading || '',
-      status: getRecordStatus(record) as 'pending' | 'completed'
+      status: getRecordStatus(record) as 'pending' | 'completed',
+      // الترميز الجديد
+      new_zone: record.new_zone || '',
+      new_block: record.new_block || '',
+      new_home: record.new_home || ''
     });
   };
 
@@ -705,6 +713,42 @@ export function DataTable({
                   )}
                 </div>
 
+                {/* الترميز الجديد */}
+                {(viewingRecord.new_zone || viewingRecord.new_block || viewingRecord.new_home) && (
+                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                      <MapPin className="w-4 h-4 text-indigo-600 dark:text-indigo-400 ml-2" />
+                      الترميز الجديد
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      {viewingRecord.new_zone && (
+                        <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                          <span className="text-gray-600 dark:text-gray-400 block text-xs">الزون:</span>
+                          <p className="text-gray-900 dark:text-white font-medium">
+                            {viewingRecord.new_zone}
+                          </p>
+                        </div>
+                      )}
+                      {viewingRecord.new_block && (
+                        <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                          <span className="text-gray-600 dark:text-gray-400 block text-xs">البلوك:</span>
+                          <p className="text-gray-900 dark:text-white font-medium">
+                            {viewingRecord.new_block}
+                          </p>
+                        </div>
+                      )}
+                      {viewingRecord.new_home && (
+                        <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                          <span className="text-gray-600 dark:text-gray-400 block text-xs">الهوم:</span>
+                          <p className="text-gray-900 dark:text-white font-medium">
+                            {viewingRecord.new_home}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* GPS Location */}
                 {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
                   <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
@@ -1013,6 +1057,52 @@ export function DataTable({
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder="أدخل آخر قراءة"
                   />
+                </div>
+
+                {/* الترميز الجديد */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-2" />
+                    الترميز الجديد
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        الزون
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.new_zone}
+                        onChange={(e) => setEditForm({ ...editForm, new_zone: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="أدخل الزون"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        البلوك
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.new_block}
+                        onChange={(e) => setEditForm({ ...editForm, new_block: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="أدخل البلوك"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        الهوم
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.new_home}
+                        onChange={(e) => setEditForm({ ...editForm, new_home: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                        placeholder="أدخل الهوم"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>

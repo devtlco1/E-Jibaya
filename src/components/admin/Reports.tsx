@@ -5,17 +5,15 @@ import { dbOperations } from '../../lib/supabase';
 import { 
   FileBarChart, 
   Download, 
-  Calendar, 
   Filter,
   Users,
   MapPin,
   Camera,
   FileText,
-  Printer,
   Eye,
   Image as ImageIcon
 } from 'lucide-react';
-import { formatDateTime, formatDate, formatDateTimeForFilename } from '../../utils/dateFormatter';
+import { formatDate, formatDateTimeForFilename } from '../../utils/dateFormatter';
 
 interface ReportsProps {
   records: CollectionRecord[];
@@ -27,6 +25,10 @@ interface ReportFilters {
   status: string;
   fieldAgent: string;
   includeImages: boolean;
+  // الترميز الجديد
+  new_zone: string;
+  new_block: string;
+  new_home: string;
 }
 
 export function Reports({ records }: ReportsProps) {
@@ -35,7 +37,11 @@ export function Reports({ records }: ReportsProps) {
     endDate: '',
     status: '',
     fieldAgent: '',
-    includeImages: true
+    includeImages: true,
+    // الترميز الجديد
+    new_zone: '',
+    new_block: '',
+    new_home: ''
   });
   const [users, setUsers] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -81,6 +87,19 @@ export function Reports({ records }: ReportsProps) {
       filtered = filtered.filter(r => r.field_agent_id === filters.fieldAgent);
     }
 
+    // تصفية الترميز الجديد
+    if (filters.new_zone) {
+      filtered = filtered.filter(r => r.new_zone?.toLowerCase().includes(filters.new_zone.toLowerCase()));
+    }
+
+    if (filters.new_block) {
+      filtered = filtered.filter(r => r.new_block?.toLowerCase().includes(filters.new_block.toLowerCase()));
+    }
+
+    if (filters.new_home) {
+      filtered = filtered.filter(r => r.new_home?.toLowerCase().includes(filters.new_home.toLowerCase()));
+    }
+
     setFilteredRecords(filtered);
   }, [records, filters]);
 
@@ -103,11 +122,6 @@ export function Reports({ records }: ReportsProps) {
       case 'completed': return 'مكتمل';
       default: return record.status;
     }
-  };
-
-  const generateImageNumber = (recordIndex: number, imageType: 'meter' | 'invoice') => {
-    const prefix = imageType === 'meter' ? 'M' : 'I';
-    return `${prefix}${String(recordIndex + 1).padStart(3, '0')}`;
   };
 
   const extractImageId = (imageUrl: string): string => {
@@ -244,6 +258,9 @@ export function Reports({ records }: ReportsProps) {
             ${filters.endDate ? `<p><strong>إلى تاريخ:</strong> ${formatDate(filters.endDate)}</p>` : ''}
             ${filters.status ? `<p><strong>الحالة:</strong> ${filters.status === 'refused' ? 'امتنع' : filters.status === 'pending' ? 'قيد المراجعة' : filters.status === 'completed' ? 'مكتمل' : 'تمت المراجعة'}</p>` : ''}
             ${filters.fieldAgent ? `<p><strong>المحصل الميداني:</strong> ${getUserName(filters.fieldAgent)}</p>` : ''}
+            ${filters.new_zone ? `<p><strong>الزون:</strong> ${filters.new_zone}</p>` : ''}
+            ${filters.new_block ? `<p><strong>البلوك:</strong> ${filters.new_block}</p>` : ''}
+            ${filters.new_home ? `<p><strong>الهوم:</strong> ${filters.new_home}</p>` : ''}
         </div>
         ` : ''}
 
@@ -258,6 +275,7 @@ export function Reports({ records }: ReportsProps) {
                     <th>رقم المقياس</th>
                     <th>العنوان</th>
                     <th>آخر قراءة</th>
+                    <th>الترميز الجديد</th>
                     <th>الحالة</th>
                     ${filters.includeImages ? '<th>صورة المقياس</th><th>صورة الفاتورة</th>' : ''}
                     <th>الملاحظات</th>
@@ -274,6 +292,9 @@ export function Reports({ records }: ReportsProps) {
                     <td>${record.meter_number || 'غير محدد'}</td>
                     <td>${record.address || 'غير محدد'}</td>
                     <td>${record.last_reading || 'غير محدد'}</td>
+                    <td>${record.new_zone || record.new_block || record.new_home ? 
+                        `${record.new_zone || ''} ${record.new_block || ''} ${record.new_home || ''}`.trim() : 
+                        'غير محدد'}</td>
                     <td><span class="status status-${record.is_refused ? 'refused' : record.status}">${getStatusText(record)}</span></td>
                     ${filters.includeImages ? `
                     <td>${record.meter_photo_url ? `<span class="image-ref">${extractImageId(record.meter_photo_url)}</span>` : 'لا توجد'}</td>
@@ -405,6 +426,52 @@ export function Reports({ records }: ReportsProps) {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* الترميز الجديد */}
+          <div className="col-span-full">
+            <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+              <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-2" />
+              الترميز الجديد
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  الزون
+                </label>
+                <input
+                  type="text"
+                  value={filters.new_zone}
+                  onChange={(e) => setFilters({ ...filters, new_zone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="البحث بالزون"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  البلوك
+                </label>
+                <input
+                  type="text"
+                  value={filters.new_block}
+                  onChange={(e) => setFilters({ ...filters, new_block: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="البحث بالبلوك"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  الهوم
+                </label>
+                <input
+                  type="text"
+                  value={filters.new_home}
+                  onChange={(e) => setFilters({ ...filters, new_home: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="البحث بالهوم"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center">

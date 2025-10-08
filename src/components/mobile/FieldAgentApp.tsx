@@ -489,7 +489,11 @@ export function FieldAgentApp() {
       gps_latitude: gpsData?.lat || selectedRecord.gps_latitude,
       gps_longitude: gpsData?.lng || selectedRecord.gps_longitude,
       notes: notes || selectedRecord.notes,
-      is_refused: isRefused
+      is_refused: isRefused,
+      // الترميز الجديد
+      new_zone: selectedRecord.new_zone,
+      new_block: selectedRecord.new_block,
+      new_home: selectedRecord.new_home
     };
 
     const success = await dbOperations.updateRecord(selectedRecord.id, updateData);

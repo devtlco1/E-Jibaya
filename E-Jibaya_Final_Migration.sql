@@ -81,7 +81,11 @@ CREATE TABLE public.collection_records (
     submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    -- الترميز الجديد
+    new_zone VARCHAR(20),
+    new_block VARCHAR(20),
+    new_home VARCHAR(20)
 );
 
 -- جدول صور السجلات (مع جميع الأعمدة المطلوبة)

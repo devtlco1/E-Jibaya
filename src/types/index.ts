@@ -27,6 +27,10 @@ export interface CollectionRecord {
   submitted_at: string;
   updated_at: string;
   completed_by: string | null;
+  // الترميز الجديد
+  new_zone: string | null;
+  new_block: string | null;
+  new_home: string | null;
 }
 
 export interface CreateRecordData {
@@ -46,6 +50,10 @@ export interface UpdateRecordData {
   address: string;
   last_reading: string;
   status: 'pending' | 'completed';
+  // الترميز الجديد
+  new_zone: string | null;
+  new_block: string | null;
+  new_home: string | null;
 }
 
 export interface AuthContextType {
@@ -66,6 +74,10 @@ export interface FilterState {
   meter_number: string;
   address: string;
   status: string;
+  // الترميز الجديد
+  new_zone: string;
+  new_block: string;
+  new_home: string;
 }
 
 export interface ActivityLog {

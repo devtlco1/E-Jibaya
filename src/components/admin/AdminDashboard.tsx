@@ -51,7 +51,11 @@ export function AdminDashboard() {
     account_number: '',
     meter_number: '',
     address: '',
-    status: ''
+    status: '',
+    // الترميز الجديد
+    new_zone: '',
+    new_block: '',
+    new_home: ''
   });
   const [allRecordsStats, setAllRecordsStats] = useState({
     total: 0,
