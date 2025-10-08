@@ -130,71 +130,76 @@ export function DataTable({
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
+            line-height: 1.4;
             color: #333;
-            background: #f8f9fa;
-            padding: 20px;
+            background: white;
+            margin: 0;
+            padding: 0;
         }
         
         .container {
-            max-width: 1000px;
+            width: 210mm;
+            min-height: 297mm;
             margin: 0 auto;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            padding: 15mm;
+            box-sizing: border-box;
         }
         
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 20px;
             text-align: center;
+            margin-bottom: 20px;
+            border-radius: 8px;
         }
         
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
         
         .header .subtitle {
-            font-size: 16px;
+            font-size: 14px;
             opacity: 0.9;
         }
         
         .content {
-            padding: 30px;
+            padding: 0;
         }
         
         .section {
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
+            page-break-inside: avoid;
         }
         
         .section-header {
             background: #f3f4f6;
-            padding: 15px 20px;
+            padding: 10px 15px;
             border-bottom: 1px solid #e5e7eb;
             font-weight: 600;
-            font-size: 18px;
+            font-size: 16px;
             color: #374151;
         }
         
         .section-content {
-            padding: 20px;
+            padding: 15px;
         }
         
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
         }
         
         .info-item {
             border-bottom: 1px solid #f3f4f6;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
         
         .info-item:last-child {
@@ -202,14 +207,14 @@ export function DataTable({
         }
         
         .info-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #6b7280;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             font-weight: 500;
         }
         
         .info-value {
-            font-size: 14px;
+            font-size: 13px;
             color: #111827;
             font-weight: 500;
         }
@@ -240,55 +245,84 @@ export function DataTable({
         
         .photos-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
         }
         
         .photo-item {
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
+            page-break-inside: avoid;
         }
         
         .photo-header {
             background: #f9fafb;
-            padding: 10px 15px;
+            padding: 8px 12px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 12px;
             color: #374151;
+            text-align: center;
         }
         
         .photo-image {
             width: 100%;
-            height: 200px;
+            height: 120mm;
             object-fit: cover;
+            display: block;
         }
         
         .notes {
             background: #f9fafb;
-            padding: 15px;
+            padding: 12px;
             border-radius: 6px;
             border-right: 4px solid #3b82f6;
             font-style: italic;
+            font-size: 13px;
         }
         
         .footer {
             background: #f3f4f6;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             color: #6b7280;
-            font-size: 14px;
+            font-size: 12px;
+            margin-top: 20px;
+            border-radius: 6px;
         }
         
         @media print {
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+            
             body {
                 background: white;
                 padding: 0;
+                margin: 0;
             }
             
             .container {
+                width: 100%;
+                min-height: 100vh;
+                padding: 0;
+                margin: 0;
                 box-shadow: none;
                 border-radius: 0;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+                margin-bottom: 10px;
+            }
+            
+            .photos-grid {
+                page-break-inside: avoid;
+            }
+            
+            .photo-item {
+                page-break-inside: avoid;
             }
         }
     </style>
@@ -1208,17 +1242,6 @@ export function DataTable({
                 {/* Additional Actions */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                   <div className="flex flex-wrap gap-2">
-                    {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
-                      <a
-                        href={`https://maps.google.com/?q=${viewingRecord.gps_latitude},${viewingRecord.gps_longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                      >
-                        <MapPin className="w-4 h-4 ml-1" />
-                        عرض الموقع في الخريطة
-                      </a>
-                    )}
                     <button
                       onClick={() => {
                         setViewingRecord(null);
