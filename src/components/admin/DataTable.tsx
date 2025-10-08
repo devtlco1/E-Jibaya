@@ -6,6 +6,7 @@ import { dbOperations } from '../../lib/supabase';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { PhotoComparison } from './PhotoComparison';
+import { LocationPopup } from './LocationPopup';
 import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 
@@ -52,6 +53,8 @@ export function DataTable({
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
   const [showPhotoComparison, setShowPhotoComparison] = useState(false);
   const [selectedRecordForPhotos, setSelectedRecordForPhotos] = useState<string | null>(null);
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
+  const [selectedRecordForLocation, setSelectedRecordForLocation] = useState<string | null>(null);
   const [imageZoom, setImageZoom] = useState(1);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -146,6 +149,11 @@ export function DataTable({
   const handlePhotoComparison = (record: CollectionRecord) => {
     setSelectedRecordForPhotos(record.id);
     setShowPhotoComparison(true);
+  };
+
+  const handleLocationView = (record: CollectionRecord) => {
+    setSelectedRecordForLocation(record.id);
+    setShowLocationPopup(true);
   };
 
   const handleDelete = (id: string) => {
@@ -539,16 +547,16 @@ export function DataTable({
                         <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
                       {record.gps_latitude && record.gps_longitude && (
-                        <a
-                          href={`https://maps.google.com/?q=${record.gps_latitude},${record.gps_longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
-                          title="عرض الموقع"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLocationView(record);
+                          }}
+                          className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-1"
+                          title="عرض المواقع"
                         >
-                          <MapPin className="w-4 h-4" />
-                        </a>
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
                       )}
                       <button
                         onClick={(e) => {
@@ -1037,6 +1045,17 @@ export function DataTable({
           onClose={() => {
             setShowPhotoComparison(false);
             setSelectedRecordForPhotos(null);
+          }}
+        />
+      )}
+
+      {/* Location Popup Modal */}
+      {showLocationPopup && selectedRecordForLocation && (
+        <LocationPopup
+          recordId={selectedRecordForLocation}
+          onClose={() => {
+            setShowLocationPopup(false);
+            setSelectedRecordForLocation(null);
           }}
         />
       )}
