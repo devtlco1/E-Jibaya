@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X, MapPin, Clock, User, ExternalLink, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { formatDateTime } from '../../utils/dateFormatter';
@@ -287,7 +287,7 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
                 {/* خريطة Mapbox */}
                 <div className="w-full h-full">
                   <iframe
-                    src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWZoZzdqbDMwMTd6MmpzbHpwMHc2ZDY2In0._6lF1B6bUcehXn5nLGFz5A`}
+                    src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ`}
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
