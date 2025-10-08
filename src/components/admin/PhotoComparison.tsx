@@ -225,10 +225,6 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
           {/* قائمة الصور - الجانب الأيسر */}
           <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
             <div className="p-4">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-4">
-                جميع الصور ({[...(originalPhotos.meter ? [originalPhotos.meter] : []), ...(originalPhotos.invoice ? [originalPhotos.invoice] : []), ...photos].length})
-              </h4>
-              
               <div className="space-y-4">
                 {/* صور المقياس */}
                 <div>
