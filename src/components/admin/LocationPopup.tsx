@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { X, MapPin, Clock, User, ExternalLink, Navigation, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { formatDateTime } from '../../utils/dateFormatter';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface LocationData {
   id: string;
@@ -23,13 +25,29 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
   const [loading, setLoading] = useState(true);
   const [selectedLocationIndex, setSelectedLocationIndex] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
-  const [mapKey, setMapKey] = useState(0); // For refreshing the map
   const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<mapboxgl.Map | null>(null);
 
   useEffect(() => {
     loadLocationData();
     loadUsers();
   }, [recordId]);
+
+  useEffect(() => {
+    if (locations.length > 0 && selectedLocationIndex >= 0) {
+      const selectedLocation = locations[selectedLocationIndex];
+      updateMapLocation(selectedLocation);
+    }
+  }, [selectedLocationIndex, locations]);
+
+  // Cleanup map on unmount
+  useEffect(() => {
+    return () => {
+      if (mapInstance.current) {
+        mapInstance.current.remove();
+      }
+    };
+  }, []);
 
   const loadLocationData = async () => {
     try {
@@ -99,8 +117,59 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
   };
 
+  const initializeMap = (location: LocationData) => {
+    if (!mapRef.current || mapInstance.current) return;
+
+    // Set access token
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ';
+
+    // Create map
+    mapInstance.current = new mapboxgl.Map({
+      container: mapRef.current,
+      style: 'mapbox://styles/mapbox/satellite-v9',
+      center: [location.gps_longitude, location.gps_latitude],
+      zoom: 18
+    });
+
+    // Add navigation controls
+    mapInstance.current.addControl(new mapboxgl.NavigationControl());
+
+    // Add marker
+    new mapboxgl.Marker({ color: 'red' })
+      .setLngLat([location.gps_longitude, location.gps_latitude])
+      .addTo(mapInstance.current);
+  };
+
+  const updateMapLocation = (location: LocationData) => {
+    if (!mapInstance.current) {
+      initializeMap(location);
+      return;
+    }
+
+    // Update map center and marker
+    mapInstance.current.flyTo({
+      center: [location.gps_longitude, location.gps_latitude],
+      zoom: 18
+    });
+
+    // Remove existing markers
+    const markers = document.querySelectorAll('.mapboxgl-marker');
+    markers.forEach(marker => marker.remove());
+
+    // Add new marker
+    new mapboxgl.Marker({ color: 'red' })
+      .setLngLat([location.gps_longitude, location.gps_latitude])
+      .addTo(mapInstance.current);
+  };
+
   const refreshMap = () => {
-    setMapKey(prev => prev + 1);
+    if (mapInstance.current) {
+      mapInstance.current.remove();
+      mapInstance.current = null;
+    }
+    if (selectedLocation) {
+      initializeMap(selectedLocation);
+    }
   };
 
   const goToPreviousLocation = () => {
@@ -290,17 +359,10 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
           <div className="flex-1 bg-gray-100 dark:bg-gray-700 relative">
             {selectedLocation && (
               <>
-                {/* خريطة Mapbox */}
+                {/* خريطة Mapbox GL JS */}
                 <div 
-                  key={mapKey}
                   ref={mapRef}
                   className="w-full h-full"
-                  style={{
-                    backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ)`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat'
-                  }}
                 />
 
                 {/* زر تحديث الخريطة */}
