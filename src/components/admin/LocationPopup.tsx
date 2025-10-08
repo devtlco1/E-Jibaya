@@ -180,87 +180,8 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
         </div>
 
         <div className="flex h-[calc(90vh-120px)]">
-          {/* الخريطة - الجانب الأيسر */}
-          <div className="flex-1 bg-gray-100 dark:bg-gray-700 relative">
-            {selectedLocation && (
-              <>
-                {/* خريطة Mapbox */}
-                <div className="w-full h-full">
-                  <iframe
-                    src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWZoZzdqbDMwMTd6MmpzbHpwMHc2ZDY2In0._6lF1B6bUcehXn5nLGFz5A`}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    title="خريطة الموقع"
-                  />
-                </div>
-
-                {/* أزرار التنقل */}
-                {locations.length > 1 && (
-                  <>
-                    <button
-                      onClick={goToPreviousLocation}
-                      className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                      title="الموقع السابق"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                    </button>
-                    <button
-                      onClick={goToNextLocation}
-                      className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                      title="الموقع التالي"
-                    >
-                      <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                    </button>
-                  </>
-                )}
-
-                {/* معلومات الموقع المحدد */}
-                <div className="absolute bottom-4 left-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-1">
-                        الموقع المحدد #{selectedLocationIndex + 1}
-                      </h4>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <div className="flex items-center">
-                          <Clock className="w-3 h-3 ml-1" />
-                          <span>{formatDateTime(selectedLocation.updated_at)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <User className="w-3 h-3 ml-1" />
-                          <span>{getUserName(selectedLocation.field_agent_id)}</span>
-                        </div>
-                        <div className="text-xs font-mono">
-                          {selectedLocation.gps_latitude.toFixed(6)}, {selectedLocation.gps_longitude.toFixed(6)}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2 space-x-reverse">
-                      <button
-                        onClick={() => openInGoogleMaps(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
-                        className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                      >
-                        <ExternalLink className="w-4 h-4 ml-1" />
-                        فتح في الخريطة
-                      </button>
-                      <button
-                        onClick={() => openInGoogleMapsDirections(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
-                        className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-                      >
-                        <Navigation className="w-4 h-4 ml-1" />
-                        التوجه
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* قائمة المواقع - الجانب الأيمن */}
-          <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
+          {/* قائمة المواقع - الجانب الأيسر */}
+          <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
             <div className="p-4">
               <h4 className="font-medium text-gray-900 dark:text-white mb-4">
                 جميع المواقع ({locations.length})
@@ -357,6 +278,85 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* الخريطة - الجانب الأيمن */}
+          <div className="flex-1 bg-gray-100 dark:bg-gray-700 relative">
+            {selectedLocation && (
+              <>
+                {/* خريطة Mapbox */}
+                <div className="w-full h-full">
+                  <iframe
+                    src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWZoZzdqbDMwMTd6MmpzbHpwMHc2ZDY2In0._6lF1B6bUcehXn5nLGFz5A`}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    title="خريطة الموقع"
+                  />
+                </div>
+
+                {/* أزرار التنقل */}
+                {locations.length > 1 && (
+                  <>
+                    <button
+                      onClick={goToPreviousLocation}
+                      className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      title="الموقع السابق"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                    </button>
+                    <button
+                      onClick={goToNextLocation}
+                      className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      title="الموقع التالي"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                    </button>
+                  </>
+                )}
+
+                {/* معلومات الموقع المحدد */}
+                <div className="absolute bottom-4 left-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-1">
+                        الموقع المحدد #{selectedLocationIndex + 1}
+                      </h4>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <div className="flex items-center">
+                          <Clock className="w-3 h-3 ml-1" />
+                          <span>{formatDateTime(selectedLocation.updated_at)}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <User className="w-3 h-3 ml-1" />
+                          <span>{getUserName(selectedLocation.field_agent_id)}</span>
+                        </div>
+                        <div className="text-xs font-mono">
+                          {selectedLocation.gps_latitude.toFixed(6)}, {selectedLocation.gps_longitude.toFixed(6)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 space-x-reverse">
+                      <button
+                        onClick={() => openInGoogleMaps(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
+                        className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4 ml-1" />
+                        فتح في الخريطة
+                      </button>
+                      <button
+                        onClick={() => openInGoogleMapsDirections(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
+                        className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                      >
+                        <Navigation className="w-4 h-4 ml-1" />
+                        التوجه
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
