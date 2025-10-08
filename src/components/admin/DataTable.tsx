@@ -7,7 +7,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { PhotoComparison } from './PhotoComparison';
 import { LocationPopup } from './LocationPopup';
-import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images } from 'lucide-react';
+import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 interface DataTableProps {
@@ -603,45 +603,56 @@ export function DataTable({
       {/* View Modal */}
       {viewingRecord && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-4 space-x-reverse">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  تفاصيل السجل
+                  تفاصيل السجل - {viewingRecord.subscriber_name || 'غير محدد'}
                 </h3>
-                <button
-                  onClick={() => setViewingRecord(null)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                  {viewingRecord.account_number || 'غير محدد'}
+                </span>
               </div>
+              <button
+                onClick={() => setViewingRecord(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
 
               <div className="space-y-6">
                 {/* Record Metadata */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">معلومات السجل</h4>
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+                    معلومات السجل
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">تاريخ الإنشاء:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">تاريخ الإنشاء:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {formatDateTime(viewingRecord.submitted_at)}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">آخر تحديث:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">آخر تحديث:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {formatDateTime(viewingRecord.updated_at)}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">تم الإنشاء بواسطة:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">تم الإنشاء بواسطة:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {getUserName(viewingRecord.field_agent_id)}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">تم التعديل بواسطة:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">تم التعديل بواسطة:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {viewingRecord.completed_by ? getUserName(viewingRecord.completed_by) : 
                          (viewingRecord.updated_at !== viewingRecord.submitted_at ? 
@@ -653,37 +664,40 @@ export function DataTable({
                 </div>
 
                 {/* Customer Information */}
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">بيانات العميل</h4>
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <User className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                    بيانات العميل
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">اسم المشترك:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">اسم المشترك:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {viewingRecord.subscriber_name || 'غير محدد'}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">رقم الحساب:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">رقم الحساب:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {viewingRecord.account_number || 'غير محدد'}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">رقم المقياس:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">رقم المقياس:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {viewingRecord.meter_number || 'غير محدد'}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">آخر قراءة:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">آخر قراءة:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {viewingRecord.last_reading || 'غير محدد'}
                       </p>
                     </div>
                   </div>
                   {viewingRecord.address && (
-                    <div className="mt-4">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">العنوان:</span>
+                    <div className="mt-4 border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">العنوان:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {viewingRecord.address}
                       </p>
@@ -693,9 +707,12 @@ export function DataTable({
 
                 {/* GPS Location */}
                 {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">الموقع الجغرافي</h4>
-                    <div className="flex items-center space-x-2 space-x-reverse">
+                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                      <MapPin className="w-4 h-4 text-red-600 dark:text-red-400 ml-2" />
+                      الموقع الجغرافي
+                    </h4>
+                    <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">
                         {viewingRecord.gps_latitude}, {viewingRecord.gps_longitude}
                       </span>
@@ -713,38 +730,47 @@ export function DataTable({
                 )}
 
                 {/* Photos */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {viewingRecord.meter_photo_url && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">صورة المقياس</h4>
-                      <img 
-                        src={viewingRecord.meter_photo_url} 
-                        alt="صورة المقياس" 
-                        className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => handleImageClick(viewingRecord.meter_photo_url!, 'صورة المقياس')}
-                      />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">انقر للتكبير</p>
-                    </div>
-                  )}
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Camera className="w-4 h-4 text-purple-600 dark:text-purple-400 ml-2" />
+                    الصور المرفقة
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {viewingRecord.meter_photo_url && (
+                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                        <h5 className="font-medium text-gray-900 dark:text-white mb-2 text-sm">صورة المقياس</h5>
+                        <img 
+                          src={viewingRecord.meter_photo_url} 
+                          alt="صورة المقياس" 
+                          className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => handleImageClick(viewingRecord.meter_photo_url!, 'صورة المقياس')}
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">انقر للتكبير</p>
+                      </div>
+                    )}
 
-                  {viewingRecord.invoice_photo_url && (
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">صورة الفاتورة</h4>
-                      <img 
-                        src={viewingRecord.invoice_photo_url} 
-                        alt="صورة الفاتورة" 
-                        className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => handleImageClick(viewingRecord.invoice_photo_url!, 'صورة الفاتورة')}
-                      />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">انقر للتكبير</p>
-                    </div>
-                  )}
+                    {viewingRecord.invoice_photo_url && (
+                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                        <h5 className="font-medium text-gray-900 dark:text-white mb-2 text-sm">صورة الفاتورة</h5>
+                        <img 
+                          src={viewingRecord.invoice_photo_url} 
+                          alt="صورة الفاتورة" 
+                          className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => handleImageClick(viewingRecord.invoice_photo_url!, 'صورة الفاتورة')}
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">انقر للتكبير</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Notes */}
                 {viewingRecord.notes && (
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">الملاحظات</h4>
+                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                      <MessageSquare className="w-4 h-4 text-orange-600 dark:text-orange-400 ml-2" />
+                      الملاحظات
+                    </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
                       {viewingRecord.notes}
                     </p>
@@ -752,8 +778,11 @@ export function DataTable({
                 )}
 
                 {/* Status */}
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">الحالة</h4>
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400 ml-2" />
+                    حالة السجل
+                  </h4>
                   <div className="flex items-center space-x-2 space-x-reverse">
                     <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(getRecordStatus(viewingRecord))}`}>
                       {getRecordStatusText(viewingRecord)}
