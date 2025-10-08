@@ -76,31 +76,60 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
     try {
       setLoading(true);
       
-      // جلب السجل الأساسي
-      const { record } = await dbOperations.getRecordWithPhotos(recordId);
-      
-      if (!record) {
+      // جلب المواقع التاريخية من الجدول الجديد
+      const { data: locationHistory, error } = await (dbOperations as any).supabase
+        .from('record_locations')
+        .select(`
+          id,
+          gps_latitude,
+          gps_longitude,
+          location_type,
+          notes,
+          created_at,
+          created_by,
+          users!record_locations_created_by_fkey(full_name)
+        `)
+        .eq('record_id', recordId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading location history:', error);
         setLocations([]);
         return;
       }
 
       const locationData: LocationData[] = [];
 
-      // إضافة الموقع الأساسي للسجل
-      if (record.gps_latitude && record.gps_longitude) {
-        locationData.push({
-          id: record.id,
-          gps_latitude: record.gps_latitude,
-          gps_longitude: record.gps_longitude,
-          submitted_at: record.submitted_at,
-          updated_at: record.updated_at,
-          field_agent_id: record.field_agent_id,
-          notes: record.notes || undefined
+      // تحويل البيانات إلى التنسيق المطلوب
+      if (locationHistory && locationHistory.length > 0) {
+        locationHistory.forEach((loc: any) => {
+          locationData.push({
+            id: loc.id,
+            gps_latitude: loc.gps_latitude,
+            gps_longitude: loc.gps_longitude,
+            submitted_at: loc.created_at,
+            updated_at: loc.created_at,
+            field_agent_id: loc.created_by,
+            notes: loc.notes || `نوع الموقع: ${loc.location_type === 'submission' ? 'إرسال أولي' : loc.location_type === 'update' ? 'تحديث' : 'رفع صورة'}`
+          });
         });
       }
 
-      // ترتيب المواقع حسب الوقت (الأحدث أولاً)
-      locationData.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      // إذا لم توجد مواقع تاريخية، جلب الموقع من السجل الأساسي
+      if (locationData.length === 0) {
+        const { record } = await dbOperations.getRecordWithPhotos(recordId);
+        if (record && record.gps_latitude && record.gps_longitude) {
+          locationData.push({
+            id: record.id,
+            gps_latitude: record.gps_latitude,
+            gps_longitude: record.gps_longitude,
+            submitted_at: record.submitted_at,
+            updated_at: record.updated_at,
+            field_agent_id: record.field_agent_id,
+            notes: record.notes || 'الموقع الأصلي'
+          });
+        }
+      }
       
       setLocations(locationData);
       setSelectedLocationIndex(0);

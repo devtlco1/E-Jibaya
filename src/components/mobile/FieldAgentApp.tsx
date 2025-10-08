@@ -363,6 +363,24 @@ export function FieldAgentApp() {
       const result = await dbOperations.createRecord(record);
       
       if (result) {
+        // حفظ الموقع الأولي في جدول المواقع التاريخية
+        if (gpsData) {
+          try {
+            await (dbOperations as any).supabase
+              .from('record_locations')
+              .insert({
+                record_id: result.id,
+                gps_latitude: gpsData.lat,
+                gps_longitude: gpsData.lng,
+                location_type: 'submission',
+                created_by: user!.id,
+                notes: notes || 'الموقع الأصلي عند الإرسال الأولي'
+              });
+          } catch (locationError) {
+            console.warn('Failed to save initial location:', locationError);
+          }
+        }
+
         // Log record creation activity (don't fail if it doesn't work)
         try {
           await dbOperations.createActivityLog({
@@ -468,6 +486,24 @@ export function FieldAgentApp() {
     };
 
     const success = await dbOperations.updateRecord(selectedRecord.id, updateData);
+
+    // حفظ الموقع الجديد في جدول المواقع التاريخية إذا كان مختلفاً
+    if (success && gpsData && (gpsData.lat !== selectedRecord.gps_latitude || gpsData.lng !== selectedRecord.gps_longitude)) {
+      try {
+        await (dbOperations as any).supabase
+          .from('record_locations')
+          .insert({
+            record_id: selectedRecord.id,
+            gps_latitude: gpsData.lat,
+            gps_longitude: gpsData.lng,
+            location_type: 'photo_upload',
+            created_by: user.id,
+            notes: additionalPhotosNotes || 'موقع جديد عند رفع صور إضافية'
+          });
+      } catch (locationError) {
+        console.warn('Failed to save location history:', locationError);
+      }
+    }
     
     if (success) {
       // Log activity
