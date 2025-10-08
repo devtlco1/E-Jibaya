@@ -7,7 +7,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { PhotoComparison } from './PhotoComparison';
 import { LocationPopup } from './LocationPopup';
-import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield, Printer } from 'lucide-react';
+import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield, Download } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 interface DataTableProps {
@@ -112,6 +112,362 @@ export function DataTable({
     
     return user.full_name;
   };
+
+  const exportRecordAsHTML = (record: CollectionRecord) => {
+    const htmlContent = `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل السجل - ${record.subscriber_name || 'غير محدد'}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: #f3f4f6;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+            font-size: 18px;
+            color: #374151;
+        }
+        
+        .section-content {
+            padding: 20px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .info-item {
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 10px;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            color: #111827;
+            font-weight: 500;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-refused {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .photo-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .photo-header {
+            background: #f9fafb;
+            padding: 10px 15px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #374151;
+        }
+        
+        .photo-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .notes {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            border-right: 4px solid #3b82f6;
+            font-style: italic;
+        }
+        
+        .footer {
+            background: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>تفاصيل السجل</h1>
+            <div class="subtitle">${record.subscriber_name || 'غير محدد'} - ${record.account_number || 'غير محدد'}</div>
+        </div>
+        
+        <div class="content">
+            <!-- معلومات السجل -->
+            <div class="section">
+                <div class="section-header">📄 معلومات السجل</div>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">تاريخ الإنشاء</div>
+                            <div class="info-value">${formatDateTime(record.submitted_at)}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">آخر تحديث</div>
+                            <div class="info-value">${formatDateTime(record.updated_at)}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">تم الإنشاء بواسطة</div>
+                            <div class="info-value">${getUserName(record.field_agent_id)}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">تم التعديل بواسطة</div>
+                            <div class="info-value">${record.completed_by ? getUserName(record.completed_by) : 'لم يتم التعديل'}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- بيانات العميل -->
+            <div class="section">
+                <div class="section-header">👤 بيانات العميل</div>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">اسم المشترك</div>
+                            <div class="info-value">${record.subscriber_name || 'غير محدد'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">رقم الحساب</div>
+                            <div class="info-value">${record.account_number || 'غير محدد'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">رقم المقياس</div>
+                            <div class="info-value">${record.meter_number || 'غير محدد'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">آخر قراءة</div>
+                            <div class="info-value">${record.last_reading || 'غير محدد'}</div>
+                        </div>
+                        ${record.address ? `
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <div class="info-label">العنوان</div>
+                            <div class="info-value">${record.address}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            
+            ${(record.new_zone || record.new_block || record.new_home) ? `
+            <!-- الترميز الجديد -->
+            <div class="section">
+                <div class="section-header">🏠 الترميز الجديد</div>
+                <div class="section-content">
+                    <div class="info-grid">
+                        ${record.new_zone ? `
+                        <div class="info-item">
+                            <div class="info-label">الزون</div>
+                            <div class="info-value">${record.new_zone}</div>
+                        </div>
+                        ` : ''}
+                        ${record.new_block ? `
+                        <div class="info-item">
+                            <div class="info-label">البلوك</div>
+                            <div class="info-value">${record.new_block}</div>
+                        </div>
+                        ` : ''}
+                        ${record.new_home ? `
+                        <div class="info-item">
+                            <div class="info-label">الهوم</div>
+                            <div class="info-value">${record.new_home}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            ${(record.gps_latitude && record.gps_longitude) ? `
+            <!-- الموقع الجغرافي -->
+            <div class="section">
+                <div class="section-header">📍 الموقع الجغرافي</div>
+                <div class="section-content">
+                    <div class="info-item">
+                        <div class="info-label">الإحداثيات</div>
+                        <div class="info-value">${record.gps_latitude}, ${record.gps_longitude}</div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            ${(record.meter_photo_url || record.invoice_photo_url) ? `
+            <!-- الصور المرفقة -->
+            <div class="section">
+                <div class="section-header">📷 الصور المرفقة</div>
+                <div class="section-content">
+                    <div class="photos-grid">
+                        ${record.meter_photo_url ? `
+                        <div class="photo-item">
+                            <div class="photo-header">صورة المقياس</div>
+                            <img src="${record.meter_photo_url}" alt="صورة المقياس" class="photo-image" />
+                        </div>
+                        ` : ''}
+                        ${record.invoice_photo_url ? `
+                        <div class="photo-item">
+                            <div class="photo-header">صورة الفاتورة</div>
+                            <img src="${record.invoice_photo_url}" alt="صورة الفاتورة" class="photo-image" />
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+            
+            ${record.notes ? `
+            <!-- الملاحظات -->
+            <div class="section">
+                <div class="section-header">💬 الملاحظات</div>
+                <div class="section-content">
+                    <div class="notes">${record.notes}</div>
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- حالة السجل -->
+            <div class="section">
+                <div class="section-header">🛡️ حالة السجل</div>
+                <div class="section-content">
+                    <div class="info-item">
+                        <div class="info-label">الحالة</div>
+                        <div class="info-value">
+                            <span class="status-badge status-${record.is_refused ? 'refused' : record.status}">
+                                ${record.is_refused ? 'امتنع العميل عن الدفع' : (record.status === 'pending' ? 'قيد المراجعة' : 'مكتمل')}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>تم إنشاء هذا التقرير في ${new Date().toLocaleString('ar-SA')}</p>
+            <p>نظام إدارة الجباية - E-Jibaya</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    // إنشاء ملف HTML وتحميله
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `سجل_${record.subscriber_name || 'غير_محدد'}_${record.account_number || 'غير_محدد'}_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleEdit = (record: CollectionRecord) => {
     setEditingRecord(record);
     setEditForm({
@@ -610,33 +966,8 @@ export function DataTable({
 
       {/* View Modal */}
       {viewingRecord && (
-        <>
-          {/* Print Styles */}
-          <style dangerouslySetInnerHTML={{
-            __html: `
-              @media print {
-                body * {
-                  visibility: hidden;
-                }
-                .print-content, .print-content * {
-                  visibility: visible;
-                }
-                .print-content {
-                  position: absolute;
-                  left: 0;
-                  top: 0;
-                  width: 100%;
-                  background: white !important;
-                  color: black !important;
-                }
-                .no-print {
-                  display: none !important;
-                }
-              }
-            `
-          }} />
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 print-content">
-            <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-4 space-x-reverse">
@@ -647,14 +978,14 @@ export function DataTable({
                   {viewingRecord.account_number || 'غير محدد'}
                 </span>
               </div>
-              <div className="flex items-center space-x-2 space-x-reverse no-print">
+              <div className="flex items-center space-x-2 space-x-reverse">
                 <button
-                  onClick={() => window.print()}
-                  className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
-                  title="طباعة التقرير"
+                  onClick={() => exportRecordAsHTML(viewingRecord)}
+                  className="flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm"
+                  title="تصدير كملف HTML"
                 >
-                  <Printer className="w-4 h-4 ml-1" />
-                  طباعة
+                  <Download className="w-4 h-4 ml-1" />
+                  تصدير HTML
                 </button>
                 <button
                   onClick={() => setViewingRecord(null)}
@@ -876,87 +1207,34 @@ export function DataTable({
 
                 {/* Additional Actions */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="flex flex-wrap gap-2 justify-between">
-                    <div className="flex flex-wrap gap-2">
-                      {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
-                        <a
-                          href={`https://maps.google.com/?q=${viewingRecord.gps_latitude},${viewingRecord.gps_longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                        >
-                          <MapPin className="w-4 h-4 ml-1" />
-                          عرض الموقع في الخريطة
-                        </a>
-                      )}
-                      <button
-                        onClick={() => {
-                          setViewingRecord(null);
-                          handleEdit(viewingRecord);
-                        }}
-                        className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                  <div className="flex flex-wrap gap-2">
+                    {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
+                      <a
+                        href={`https://maps.google.com/?q=${viewingRecord.gps_latitude},${viewingRecord.gps_longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
                       >
-                        <Edit className="w-4 h-4 ml-1" />
-                        تعديل السجل
-                      </button>
-                    </div>
-                    
-                    {/* Status Buttons */}
-                    <div className="flex gap-2 no-print">
-                      <button
-                        onClick={() => {
-                          const updateData = {
-                            ...viewingRecord,
-                            status: 'pending' as 'pending' | 'completed',
-                            completed_by: currentUser?.id || null
-                          };
-                          onUpdateRecord(viewingRecord.id, updateData);
-                          addNotification({
-                            type: 'success',
-                            title: 'تم التحديث',
-                            message: 'تم تغيير حالة السجل إلى قيد المراجعة'
-                          });
-                          setViewingRecord(null);
-                        }}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                          getRecordStatus(viewingRecord) === 'pending'
-                            ? 'bg-yellow-500 text-white shadow-lg'
-                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800'
-                        }`}
-                      >
-                        قيد المراجعة
-                      </button>
-                      <button
-                        onClick={() => {
-                          const updateData = {
-                            ...viewingRecord,
-                            status: 'completed' as 'pending' | 'completed',
-                            completed_by: currentUser?.id || null
-                          };
-                          onUpdateRecord(viewingRecord.id, updateData);
-                          addNotification({
-                            type: 'success',
-                            title: 'تم التحديث',
-                            message: 'تم تغيير حالة السجل إلى مكتمل'
-                          });
-                          setViewingRecord(null);
-                        }}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                          getRecordStatus(viewingRecord) === 'completed'
-                            ? 'bg-green-500 text-white shadow-lg'
-                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
-                        }`}
-                      >
-                        مكتمل
-                      </button>
-                    </div>
+                        <MapPin className="w-4 h-4 ml-1" />
+                        عرض الموقع في الخريطة
+                      </a>
+                    )}
+                    <button
+                      onClick={() => {
+                        setViewingRecord(null);
+                        handleEdit(viewingRecord);
+                      }}
+                      className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                    >
+                      <Edit className="w-4 h-4 ml-1" />
+                      تعديل السجل
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        </>
       )}
 
       {/* Image Zoom Modal */}
