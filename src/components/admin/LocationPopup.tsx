@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, Clock, User, ExternalLink, Navigation, Layers } from 'lucide-react';
+import { X, MapPin, Clock, User, ExternalLink, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { formatDateTime } from '../../utils/dateFormatter';
 
@@ -21,7 +21,7 @@ interface LocationPopupProps {
 export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
+  const [selectedLocationIndex, setSelectedLocationIndex] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -56,24 +56,11 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
         });
       }
 
-      // جلب جميع الصور الإضافية مع المواقع
-      const photos = await dbOperations.getRecordPhotos(recordId);
-      
-      // إضافة المواقع من الصور الإضافية (إذا كانت تحتوي على معلومات موقع)
-      photos.forEach(photo => {
-        // يمكن إضافة منطق هنا لجلب معلومات الموقع من الصور إذا كانت متاحة
-        // حالياً سنركز على الموقع الأساسي للسجل
-      });
-
       // ترتيب المواقع حسب الوقت (الأحدث أولاً)
       locationData.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
       
       setLocations(locationData);
-      
-      // تحديد أول موقع كافتراضي
-      if (locationData.length > 0) {
-        setSelectedLocation(locationData[0]);
-      }
+      setSelectedLocationIndex(0);
     } catch (error) {
       console.error('Error loading location data:', error);
     } finally {
@@ -110,10 +97,22 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
   };
 
+  const goToPreviousLocation = () => {
+    setSelectedLocationIndex(prev => 
+      prev > 0 ? prev - 1 : locations.length - 1
+    );
+  };
+
+  const goToNextLocation = () => {
+    setSelectedLocationIndex(prev => 
+      prev < locations.length - 1 ? prev + 1 : 0
+    );
+  };
+
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
           <div className="p-6">
             <div className="flex items-center justify-center py-12">
               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -157,34 +156,125 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
     );
   }
 
+  const selectedLocation = locations[selectedLocationIndex];
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-4 space-x-reverse">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              المواقع الجغرافية ({locations.length})
+              مقارنة المواقع الجغرافية
             </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+              {selectedLocationIndex + 1} من {locations.length}
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex h-[calc(90vh-120px)]">
+          {/* الخريطة - الجانب الأيسر */}
+          <div className="flex-1 bg-gray-100 dark:bg-gray-700 relative">
+            {selectedLocation && (
+              <>
+                {/* خريطة Mapbox */}
+                <div className="w-full h-full">
+                  <iframe
+                    src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWZoZzdqbDMwMTd6MmpzbHpwMHc2ZDY2In0._6lF1B6bUcehXn5nLGFz5A`}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    title="خريطة الموقع"
+                  />
+                </div>
+
+                {/* أزرار التنقل */}
+                {locations.length > 1 && (
+                  <>
+                    <button
+                      onClick={goToPreviousLocation}
+                      className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      title="الموقع السابق"
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                    </button>
+                    <button
+                      onClick={goToNextLocation}
+                      className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      title="الموقع التالي"
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                    </button>
+                  </>
+                )}
+
+                {/* معلومات الموقع المحدد */}
+                <div className="absolute bottom-4 left-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-1">
+                        الموقع المحدد #{selectedLocationIndex + 1}
+                      </h4>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <div className="flex items-center">
+                          <Clock className="w-3 h-3 ml-1" />
+                          <span>{formatDateTime(selectedLocation.updated_at)}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <User className="w-3 h-3 ml-1" />
+                          <span>{getUserName(selectedLocation.field_agent_id)}</span>
+                        </div>
+                        <div className="text-xs font-mono">
+                          {selectedLocation.gps_latitude.toFixed(6)}, {selectedLocation.gps_longitude.toFixed(6)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 space-x-reverse">
+                      <button
+                        onClick={() => openInGoogleMaps(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
+                        className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4 ml-1" />
+                        فتح في الخريطة
+                      </button>
+                      <button
+                        onClick={() => openInGoogleMapsDirections(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
+                        className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                      >
+                        <Navigation className="w-4 h-4 ml-1" />
+                        التوجه
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[70vh]">
-            {/* قائمة المواقع */}
-            <div className="lg:col-span-1 overflow-y-auto">
+          {/* قائمة المواقع - الجانب الأيمن */}
+          <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
+            <div className="p-4">
+              <h4 className="font-medium text-gray-900 dark:text-white mb-4">
+                جميع المواقع ({locations.length})
+              </h4>
+              
               <div className="space-y-3">
                 {locations.map((location, index) => (
                   <div
                     key={location.id}
-                    onClick={() => setSelectedLocation(location)}
+                    onClick={() => setSelectedLocationIndex(index)}
                     className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                      selectedLocation?.id === location.id
+                      selectedLocationIndex === index
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
                     }`}
                   >
                     <div className="flex items-start justify-between">
@@ -239,104 +329,35 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
                   </div>
                 ))}
               </div>
-            </div>
 
-            {/* الخريطة التفاعلية */}
-            <div className="lg:col-span-2">
-              {selectedLocation ? (
-                <div className="h-full bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                  {/* خريطة Google Maps مدمجة */}
-                  <iframe
-                    src={`https://www.google.com/maps/embed/v1/view?center=${selectedLocation.gps_latitude},${selectedLocation.gps_longitude}&zoom=18&maptype=satellite`}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="خريطة الموقع"
-                  />
-                  
-                  {/* معلومات الموقع المحدد */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-1">
-                          الموقع المحدد
-                        </h4>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                          <div className="flex items-center">
-                            <Clock className="w-3 h-3 ml-1" />
-                            <span>{formatDateTime(selectedLocation.updated_at)}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <User className="w-3 h-3 ml-1" />
-                            <span>{getUserName(selectedLocation.field_agent_id)}</span>
-                          </div>
-                          <div className="text-xs font-mono">
-                            {selectedLocation.gps_latitude.toFixed(6)}, {selectedLocation.gps_longitude.toFixed(6)}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex space-x-2 space-x-reverse">
-                        <button
-                          onClick={() => openInGoogleMaps(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
-                          className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                        >
-                          <ExternalLink className="w-4 h-4 ml-1" />
-                          فتح في الخريطة
-                        </button>
-                        <button
-                          onClick={() => openInGoogleMapsDirections(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
-                          className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-                        >
-                          <Navigation className="w-4 h-4 ml-1" />
-                          التوجه
-                        </button>
-                      </div>
+              {/* إحصائيات المواقع */}
+              {locations.length > 1 && (
+                <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <h5 className="font-medium text-gray-900 dark:text-white mb-3">
+                    إحصائيات المواقع
+                  </h5>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">إجمالي المواقع:</span>
+                      <p className="text-gray-900 dark:text-white font-medium">{locations.length}</p>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded-lg">
-                  <div className="text-center">
-                    <Layers className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">
-                      اختر موقعاً لعرضه على الخريطة
-                    </p>
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">أول موقع:</span>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {formatDateTime(locations[locations.length - 1].updated_at)}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 dark:text-gray-400">آخر موقع:</span>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {formatDateTime(locations[0].updated_at)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           </div>
-
-          {/* إحصائيات المواقع */}
-          {locations.length > 1 && (
-            <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                إحصائيات المواقع
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400">إجمالي المواقع:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">{locations.length}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400">أول موقع:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">
-                    {formatDateTime(locations[locations.length - 1].updated_at)}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-gray-600 dark:text-gray-400">آخر موقع:</span>
-                  <p className="text-gray-900 dark:text-white font-medium">
-                    {formatDateTime(locations[0].updated_at)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
