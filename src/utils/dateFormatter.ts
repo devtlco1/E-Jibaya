@@ -23,6 +23,14 @@ export function formatDateTime(dateString: string | Date): string {
       return 'تاريخ غير صحيح';
     }
 
+    // التحقق من أن التاريخ ليس في المستقبل البعيد (أكثر من سنة من الآن)
+    const now = new Date();
+    const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    if (date > oneYearFromNow) {
+      console.warn('Date seems to be in the future:', dateString);
+      return 'تاريخ غير صحيح';
+    }
+
     // استخراج مكونات التاريخ
     const day = date.getDate();
     const month = arabicMonths[date.getMonth()];
