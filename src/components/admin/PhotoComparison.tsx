@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Download, Eye, Calendar, User, FileText, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { X, Download, Eye, FileText, MessageSquare, ZoomIn, ZoomOut } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
@@ -15,6 +15,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
   const [loading, setLoading] = useState(true);
   const [selectedPhotoType, setSelectedPhotoType] = useState<'meter' | 'invoice'>('meter');
   const [selectedPhoto, setSelectedPhoto] = useState<RecordPhoto | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     loadRecordData();
@@ -78,54 +79,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
     return formatDateTime(dateString);
   };
 
-  const getAllPhotos = () => {
-    const allPhotos: (RecordPhoto & { isOriginal?: boolean })[] = [];
-    
-    // Add original photos
-    if (originalPhotos.meter) {
-      allPhotos.push({ 
-        ...originalPhotos.meter, 
-        record_id: recordId,
-        created_at: originalPhotos.meter.photo_date,
-        notes: null,
-        isOriginal: true 
-      });
-    }
-    if (originalPhotos.invoice) {
-      allPhotos.push({ 
-        ...originalPhotos.invoice, 
-        record_id: recordId,
-        created_at: originalPhotos.invoice.photo_date,
-        notes: null,
-        isOriginal: true 
-      });
-    }
-    
-    // Add additional photos
-    allPhotos.push(...photos);
-    
-    return allPhotos;
-  };
 
-  const navigateToNextPhoto = () => {
-    const allPhotos = getAllPhotos();
-    const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
-    if (currentIndex < allPhotos.length - 1) {
-      const nextPhoto = allPhotos[currentIndex + 1];
-      setSelectedPhoto(nextPhoto);
-      setSelectedPhotoType(nextPhoto.photo_type);
-    }
-  };
-
-  const navigateToPreviousPhoto = () => {
-    const allPhotos = getAllPhotos();
-    const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
-    if (currentIndex > 0) {
-      const prevPhoto = allPhotos[currentIndex - 1];
-      setSelectedPhoto(prevPhoto);
-      setSelectedPhotoType(prevPhoto.photo_type);
-    }
-  };
 
   if (loading) {
     return (
@@ -324,68 +278,58 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
           <div className="flex-1 flex flex-col">
             {selectedPhoto ? (
               <>
-                {/* Photo Info */}
+                {/* Simple Download Button */}
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4 space-x-reverse">
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <Calendar className="w-4 h-4 ml-1" />
-                        {formatDate(selectedPhoto.photo_date)}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                        <FileText className="w-4 h-4 ml-1" />
-                        {selectedPhoto.photo_type === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة'}
-                      </div>
-                      {selectedPhoto.id !== 'original-meter' && selectedPhoto.id !== 'original-invoice' && (
-                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                          <User className="w-4 h-4 ml-1" />
-                          صورة إضافية
-                        </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => downloadPhoto(
+                        selectedPhoto.photo_url,
+                        `${selectedPhoto.photo_type}_${selectedPhoto.id}.jpg`
                       )}
-                    </div>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <button
-                        onClick={navigateToPreviousPhoto}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        title="الصورة السابقة"
-                      >
-                        <ChevronRight className="w-4 h-4 text-gray-500" />
-                      </button>
-                      <button
-                        onClick={navigateToNextPhoto}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        title="الصورة التالية"
-                      >
-                        <ChevronLeft className="w-4 h-4 text-gray-500" />
-                      </button>
-                      <span className="text-sm text-gray-500 px-2">
-                        {(() => {
-                          const allPhotos = getAllPhotos();
-                          const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
-                          return `${currentIndex + 1} / ${allPhotos.length}`;
-                        })()}
-                      </span>
-                      <button
-                        onClick={() => downloadPhoto(
-                          selectedPhoto.photo_url,
-                          `${selectedPhoto.photo_type}_${selectedPhoto.id}.jpg`
-                        )}
-                        className="flex items-center px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
-                      >
-                        <Download className="w-4 h-4 ml-1" />
-                        تحميل
-                      </button>
-                    </div>
+                      className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                    >
+                      <Download className="w-4 h-4 ml-2" />
+                      تحميل
+                    </button>
                   </div>
                 </div>
 
-                {/* Photo Display */}
-                <div className="flex-1 p-4 flex items-center justify-center bg-gray-100 dark:bg-gray-900 overflow-auto">
-                  <img
-                    src={selectedPhoto.photo_url}
-                    alt={`${selectedPhoto.photo_type === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة'}`}
-                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                  />
+                {/* Photo Display with Zoom */}
+                <div className="flex-1 p-4 flex items-center justify-center bg-gray-100 dark:bg-gray-900 overflow-auto relative">
+                  <div className="relative">
+                    <img
+                      src={selectedPhoto.photo_url}
+                      alt={`${selectedPhoto.photo_type === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة'}`}
+                      className="max-w-full max-h-full object-contain rounded-lg shadow-lg transition-transform duration-200 cursor-zoom-in"
+                      style={{ transform: `scale(${zoom})` }}
+                      onClick={() => setZoom(zoom === 1 ? 2 : 1)}
+                    />
+                    
+                    {/* Zoom Controls */}
+                    <div className="absolute top-4 left-4 flex flex-col space-y-2">
+                      <button
+                        onClick={() => setZoom(Math.min(zoom + 0.5, 3))}
+                        className="p-2 bg-white dark:bg-gray-800 shadow-lg rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        title="تكبير"
+                      >
+                        <ZoomIn className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                      </button>
+                      <button
+                        onClick={() => setZoom(Math.max(zoom - 0.5, 0.5))}
+                        className="p-2 bg-white dark:bg-gray-800 shadow-lg rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        title="تصغير"
+                      >
+                        <ZoomOut className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                      </button>
+                      <button
+                        onClick={() => setZoom(1)}
+                        className="p-2 bg-white dark:bg-gray-800 shadow-lg rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-xs text-gray-600 dark:text-gray-300"
+                        title="إعادة تعيين"
+                      >
+                        100%
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Photo Notes */}
