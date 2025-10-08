@@ -19,7 +19,7 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialPosition: { x: 0, y: 0 } });
 
   useEffect(() => {
     loadRecordData();
@@ -91,21 +91,61 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (zoom > 1) {
       setIsDragging(true);
-      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+      setDragStart({ 
+        x: e.clientX, 
+        y: e.clientY, 
+        initialPosition: { x: position.x, y: position.y }
+      });
+      e.preventDefault();
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging && zoom > 1) {
-      const sensitivity = 1.5; // زيادة حساسية الحركة
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+      
       setPosition({
-        x: (e.clientX - dragStart.x) * sensitivity,
-        y: (e.clientY - dragStart.y) * sensitivity
+        x: dragStart.initialPosition.x + deltaX,
+        y: dragStart.initialPosition.y + deltaY
       });
+      e.preventDefault();
     }
   };
 
   const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // دعم اللمس للأجهزة اللوحية
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (zoom > 1 && e.touches.length === 1) {
+      const touch = e.touches[0];
+      setIsDragging(true);
+      setDragStart({ 
+        x: touch.clientX, 
+        y: touch.clientY, 
+        initialPosition: { x: position.x, y: position.y }
+      });
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isDragging && zoom > 1 && e.touches.length === 1) {
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - dragStart.x;
+      const deltaY = touch.clientY - dragStart.y;
+      
+      setPosition({
+        x: dragStart.initialPosition.x + deltaX,
+        y: dragStart.initialPosition.y + deltaY
+      });
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = () => {
     setIsDragging(false);
   };
 
@@ -362,22 +402,27 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
               <>
                 {/* الصورة مع التحكم المتقدم */}
                 <div 
-                  className="w-full h-full flex items-center justify-center overflow-hidden cursor-move"
+                  className="w-full h-full flex items-center justify-center overflow-hidden"
                   onWheel={handleWheel}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  style={{ cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
                 >
                   <img
                     src={selectedPhoto.photo_url}
                     alt={`${selectedPhoto.photo_type === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة'}`}
-                    className="max-w-full max-h-full object-contain transition-transform duration-200 select-none"
+                    className="max-w-full max-h-full object-contain select-none"
                     style={{ 
                       transform: `scale(${zoom}) rotate(${rotation}deg) translate(${position.x}px, ${position.y}px)`,
-                      cursor: isDragging ? 'grabbing' : 'grab'
+                      transition: isDragging ? 'none' : 'transform 0.1s ease-out'
                     }}
                     draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
                   />
                 </div>
 
