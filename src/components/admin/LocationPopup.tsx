@@ -284,17 +284,20 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
           <div className="flex-1 bg-gray-100 dark:bg-gray-700 relative">
             {selectedLocation && (
               <>
-                {/* خريطة Google Maps */}
+                {/* خريطة Mapbox */}
                 <div className="w-full h-full">
                   <iframe
-                    src={`https://www.google.com/maps/embed/v1/view?center=${selectedLocation.gps_latitude},${selectedLocation.gps_longitude}&zoom=18&maptype=satellite`}
+                    src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/pin-s-marker+ff0000(${selectedLocation.gps_longitude},${selectedLocation.gps_latitude})/${selectedLocation.gps_longitude},${selectedLocation.gps_latitude},18,0/800x600?access_token=pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ`}
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
                     title="خريطة الموقع"
+                    onError={(e) => {
+                      console.error('Mapbox iframe error:', e);
+                      // Fallback to Google Maps if Mapbox fails
+                      const iframe = e.target as HTMLIFrameElement;
+                      iframe.src = `https://www.google.com/maps/embed/v1/view?center=${selectedLocation.gps_latitude},${selectedLocation.gps_longitude}&zoom=18&maptype=satellite`;
+                    }}
                   />
                 </div>
 
