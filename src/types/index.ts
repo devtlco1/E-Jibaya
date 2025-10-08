@@ -77,7 +77,6 @@ export interface FilterState {
   // الترميز الجديد
   new_zone: string;
   new_block: string;
-  new_home: string;
 }
 
 export interface ActivityLog {

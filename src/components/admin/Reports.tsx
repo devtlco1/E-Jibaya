@@ -28,7 +28,6 @@ interface ReportFilters {
   // الترميز الجديد
   new_zone: string;
   new_block: string;
-  new_home: string;
 }
 
 export function Reports({ records }: ReportsProps) {
@@ -40,8 +39,7 @@ export function Reports({ records }: ReportsProps) {
     includeImages: true,
     // الترميز الجديد
     new_zone: '',
-    new_block: '',
-    new_home: ''
+    new_block: ''
   });
   const [users, setUsers] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -89,15 +87,11 @@ export function Reports({ records }: ReportsProps) {
 
     // تصفية الترميز الجديد
     if (filters.new_zone) {
-      filtered = filtered.filter(r => r.new_zone?.toLowerCase().includes(filters.new_zone.toLowerCase()));
+      filtered = filtered.filter(r => r.new_zone === filters.new_zone);
     }
 
     if (filters.new_block) {
-      filtered = filtered.filter(r => r.new_block?.toLowerCase().includes(filters.new_block.toLowerCase()));
-    }
-
-    if (filters.new_home) {
-      filtered = filtered.filter(r => r.new_home?.toLowerCase().includes(filters.new_home.toLowerCase()));
+      filtered = filtered.filter(r => r.new_block === filters.new_block);
     }
 
     setFilteredRecords(filtered);
@@ -260,7 +254,6 @@ export function Reports({ records }: ReportsProps) {
             ${filters.fieldAgent ? `<p><strong>المحصل الميداني:</strong> ${getUserName(filters.fieldAgent)}</p>` : ''}
             ${filters.new_zone ? `<p><strong>الزون:</strong> ${filters.new_zone}</p>` : ''}
             ${filters.new_block ? `<p><strong>البلوك:</strong> ${filters.new_block}</p>` : ''}
-            ${filters.new_home ? `<p><strong>الهوم:</strong> ${filters.new_home}</p>` : ''}
         </div>
         ` : ''}
 
@@ -292,8 +285,8 @@ export function Reports({ records }: ReportsProps) {
                     <td>${record.meter_number || 'غير محدد'}</td>
                     <td>${record.address || 'غير محدد'}</td>
                     <td>${record.last_reading || 'غير محدد'}</td>
-                    <td>${record.new_zone || record.new_block || record.new_home ? 
-                        `${record.new_zone || ''} ${record.new_block || ''} ${record.new_home || ''}`.trim() : 
+                    <td>${record.new_zone || record.new_block ? 
+                        `${record.new_zone || ''} ${record.new_block || ''}`.trim() : 
                         'غير محدد'}</td>
                     <td><span class="status status-${record.is_refused ? 'refused' : record.status}">${getStatusText(record)}</span></td>
                     ${filters.includeImages ? `
@@ -434,42 +427,48 @@ export function Reports({ records }: ReportsProps) {
               <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-2" />
               الترميز الجديد
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   الزون
                 </label>
-                <input
-                  type="text"
+                <select
                   value={filters.new_zone}
-                  onChange={(e) => setFilters({ ...filters, new_zone: e.target.value })}
+                  onChange={(e) => {
+                    setFilters({ 
+                      ...filters, 
+                      new_zone: e.target.value,
+                      new_block: '' // إعادة تعيين البلوك عند تغيير الزون
+                    });
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="البحث بالزون"
-                />
+                >
+                  <option value="">جميع الأزون</option>
+                  {Array.from(new Set(records.map(r => r.new_zone).filter(Boolean))).sort().map(zone => (
+                    <option key={zone} value={zone || ''}>الزون {zone}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   البلوك
                 </label>
-                <input
-                  type="text"
+                <select
                   value={filters.new_block}
                   onChange={(e) => setFilters({ ...filters, new_block: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="البحث بالبلوك"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  الهوم
-                </label>
-                <input
-                  type="text"
-                  value={filters.new_home}
-                  onChange={(e) => setFilters({ ...filters, new_home: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="البحث بالهوم"
-                />
+                  disabled={!filters.new_zone}
+                >
+                  <option value="">جميع البلوكات</option>
+                  {Array.from(new Set(
+                    records
+                      .filter(r => !filters.new_zone || r.new_zone === filters.new_zone)
+                      .map(r => r.new_block)
+                      .filter(Boolean)
+                  )).sort().map(block => (
+                    <option key={block} value={block || ''}>البلوك {block}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

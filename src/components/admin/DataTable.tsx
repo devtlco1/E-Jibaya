@@ -142,27 +142,27 @@ export function DataTable({
             min-height: 297mm;
             margin: 0 auto;
             background: white;
-            padding: 15mm;
+            padding: 10mm;
             box-sizing: border-box;
         }
         
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
-            margin-bottom: 20px;
-            border-radius: 8px;
+            margin-bottom: 15px;
+            border-radius: 4px;
         }
         
         .header h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
+            font-size: 20px;
+            margin-bottom: 5px;
             font-weight: 700;
         }
         
         .header .subtitle {
-            font-size: 14px;
+            font-size: 12px;
             opacity: 0.9;
         }
         
@@ -171,35 +171,35 @@ export function DataTable({
         }
         
         .section {
-            margin-bottom: 15px;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 0.5px solid #d1d5db;
+            border-radius: 3px;
             overflow: hidden;
             page-break-inside: avoid;
         }
         
         .section-header {
-            background: #f3f4f6;
-            padding: 10px 15px;
-            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+            padding: 8px 12px;
+            border-bottom: 0.5px solid #d1d5db;
             font-weight: 600;
-            font-size: 16px;
+            font-size: 14px;
             color: #374151;
         }
         
         .section-content {
-            padding: 15px;
+            padding: 10px;
         }
         
         .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            gap: 10px;
         }
         
         .info-item {
-            border-bottom: 1px solid #f3f4f6;
-            padding-bottom: 8px;
+            border-bottom: 0.5px solid #f3f4f6;
+            padding-bottom: 5px;
         }
         
         .info-item:last-child {
@@ -207,14 +207,14 @@ export function DataTable({
         }
         
         .info-label {
-            font-size: 11px;
+            font-size: 10px;
             color: #6b7280;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             font-weight: 500;
         }
         
         .info-value {
-            font-size: 13px;
+            font-size: 12px;
             color: #111827;
             font-weight: 500;
         }
@@ -246,55 +246,55 @@ export function DataTable({
         .photos-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            gap: 10px;
         }
         
         .photo-item {
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
+            border: 0.5px solid #d1d5db;
+            border-radius: 3px;
             overflow: hidden;
             page-break-inside: avoid;
         }
         
         .photo-header {
             background: #f9fafb;
-            padding: 8px 12px;
+            padding: 5px 8px;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 10px;
             color: #374151;
             text-align: center;
         }
         
         .photo-image {
             width: 100%;
-            height: 120mm;
+            height: 80mm;
             object-fit: cover;
             display: block;
         }
         
         .notes {
             background: #f9fafb;
-            padding: 12px;
-            border-radius: 6px;
-            border-right: 4px solid #3b82f6;
+            padding: 8px;
+            border-radius: 3px;
+            border-right: 2px solid #3b82f6;
             font-style: italic;
-            font-size: 13px;
+            font-size: 11px;
         }
         
         .footer {
             background: #f3f4f6;
-            padding: 15px;
+            padding: 8px;
             text-align: center;
             color: #6b7280;
-            font-size: 12px;
-            margin-top: 20px;
-            border-radius: 6px;
+            font-size: 10px;
+            margin-top: 10px;
+            border-radius: 3px;
         }
         
         @media print {
             @page {
                 size: A4;
-                margin: 15mm;
+                margin: 10mm;
             }
             
             body {
@@ -314,7 +314,7 @@ export function DataTable({
             
             .section {
                 page-break-inside: avoid;
-                margin-bottom: 10px;
+                margin-bottom: 5px;
             }
             
             .photos-grid {
@@ -330,7 +330,7 @@ export function DataTable({
 <body>
     <div class="container">
         <div class="header">
-            <h1>تفاصيل السجل</h1>
+            <h1>تقرير المشترك</h1>
             <div class="subtitle">${record.subscriber_name || 'غير محدد'} - ${record.account_number || 'غير محدد'}</div>
         </div>
         
@@ -483,7 +483,7 @@ export function DataTable({
         </div>
         
         <div class="footer">
-            <p>تم إنشاء هذا التقرير في ${new Date().toLocaleString('ar-SA')}</p>
+            <p>تم إنشاء هذا التقرير في ${formatDateTime(new Date().toISOString())}</p>
             <p>نظام إدارة الجباية - E-Jibaya</p>
         </div>
     </div>

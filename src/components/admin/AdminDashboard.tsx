@@ -54,8 +54,7 @@ export function AdminDashboard() {
     status: '',
     // الترميز الجديد
     new_zone: '',
-    new_block: '',
-    new_home: ''
+    new_block: ''
   });
   const [allRecordsStats, setAllRecordsStats] = useState({
     total: 0,
