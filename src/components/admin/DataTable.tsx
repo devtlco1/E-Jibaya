@@ -147,76 +147,64 @@ export function DataTable({
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
+            background: #f8f9fa;
+            color: #333;
+            padding: 10px;
             text-align: center;
-            margin-bottom: 15px;
-            border-radius: 4px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
         }
         
         .header h1 {
-            font-size: 20px;
+            font-size: 18px;
             margin-bottom: 5px;
             font-weight: 700;
         }
         
         .header .subtitle {
             font-size: 12px;
-            opacity: 0.9;
+            color: #666;
         }
         
         .content {
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 100px);
         }
         
-        .section {
-            margin-bottom: 10px;
-            border: 0.5px solid #d1d5db;
-            border-radius: 3px;
-            overflow: hidden;
-            page-break-inside: avoid;
-        }
-        
-        .section-header {
-            background: #f9fafb;
-            padding: 8px 12px;
-            border-bottom: 0.5px solid #d1d5db;
-            font-weight: 600;
-            font-size: 14px;
-            color: #374151;
-        }
-        
-        .section-content {
+        .data-section {
+            flex: 1;
             padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
         }
         
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
         }
         
-        .info-item {
-            border-bottom: 0.5px solid #f3f4f6;
-            padding-bottom: 5px;
+        .data-table td {
+            padding: 3px 5px;
+            border: 0.5px solid #ddd;
+            vertical-align: top;
         }
         
-        .info-item:last-child {
-            border-bottom: none;
+        .data-table .label {
+            background: #f5f5f5;
+            font-weight: 600;
+            width: 30%;
         }
         
-        .info-label {
-            font-size: 10px;
-            color: #6b7280;
-            margin-bottom: 2px;
-            font-weight: 500;
+        .data-table .value {
+            background: white;
+            width: 70%;
         }
         
-        .info-value {
-            font-size: 12px;
-            color: #111827;
-            font-weight: 500;
+        .coding-row {
+            background: #e8f4fd !important;
         }
         
         .status-badge {
@@ -243,58 +231,66 @@ export function DataTable({
             color: #991b1b;
         }
         
+        .photos-section {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+        
         .photos-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
+            height: 100%;
         }
         
         .photo-item {
-            border: 0.5px solid #d1d5db;
-            border-radius: 3px;
+            border: 1px solid #ddd;
             overflow: hidden;
             page-break-inside: avoid;
+            display: flex;
+            flex-direction: column;
         }
         
         .photo-header {
-            background: #f9fafb;
-            padding: 5px 8px;
+            background: #f5f5f5;
+            padding: 5px;
             font-weight: 600;
             font-size: 10px;
-            color: #374151;
+            color: #333;
             text-align: center;
+            border-bottom: 1px solid #ddd;
         }
         
         .photo-image {
             width: 100%;
-            height: 80mm;
+            flex: 1;
             object-fit: cover;
             display: block;
         }
         
         .notes {
-            background: #f9fafb;
-            padding: 8px;
-            border-radius: 3px;
-            border-right: 2px solid #3b82f6;
+            background: #f5f5f5;
+            padding: 5px;
+            border: 1px solid #ddd;
             font-style: italic;
-            font-size: 11px;
+            font-size: 10px;
         }
         
         .footer {
-            background: #f3f4f6;
-            padding: 8px;
+            background: #f5f5f5;
+            padding: 5px;
             text-align: center;
-            color: #6b7280;
-            font-size: 10px;
-            margin-top: 10px;
-            border-radius: 3px;
+            color: #666;
+            font-size: 9px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
         }
         
         @media print {
             @page {
                 size: A4;
-                margin: 10mm;
+                margin: 8mm;
             }
             
             body {
@@ -312,9 +308,17 @@ export function DataTable({
                 border-radius: 0;
             }
             
-            .section {
+            .content {
+                height: auto;
+            }
+            
+            .data-section {
                 page-break-inside: avoid;
                 margin-bottom: 5px;
+            }
+            
+            .photos-section {
+                page-break-inside: avoid;
             }
             
             .photos-grid {
@@ -335,151 +339,85 @@ export function DataTable({
         </div>
         
         <div class="content">
-            <!-- معلومات السجل -->
-            <div class="section">
-                <div class="section-header">📄 معلومات السجل</div>
-                <div class="section-content">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">تاريخ الإنشاء</div>
-                            <div class="info-value">${formatDateTime(record.submitted_at)}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">آخر تحديث</div>
-                            <div class="info-value">${formatDateTime(record.updated_at)}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">تم الإنشاء بواسطة</div>
-                            <div class="info-value">${getUserName(record.field_agent_id)}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">تم التعديل بواسطة</div>
-                            <div class="info-value">${record.completed_by ? getUserName(record.completed_by) : 'لم يتم التعديل'}</div>
-                        </div>
-                    </div>
-                </div>
+            <!-- البيانات -->
+            <div class="data-section">
+                <table class="data-table">
+                    <tr>
+                        <td class="label">اسم المشترك</td>
+                        <td class="value">${record.subscriber_name || 'غير محدد'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">رقم الحساب</td>
+                        <td class="value">${record.account_number || 'غير محدد'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">رقم المقياس</td>
+                        <td class="value">${record.meter_number || 'غير محدد'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">آخر قراءة</td>
+                        <td class="value">${record.last_reading || 'غير محدد'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">العنوان</td>
+                        <td class="value">${record.address || 'غير محدد'}</td>
+                    </tr>
+                    <tr class="coding-row">
+                        <td class="label">الترميز الجديد</td>
+                        <td class="value">${(record.new_zone || '') + ' ' + (record.new_block || '') || 'غير محدد'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">الموقع الجغرافي</td>
+                        <td class="value">${(record.gps_latitude && record.gps_longitude) ? `${record.gps_latitude}, ${record.gps_longitude}` : 'غير محدد'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">تاريخ الإنشاء</td>
+                        <td class="value">${formatDateTime(record.submitted_at)}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">آخر تحديث</td>
+                        <td class="value">${formatDateTime(record.updated_at)}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">تم الإنشاء بواسطة</td>
+                        <td class="value">${getUserName(record.field_agent_id)}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">تم التعديل بواسطة</td>
+                        <td class="value">${record.completed_by ? getUserName(record.completed_by) : 'لم يتم التعديل'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">الحالة</td>
+                        <td class="value">${record.is_refused ? 'امتنع العميل عن الدفع' : (record.status === 'pending' ? 'قيد المراجعة' : 'مكتمل')}</td>
+                    </tr>
+                    ${record.notes ? `
+                    <tr>
+                        <td class="label">الملاحظات</td>
+                        <td class="value">${record.notes}</td>
+                    </tr>
+                    ` : ''}
+                </table>
             </div>
             
-            <!-- بيانات العميل -->
-            <div class="section">
-                <div class="section-header">👤 بيانات العميل</div>
-                <div class="section-content">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">اسم المشترك</div>
-                            <div class="info-value">${record.subscriber_name || 'غير محدد'}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">رقم الحساب</div>
-                            <div class="info-value">${record.account_number || 'غير محدد'}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">رقم المقياس</div>
-                            <div class="info-value">${record.meter_number || 'غير محدد'}</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">آخر قراءة</div>
-                            <div class="info-value">${record.last_reading || 'غير محدد'}</div>
-                        </div>
-                        ${record.address ? `
-                        <div class="info-item" style="grid-column: 1 / -1;">
-                            <div class="info-label">العنوان</div>
-                            <div class="info-value">${record.address}</div>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-            
-            ${(record.new_zone || record.new_block || record.new_home) ? `
-            <!-- الترميز الجديد -->
-            <div class="section">
-                <div class="section-header">🏠 الترميز الجديد</div>
-                <div class="section-content">
-                    <div class="info-grid">
-                        ${record.new_zone ? `
-                        <div class="info-item">
-                            <div class="info-label">الزون</div>
-                            <div class="info-value">${record.new_zone}</div>
-                        </div>
-                        ` : ''}
-                        ${record.new_block ? `
-                        <div class="info-item">
-                            <div class="info-label">البلوك</div>
-                            <div class="info-value">${record.new_block}</div>
-                        </div>
-                        ` : ''}
-                        ${record.new_home ? `
-                        <div class="info-item">
-                            <div class="info-label">الهوم</div>
-                            <div class="info-value">${record.new_home}</div>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>
-            ` : ''}
-            
-            ${(record.gps_latitude && record.gps_longitude) ? `
-            <!-- الموقع الجغرافي -->
-            <div class="section">
-                <div class="section-header">📍 الموقع الجغرافي</div>
-                <div class="section-content">
-                    <div class="info-item">
-                        <div class="info-label">الإحداثيات</div>
-                        <div class="info-value">${record.gps_latitude}, ${record.gps_longitude}</div>
-                    </div>
-                </div>
-            </div>
-            ` : ''}
-            
+            <!-- الصور -->
             ${(record.meter_photo_url || record.invoice_photo_url) ? `
-            <!-- الصور المرفقة -->
-            <div class="section">
-                <div class="section-header">📷 الصور المرفقة</div>
-                <div class="section-content">
-                    <div class="photos-grid">
-                        ${record.meter_photo_url ? `
-                        <div class="photo-item">
-                            <div class="photo-header">صورة المقياس</div>
-                            <img src="${record.meter_photo_url}" alt="صورة المقياس" class="photo-image" />
-                        </div>
-                        ` : ''}
-                        ${record.invoice_photo_url ? `
-                        <div class="photo-item">
-                            <div class="photo-header">صورة الفاتورة</div>
-                            <img src="${record.invoice_photo_url}" alt="صورة الفاتورة" class="photo-image" />
-                        </div>
-                        ` : ''}
+            <div class="photos-section">
+                <div class="photos-grid">
+                    ${record.meter_photo_url ? `
+                    <div class="photo-item">
+                        <div class="photo-header">صورة المقياس</div>
+                        <img src="${record.meter_photo_url}" alt="صورة المقياس" class="photo-image" />
                     </div>
+                    ` : ''}
+                    ${record.invoice_photo_url ? `
+                    <div class="photo-item">
+                        <div class="photo-header">صورة الفاتورة</div>
+                        <img src="${record.invoice_photo_url}" alt="صورة الفاتورة" class="photo-image" />
+                    </div>
+                    ` : ''}
                 </div>
             </div>
             ` : ''}
-            
-            ${record.notes ? `
-            <!-- الملاحظات -->
-            <div class="section">
-                <div class="section-header">💬 الملاحظات</div>
-                <div class="section-content">
-                    <div class="notes">${record.notes}</div>
-                </div>
-            </div>
-            ` : ''}
-            
-            <!-- حالة السجل -->
-            <div class="section">
-                <div class="section-header">🛡️ حالة السجل</div>
-                <div class="section-content">
-                    <div class="info-item">
-                        <div class="info-label">الحالة</div>
-                        <div class="info-value">
-                            <span class="status-badge status-${record.is_refused ? 'refused' : record.status}">
-                                ${record.is_refused ? 'امتنع العميل عن الدفع' : (record.status === 'pending' ? 'قيد المراجعة' : 'مكتمل')}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <div class="footer">
