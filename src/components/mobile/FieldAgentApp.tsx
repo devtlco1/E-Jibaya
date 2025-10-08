@@ -366,7 +366,7 @@ export function FieldAgentApp() {
         // حفظ الموقع الأولي في جدول المواقع التاريخية
         if (gpsData) {
           try {
-            await (dbOperations as any).supabase
+            const { error: locationError } = await (dbOperations as any).supabase
               .from('record_locations')
               .insert({
                 record_id: result.id,
@@ -376,6 +376,12 @@ export function FieldAgentApp() {
                 created_by: user!.id,
                 notes: notes || 'الموقع الأصلي عند الإرسال الأولي'
               });
+            
+            if (locationError) {
+              console.warn('Failed to save initial location:', locationError);
+            } else {
+              console.log('Initial location saved successfully');
+            }
           } catch (locationError) {
             console.warn('Failed to save initial location:', locationError);
           }
@@ -490,7 +496,7 @@ export function FieldAgentApp() {
     // حفظ الموقع الجديد في جدول المواقع التاريخية إذا كان مختلفاً
     if (success && gpsData && (gpsData.lat !== selectedRecord.gps_latitude || gpsData.lng !== selectedRecord.gps_longitude)) {
       try {
-        await (dbOperations as any).supabase
+        const { error: locationError } = await (dbOperations as any).supabase
           .from('record_locations')
           .insert({
             record_id: selectedRecord.id,
@@ -500,6 +506,20 @@ export function FieldAgentApp() {
             created_by: user.id,
             notes: additionalPhotosNotes || 'موقع جديد عند رفع صور إضافية'
           });
+        
+        if (locationError) {
+          console.warn('Failed to save location history:', locationError);
+          console.log('Location data that failed to save:', {
+            record_id: selectedRecord.id,
+            gps_latitude: gpsData.lat,
+            gps_longitude: gpsData.lng,
+            location_type: 'photo_upload',
+            created_by: user.id,
+            notes: additionalPhotosNotes || 'موقع جديد عند رفع صور إضافية'
+          });
+        } else {
+          console.log('Location history saved successfully');
+        }
       } catch (locationError) {
         console.warn('Failed to save location history:', locationError);
       }
