@@ -2,8 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { X, MapPin, Clock, User, ExternalLink, Navigation, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { formatDateTime } from '../../utils/dateFormatter';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+
+// Declare mapboxgl as global
+declare global {
+  interface Window {
+    mapboxgl: any;
+  }
+}
 
 interface LocationData {
   id: string;
@@ -26,12 +31,30 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
   const [selectedLocationIndex, setSelectedLocationIndex] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<mapboxgl.Map | null>(null);
+  const mapInstance = useRef<any>(null);
 
   useEffect(() => {
     loadLocationData();
     loadUsers();
+    loadMapboxGL();
   }, [recordId]);
+
+  const loadMapboxGL = () => {
+    // Load Mapbox GL JS from CDN if not already loaded
+    if (!window.mapboxgl) {
+      const link = document.createElement('link');
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css';
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+
+      const script = document.createElement('script');
+      script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.js';
+      script.onload = () => {
+        console.log('Mapbox GL JS loaded successfully');
+      };
+      document.head.appendChild(script);
+    }
+  };
 
   useEffect(() => {
     if (locations.length > 0 && selectedLocationIndex >= 0) {
@@ -118,13 +141,13 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
   };
 
   const initializeMap = (location: LocationData) => {
-    if (!mapRef.current || mapInstance.current) return;
+    if (!mapRef.current || mapInstance.current || !window.mapboxgl) return;
 
     // Set access token
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ';
+    window.mapboxgl.accessToken = 'pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ';
 
     // Create map
-    mapInstance.current = new mapboxgl.Map({
+    mapInstance.current = new window.mapboxgl.Map({
       container: mapRef.current,
       style: 'mapbox://styles/mapbox/satellite-v9',
       center: [location.gps_longitude, location.gps_latitude],
@@ -132,17 +155,22 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
     });
 
     // Add navigation controls
-    mapInstance.current.addControl(new mapboxgl.NavigationControl());
+    mapInstance.current.addControl(new window.mapboxgl.NavigationControl());
 
     // Add marker
-    new mapboxgl.Marker({ color: 'red' })
+    new window.mapboxgl.Marker({ color: 'red' })
       .setLngLat([location.gps_longitude, location.gps_latitude])
       .addTo(mapInstance.current);
   };
 
   const updateMapLocation = (location: LocationData) => {
-    if (!mapInstance.current) {
-      initializeMap(location);
+    if (!mapInstance.current || !window.mapboxgl) {
+      // Wait for mapboxgl to load
+      setTimeout(() => {
+        if (window.mapboxgl) {
+          initializeMap(location);
+        }
+      }, 1000);
       return;
     }
 
@@ -157,7 +185,7 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
     markers.forEach(marker => marker.remove());
 
     // Add new marker
-    new mapboxgl.Marker({ color: 'red' })
+    new window.mapboxgl.Marker({ color: 'red' })
       .setLngLat([location.gps_longitude, location.gps_latitude])
       .addTo(mapInstance.current);
   };
