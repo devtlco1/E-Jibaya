@@ -30,7 +30,7 @@ export function AdminDashboard() {
   
   const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities' | 'backup'>('records');
 
-  // Redirect employee to records tab if they try to access restricted tabs
+  // Redirect employees to records tab if they try to access restricted tabs
   useEffect(() => {
     if (user?.role === 'employee' && (activeTab === 'users' || activeTab === 'activities')) {
       setActiveTab('records');
