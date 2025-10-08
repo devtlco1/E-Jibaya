@@ -71,11 +71,11 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
 
   // دوال التحكم في التكبير والحركة
   const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 0.5, 5));
+    setZoom(prev => Math.min(prev + 0.3, 5));
   };
 
   const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 0.5, 0.5));
+    setZoom(prev => Math.max(prev - 0.3, 0.5));
   };
 
   const handleReset = () => {
@@ -97,9 +97,10 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging && zoom > 1) {
+      const sensitivity = 1.5; // زيادة حساسية الحركة
       setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
+        x: (e.clientX - dragStart.x) * sensitivity,
+        y: (e.clientY - dragStart.y) * sensitivity
       });
     }
   };
@@ -110,10 +111,11 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
+    const zoomStep = 0.2; // تقليل خطوة التكبير لحركة أسرع
     if (e.deltaY < 0) {
-      handleZoomIn();
+      setZoom(prev => Math.min(prev + zoomStep, 5));
     } else {
-      handleZoomOut();
+      setZoom(prev => Math.max(prev - zoomStep, 0.5));
     }
   };
 
@@ -187,111 +189,169 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                 جميع الصور ({[...(originalPhotos.meter ? [originalPhotos.meter] : []), ...(originalPhotos.invoice ? [originalPhotos.invoice] : []), ...photos].length})
               </h4>
               
-              <div className="space-y-3">
-                {/* Original Photos */}
-                {originalPhotos.meter && (
-                  <div
-                    onClick={() => {
-                      setSelectedPhotoType('meter');
-                      setSelectedPhoto(originalPhotos.meter ? {
-                        ...originalPhotos.meter,
-                        record_id: recordId,
-                        created_at: originalPhotos.meter.photo_date,
-                        notes: null
-                      } : null);
-                    }}
-                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                      selectedPhotoType === 'meter' && selectedPhoto?.id === 'original-meter'
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            صورة المقياس الأصلية
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {formatDate(originalPhotos.meter.photo_date)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {originalPhotos.invoice && (
-                  <div
-                    onClick={() => {
-                      setSelectedPhotoType('invoice');
-                      setSelectedPhoto(originalPhotos.invoice ? {
-                        ...originalPhotos.invoice,
-                        record_id: recordId,
-                        created_at: originalPhotos.invoice.photo_date,
-                        notes: null
-                      } : null);
-                    }}
-                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                      selectedPhotoType === 'invoice' && selectedPhoto?.id === 'original-invoice'
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            صورة الفاتورة الأصلية
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {formatDate(originalPhotos.invoice.photo_date)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Additional Photos */}
-                {photos.map((photo, index) => (
-                  <div
-                    key={photo.id}
-                    onClick={() => {
-                      setSelectedPhotoType(photo.photo_type);
-                      setSelectedPhoto(photo);
-                    }}
-                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                      selectedPhoto?.id === photo.id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <FileText className={`w-4 h-4 ml-2 ${photo.photo_type === 'meter' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'}`} />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            صورة إضافية #{index + 1}
-                          </span>
-                          {photo.notes && (
-                            <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {formatDate(photo.created_at)}
-                        </div>
-                        {photo.notes && (
-                          <div className="text-xs text-gray-500 mt-1 truncate">
-                            {photo.notes}
+              <div className="space-y-4">
+                {/* صور المقياس */}
+                <div>
+                  <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+                    صور المقياس
+                  </h5>
+                  <div className="space-y-3">
+                    {originalPhotos.meter && (
+                      <div
+                        onClick={() => {
+                          setSelectedPhotoType('meter');
+                          setSelectedPhoto(originalPhotos.meter ? {
+                            ...originalPhotos.meter,
+                            record_id: recordId,
+                            created_at: originalPhotos.meter.photo_date,
+                            notes: null
+                          } : null);
+                        }}
+                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                          selectedPhotoType === 'meter' && selectedPhoto?.id === 'original-meter'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                الصورة الأصلية
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {formatDate(originalPhotos.meter.photo_date)}
+                            </div>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* صور المقياس الإضافية */}
+                    {photos.filter(photo => photo.photo_type === 'meter').map((photo, index) => (
+                      <div
+                        key={photo.id}
+                        onClick={() => {
+                          setSelectedPhotoType('meter');
+                          setSelectedPhoto(photo);
+                        }}
+                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                          selectedPhoto?.id === photo.id
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                صورة إضافية #{index + 1}
+                              </span>
+                              {photo.notes && (
+                                <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {formatDate(photo.created_at)}
+                            </div>
+                            {photo.notes && (
+                              <div className="text-xs text-gray-500 mt-1 truncate">
+                                {photo.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {/* فاصل */}
+                <div className="border-t border-gray-300 dark:border-gray-600 my-4"></div>
+
+                {/* صور الفاتورة */}
+                <div>
+                  <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                    <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                    صور الفاتورة
+                  </h5>
+                  <div className="space-y-3">
+                    {originalPhotos.invoice && (
+                      <div
+                        onClick={() => {
+                          setSelectedPhotoType('invoice');
+                          setSelectedPhoto(originalPhotos.invoice ? {
+                            ...originalPhotos.invoice,
+                            record_id: recordId,
+                            created_at: originalPhotos.invoice.photo_date,
+                            notes: null
+                          } : null);
+                        }}
+                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                          selectedPhotoType === 'invoice' && selectedPhoto?.id === 'original-invoice'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                الصورة الأصلية
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {formatDate(originalPhotos.invoice.photo_date)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* صور الفاتورة الإضافية */}
+                    {photos.filter(photo => photo.photo_type === 'invoice').map((photo, index) => (
+                      <div
+                        key={photo.id}
+                        onClick={() => {
+                          setSelectedPhotoType('invoice');
+                          setSelectedPhoto(photo);
+                        }}
+                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                          selectedPhoto?.id === photo.id
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                صورة إضافية #{index + 1}
+                              </span>
+                              {photo.notes && (
+                                <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {formatDate(photo.created_at)}
+                            </div>
+                            {photo.notes && (
+                              <div className="text-xs text-gray-500 mt-1 truncate">
+                                {photo.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
