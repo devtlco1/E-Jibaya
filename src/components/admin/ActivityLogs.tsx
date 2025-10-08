@@ -18,7 +18,10 @@ import {
   XCircle,
   Database,
   Settings,
-  Download
+  Download,
+  Target,
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import { formatDateTime, formatDate, formatTime } from '../../utils/dateFormatter';
 
@@ -429,39 +432,50 @@ export function ActivityLogs() {
       {/* View Log Details Modal */}
       {viewingLog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-4 space-x-reverse">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  تفاصيل الحركة
+                  تفاصيل الحركة - {getActionText(viewingLog.action)}
                 </h3>
-                <button
-                  onClick={() => setViewingLog(null)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                  {getTargetTypeText(viewingLog.target_type)}
+                </span>
               </div>
+              <button
+                onClick={() => setViewingLog(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
 
               <div className="space-y-6">
                 {/* Basic Information */}
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">المعلومات الأساسية</h4>
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+                    المعلومات الأساسية
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">التوقيت:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">التوقيت:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {formatDateTime(viewingLog.created_at)}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">المستخدم:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">المستخدم:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {getUserName(viewingLog.user_id)}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">العملية:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">العملية:</span>
                       <div className="flex items-center">
                         {getActionIcon(viewingLog.action)}
                         <span className="mr-2 text-gray-900 dark:text-white font-medium">
@@ -469,8 +483,8 @@ export function ActivityLogs() {
                         </span>
                       </div>
                     </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">نوع الهدف:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">نوع الهدف:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {getTargetTypeText(viewingLog.target_type)}
                       </p>
@@ -479,17 +493,20 @@ export function ActivityLogs() {
                 </div>
 
                 {/* Target Information */}
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">معلومات الهدف</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">معرف الهدف:</span>
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Target className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                    معلومات الهدف
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">معرف الهدف:</span>
                       <p className="text-gray-900 dark:text-white font-medium font-mono text-sm">
                         {viewingLog.target_id || 'غير محدد'}
                       </p>
                     </div>
-                    <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">اسم الهدف:</span>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">اسم الهدف:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
                         {viewingLog.target_name || 'غير محدد'}
                       </p>
@@ -497,11 +514,13 @@ export function ActivityLogs() {
                   </div>
                 </div>
 
-
                 {/* Details */}
                 {viewingLog.details && Object.keys(viewingLog.details).length > 0 && (
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4">التفاصيل الإضافية</h4>
+                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                      <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400 ml-2" />
+                      التفاصيل الإضافية
+                    </h4>
                     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                       <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap font-mono">
                         {JSON.stringify(viewingLog.details, null, 2)}
@@ -511,8 +530,11 @@ export function ActivityLogs() {
                 )}
 
                 {/* Full Message */}
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4">الرسالة الكاملة</h4>
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <MessageSquare className="w-4 h-4 text-orange-600 dark:text-orange-400 ml-2" />
+                    الرسالة الكاملة
+                  </h4>
                   <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4">
                     <p className="text-blue-900 dark:text-blue-200">
                       {formatLogMessage(viewingLog)}

@@ -4,7 +4,7 @@ import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
-import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users } from 'lucide-react';
+import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatter';
 
 interface UserManagementProps {
@@ -609,79 +609,99 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       {/* View User Modal */}
       {viewingUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center space-x-4 space-x-reverse">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  تفاصيل المستخدم
+                  تفاصيل المستخدم - {viewingUser.full_name}
                 </h3>
-                <button
-                  onClick={() => setViewingUser(null)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <span className={`px-2 py-1 rounded-full text-sm ${
+                  viewingUser.role === 'admin' 
+                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                    : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                }`}>
+                  {viewingUser.role === 'admin' ? 'مدير' : viewingUser.role === 'field_agent' ? 'محصل' : 'موظف'}
+                </span>
               </div>
+              <button
+                onClick={() => setViewingUser(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    اسم المستخدم
-                  </label>
-                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    {viewingUser.username}
-                  </p>
+            {/* Content */}
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <UserIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+                    المعلومات الأساسية
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">اسم المستخدم:</span>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {viewingUser.username}
+                      </p>
+                    </div>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">الاسم الكامل:</span>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {viewingUser.full_name}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    الاسم الكامل
-                  </label>
-                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    {viewingUser.full_name}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    الدور
-                  </label>
-                  <div className="bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                {/* Role Information */}
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Shield className="w-4 h-4 text-purple-600 dark:text-purple-400 ml-2" />
+                    معلومات الدور
+                  </h4>
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                       viewingUser.role === 'admin' 
                         ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
                         : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                     }`}>
                       {viewingUser.role === 'admin' ? (
-                        <Shield className="w-3 h-3 ml-1" />
+                        <Shield className="w-4 h-4 ml-1" />
                       ) : (
-                        <Users className="w-3 h-3 ml-1" />
+                        <Users className="w-4 h-4 ml-1" />
                       )}
                       {viewingUser.role === 'admin' ? 'مدير' : viewingUser.role === 'employee' ? 'موظف' : 'محصل ميداني'}
                     </span>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    الحالة
-                  </label>
-                  <div className="bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
+                {/* Status Information */}
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Eye className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                    حالة المستخدم
+                  </h4>
+                  <div className="flex items-center space-x-2 space-x-reverse">
                     {viewingUser.username.includes('(محذوف)') ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                        <Trash2 className="w-3 h-3 ml-1" />
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                        <Trash2 className="w-4 h-4 ml-1" />
                         محذوف
                       </span>
                     ) : (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                         viewingUser.is_active
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                           : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                       }`}>
                         {viewingUser.is_active ? (
-                          <Eye className="w-3 h-3 ml-1" />
+                          <Eye className="w-4 h-4 ml-1" />
                         ) : (
-                          <EyeOff className="w-3 h-3 ml-1" />
+                          <EyeOff className="w-4 h-4 ml-1" />
                         )}
                         {viewingUser.is_active ? 'نشط' : 'معطل'}
                       </span>
@@ -689,22 +709,26 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    تاريخ الإنشاء
-                  </label>
-                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    {formatDate(viewingUser.created_at)}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    آخر تحديث
-                  </label>
-                  <p className="text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
-                    {formatDate(viewingUser.updated_at)}
-                  </p>
+                {/* Date Information */}
+                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Calendar className="w-4 h-4 text-orange-600 dark:text-orange-400 ml-2" />
+                    معلومات التواريخ
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">تاريخ الإنشاء:</span>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {formatDate(viewingUser.created_at)}
+                      </p>
+                    </div>
+                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">آخر تحديث:</span>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {formatDate(viewingUser.updated_at)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex justify-end pt-4">
