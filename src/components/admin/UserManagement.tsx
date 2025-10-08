@@ -3,6 +3,7 @@ import { User } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { Pagination } from '../common/Pagination';
 import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatter';
 
@@ -28,12 +29,33 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     userName: ''
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const { addNotification } = useNotifications();
 
   // Load users on component mount
   React.useEffect(() => {
     loadUsers();
   }, []);
+
+  // Pagination calculations
+  const totalUsers = users.length;
+  const totalPages = Math.ceil(totalUsers / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedUsers = users.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (items: number) => {
+    setItemsPerPage(items);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   const loadUsers = async () => {
     setLoading(true);
@@ -390,7 +412,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {users.map((user) => (
+              {paginatedUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     <div className="flex items-center">
@@ -474,6 +496,20 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {totalUsers > 0 && (
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalUsers}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        )}
       </div>
 
       {/* Create User Modal */}
