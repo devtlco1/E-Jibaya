@@ -383,32 +383,6 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
                 ))}
               </div>
 
-              {/* إحصائيات المواقع */}
-              {locations.length > 1 && (
-                <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <h5 className="font-medium text-gray-900 dark:text-white mb-3">
-                    إحصائيات المواقع
-                  </h5>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">إجمالي المواقع:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">{locations.length}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">أول موقع:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
-                        {formatDateTime(locations[locations.length - 1].updated_at)}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-400">آخر موقع:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
-                        {formatDateTime(locations[0].updated_at)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
