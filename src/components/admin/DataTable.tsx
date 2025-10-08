@@ -7,7 +7,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { PhotoComparison } from './PhotoComparison';
 import { LocationPopup } from './LocationPopup';
-import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield } from 'lucide-react';
+import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield, Printer } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 interface DataTableProps {
@@ -610,8 +610,33 @@ export function DataTable({
 
       {/* View Modal */}
       {viewingRecord && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <>
+          {/* Print Styles */}
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              @media print {
+                body * {
+                  visibility: hidden;
+                }
+                .print-content, .print-content * {
+                  visibility: visible;
+                }
+                .print-content {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100%;
+                  background: white !important;
+                  color: black !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `
+          }} />
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 print-content">
+            <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-4 space-x-reverse">
@@ -622,12 +647,22 @@ export function DataTable({
                   {viewingRecord.account_number || 'غير محدد'}
                 </span>
               </div>
-              <button
-                onClick={() => setViewingRecord(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center space-x-2 space-x-reverse no-print">
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm"
+                  title="طباعة التقرير"
+                >
+                  <Printer className="w-4 h-4 ml-1" />
+                  طباعة
+                </button>
+                <button
+                  onClick={() => setViewingRecord(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
@@ -841,34 +876,87 @@ export function DataTable({
 
                 {/* Additional Actions */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="flex flex-wrap gap-2">
-                    {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
-                      <a
-                        href={`https://maps.google.com/?q=${viewingRecord.gps_latitude},${viewingRecord.gps_longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                  <div className="flex flex-wrap gap-2 justify-between">
+                    <div className="flex flex-wrap gap-2">
+                      {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
+                        <a
+                          href={`https://maps.google.com/?q=${viewingRecord.gps_latitude},${viewingRecord.gps_longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                        >
+                          <MapPin className="w-4 h-4 ml-1" />
+                          عرض الموقع في الخريطة
+                        </a>
+                      )}
+                      <button
+                        onClick={() => {
+                          setViewingRecord(null);
+                          handleEdit(viewingRecord);
+                        }}
+                        className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
                       >
-                        <MapPin className="w-4 h-4 ml-1" />
-                        عرض الموقع في الخريطة
-                      </a>
-                    )}
-                    <button
-                      onClick={() => {
-                        setViewingRecord(null);
-                        handleEdit(viewingRecord);
-                      }}
-                      className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-                    >
-                      <Edit className="w-4 h-4 ml-1" />
-                      تعديل السجل
-                    </button>
+                        <Edit className="w-4 h-4 ml-1" />
+                        تعديل السجل
+                      </button>
+                    </div>
+                    
+                    {/* Status Buttons */}
+                    <div className="flex gap-2 no-print">
+                      <button
+                        onClick={() => {
+                          const updateData = {
+                            ...viewingRecord,
+                            status: 'pending' as 'pending' | 'completed',
+                            completed_by: currentUser?.id || null
+                          };
+                          onUpdateRecord(viewingRecord.id, updateData);
+                          addNotification({
+                            type: 'success',
+                            title: 'تم التحديث',
+                            message: 'تم تغيير حالة السجل إلى قيد المراجعة'
+                          });
+                          setViewingRecord(null);
+                        }}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          getRecordStatus(viewingRecord) === 'pending'
+                            ? 'bg-yellow-500 text-white shadow-lg'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800'
+                        }`}
+                      >
+                        قيد المراجعة
+                      </button>
+                      <button
+                        onClick={() => {
+                          const updateData = {
+                            ...viewingRecord,
+                            status: 'completed' as 'pending' | 'completed',
+                            completed_by: currentUser?.id || null
+                          };
+                          onUpdateRecord(viewingRecord.id, updateData);
+                          addNotification({
+                            type: 'success',
+                            title: 'تم التحديث',
+                            message: 'تم تغيير حالة السجل إلى مكتمل'
+                          });
+                          setViewingRecord(null);
+                        }}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          getRecordStatus(viewingRecord) === 'completed'
+                            ? 'bg-green-500 text-white shadow-lg'
+                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
+                        }`}
+                      >
+                        مكتمل
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        </>
       )}
 
       {/* Image Zoom Modal */}
