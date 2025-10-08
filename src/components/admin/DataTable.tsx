@@ -364,7 +364,13 @@ export function DataTable({
                     </tr>
                     <tr class="coding-row">
                         <td class="label">الترميز الجديد</td>
-                        <td class="value">${(record.new_zone || '') + ' ' + (record.new_block || '') || 'غير محدد'}</td>
+                        <td class="value">${(() => {
+                            const parts = [];
+                            if (record.new_zone) parts.push(`زون ${record.new_zone}`);
+                            if (record.new_block) parts.push(`بلوك ${record.new_block}`);
+                            if (record.new_home) parts.push(`منزل ${record.new_home}`);
+                            return parts.join(' ') || 'غير محدد';
+                        })()}</td>
                     </tr>
                     <tr>
                         <td class="label">الموقع الجغرافي</td>
