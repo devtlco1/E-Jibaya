@@ -315,46 +315,6 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
                   </>
                 )}
 
-                {/* معلومات الموقع المحدد */}
-                <div className="absolute bottom-4 left-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-1">
-                        الموقع المحدد #{selectedLocationIndex + 1}
-                      </h4>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <div className="flex items-center">
-                          <Clock className="w-3 h-3 ml-1" />
-                          <span>{formatDateTime(selectedLocation.updated_at)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <User className="w-3 h-3 ml-1" />
-                          <span>{getUserName(selectedLocation.field_agent_id)}</span>
-                        </div>
-                        <div className="text-xs font-mono">
-                          {selectedLocation.gps_latitude.toFixed(6)}, {selectedLocation.gps_longitude.toFixed(6)}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2 space-x-reverse">
-                      <button
-                        onClick={() => openInGoogleMaps(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
-                        className="inline-flex items-center px-3 py-2 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                      >
-                        <ExternalLink className="w-4 h-4 ml-1" />
-                        فتح في الخريطة
-                      </button>
-                      <button
-                        onClick={() => openInGoogleMapsDirections(selectedLocation.gps_latitude, selectedLocation.gps_longitude)}
-                        className="inline-flex items-center px-3 py-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg text-sm hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-                      >
-                        <Navigation className="w-4 h-4 ml-1" />
-                        التوجه
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </>
             )}
           </div>
