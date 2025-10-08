@@ -374,7 +374,8 @@ export function FieldAgentApp() {
                 gps_longitude: gpsData.lng,
                 location_type: 'submission',
                 created_by: user!.id,
-                notes: notes || 'الموقع الأصلي عند الإرسال الأولي'
+                notes: notes || 'الموقع الأصلي عند الإرسال الأولي',
+                created_at: new Date().toISOString()
               });
             
             if (locationError) {
@@ -504,7 +505,8 @@ export function FieldAgentApp() {
             gps_longitude: gpsData.lng,
             location_type: 'photo_upload',
             created_by: user.id,
-            notes: additionalPhotosNotes || 'موقع جديد عند رفع صور إضافية'
+            notes: additionalPhotosNotes || 'موقع جديد عند رفع صور إضافية',
+            created_at: new Date().toISOString()
           });
         
         if (locationError) {
