@@ -24,12 +24,17 @@ DROP POLICY IF EXISTS "activity_logs_insert_policy" ON public.activity_logs;
 DROP POLICY IF EXISTS "record_photos_select_policy" ON public.record_photos;
 DROP POLICY IF EXISTS "record_photos_insert_policy" ON public.record_photos;
 DROP POLICY IF EXISTS "record_photos_delete_policy" ON public.record_photos;
+DROP POLICY IF EXISTS "record_locations_select_policy" ON public.record_locations;
+DROP POLICY IF EXISTS "record_locations_insert_policy" ON public.record_locations;
+DROP POLICY IF EXISTS "record_locations_update_policy" ON public.record_locations;
+DROP POLICY IF EXISTS "record_locations_delete_policy" ON public.record_locations;
 DROP POLICY IF EXISTS "user_sessions_select_policy" ON public.user_sessions;
 DROP POLICY IF EXISTS "user_sessions_insert_policy" ON public.user_sessions;
 DROP POLICY IF EXISTS "user_sessions_delete_policy" ON public.user_sessions;
 
 -- حذف جميع الجداول
 DROP TABLE IF EXISTS public.backup_info CASCADE;
+DROP TABLE IF EXISTS public.record_locations CASCADE;
 DROP TABLE IF EXISTS public.record_photos CASCADE;
 DROP TABLE IF EXISTS public.activity_logs CASCADE;
 DROP TABLE IF EXISTS public.collection_records CASCADE;
@@ -92,6 +97,18 @@ CREATE TABLE public.record_photos (
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- جدول المواقع التاريخية للسجلات
+CREATE TABLE public.record_locations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    record_id UUID REFERENCES public.collection_records(id) ON DELETE CASCADE,
+    gps_latitude DECIMAL(10, 8) NOT NULL,
+    gps_longitude DECIMAL(11, 8) NOT NULL,
+    location_type VARCHAR(50) NOT NULL CHECK (location_type IN ('submission', 'update', 'photo_upload')),
+    notes TEXT,
+    created_by UUID REFERENCES public.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- جدول سجل النشاط
@@ -176,6 +193,7 @@ $$;
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.collection_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.record_photos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.record_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.backup_info ENABLE ROW LEVEL SECURITY;
@@ -235,6 +253,24 @@ CREATE POLICY "record_photos_update_policy" ON public.record_photos
     WITH CHECK (true);
 
 CREATE POLICY "record_photos_delete_policy" ON public.record_photos
+    FOR DELETE TO anon, authenticated
+    USING (true);
+
+-- سياسات جدول المواقع التاريخية
+CREATE POLICY "record_locations_select_policy" ON public.record_locations
+    FOR SELECT TO anon, authenticated
+    USING (true);
+
+CREATE POLICY "record_locations_insert_policy" ON public.record_locations
+    FOR INSERT TO anon, authenticated
+    WITH CHECK (true);
+
+CREATE POLICY "record_locations_update_policy" ON public.record_locations
+    FOR UPDATE TO anon, authenticated
+    USING (true)
+    WITH CHECK (true);
+
+CREATE POLICY "record_locations_delete_policy" ON public.record_locations
     FOR DELETE TO anon, authenticated
     USING (true);
 

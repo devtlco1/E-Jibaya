@@ -325,7 +325,6 @@ export function DataTable({
                 <option value="">جميع الحالات</option>
                 <option value="pending">قيد المراجعة</option>
                 <option value="completed">مكتمل</option>
-                <option value="refused">امتنع</option>
               </select>
             </div>
           </div>

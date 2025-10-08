@@ -74,11 +74,7 @@ export function Reports({ records }: ReportsProps) {
     }
 
     if (filters.status) {
-      if (filters.status === 'refused') {
-        filtered = filtered.filter(r => r.is_refused === true);
-      } else {
-        filtered = filtered.filter(r => r.is_refused !== true && r.status === filters.status);
-      }
+      filtered = filtered.filter(r => r.status === filters.status);
     }
 
     if (filters.fieldAgent) {
@@ -390,7 +386,6 @@ export function Reports({ records }: ReportsProps) {
               <option value="">جميع الحالات</option>
               <option value="pending">قيد المراجعة</option>
               <option value="completed">مكتمل</option>
-              <option value="refused">امتنع</option>
             </select>
           </div>
 
