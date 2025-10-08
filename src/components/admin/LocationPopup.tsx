@@ -396,7 +396,7 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
                 {/* زر تحديث الخريطة */}
                 <button
                   onClick={refreshMap}
-                  className="absolute top-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="absolute top-4 left-4 bg-white dark:bg-gray-800 shadow-lg rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   title="تحديث الخريطة"
                 >
                   <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-300" />
