@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DataTable } from './DataTable';
@@ -46,6 +46,10 @@ export function AdminDashboard() {
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [allRecords, setAllRecords] = useState<CollectionRecord[]>([]);
+  
+  // Real-time updates
+  const realtimeSubscription = useRef<any>(null);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     subscriber_name: '',
     account_number: '',
@@ -77,6 +81,20 @@ export function AdminDashboard() {
       loadRecords();
     }
   }, [activeTab]);
+
+  // Setup real-time subscription when component mounts
+  useEffect(() => {
+    if (user && dbOperations.supabase) {
+      setupRealtimeSubscription();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (realtimeSubscription.current && dbOperations.supabase) {
+        dbOperations.supabase.removeChannel(realtimeSubscription.current);
+      }
+    };
+  }, [user]);
 
   const loadRecords = async () => {
     setLoading(true);
@@ -125,6 +143,85 @@ export function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Setup real-time subscription
+  const setupRealtimeSubscription = () => {
+    if (!dbOperations.supabase) return;
+
+    // Clean up existing subscription
+    if (realtimeSubscription.current) {
+      dbOperations.supabase.removeChannel(realtimeSubscription.current);
+    }
+
+    console.log('Setting up real-time subscription for collection_records...');
+    
+    realtimeSubscription.current = dbOperations.supabase
+      .channel('collection_records_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'collection_records' 
+        }, 
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            // New record added
+            const newRecord = payload.new as CollectionRecord;
+            addNotification({
+              type: 'success',
+              title: 'سجل جديد',
+              message: `تم إضافة سجل جديد: ${newRecord.subscriber_name || 'غير محدد'}`
+            });
+            
+            // Refresh records if we're on the first page
+            if (currentPage === 1) {
+              loadRecords();
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            // Record updated
+            const updatedRecord = payload.new as CollectionRecord;
+            addNotification({
+              type: 'info',
+              title: 'تحديث سجل',
+              message: `تم تحديث السجل: ${updatedRecord.subscriber_name || 'غير محدد'}`
+            });
+            
+            // Refresh current page
+            loadRecords();
+          } else if (payload.eventType === 'DELETE') {
+            // Record deleted
+            addNotification({
+              type: 'warning',
+              title: 'حذف سجل',
+              message: 'تم حذف سجل من النظام'
+            });
+            
+            // Refresh current page
+            loadRecords();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+        setIsRealtimeConnected(status === 'SUBSCRIBED');
+        
+        if (status === 'SUBSCRIBED') {
+          addNotification({
+            type: 'success',
+            title: 'التحديثات المباشرة',
+            message: 'تم تفعيل التحديثات المباشرة بنجاح'
+          });
+        } else if (status === 'CHANNEL_ERROR') {
+          addNotification({
+            type: 'error',
+            title: 'خطأ في التحديثات',
+            message: 'فشل في تفعيل التحديثات المباشرة'
+          });
+        }
+      });
   };
 
   const loadFieldAgentsCount = async () => {
@@ -304,6 +401,14 @@ export function AdminDashboard() {
               </span>
             </div>
             <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse">
+              {/* Real-time connection indicator */}
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">
+                  {isRealtimeConnected ? 'مباشر' : 'غير متصل'}
+                </span>
+              </div>
+              
               <button
                 onClick={toggleTheme}
                 className="p-1.5 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"

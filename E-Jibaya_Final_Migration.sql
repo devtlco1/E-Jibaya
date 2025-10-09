@@ -85,7 +85,11 @@ CREATE TABLE public.collection_records (
     -- الترميز الجديد
     new_zone VARCHAR(20),
     new_block VARCHAR(20),
-    new_home VARCHAR(20)
+    new_home VARCHAR(20),
+    -- الحجز الناعم (Soft Lock)
+    locked_by UUID REFERENCES public.users(id),
+    locked_at TIMESTAMP WITH TIME ZONE,
+    lock_expires_at TIMESTAMP WITH TIME ZONE
 );
 
 -- جدول صور السجلات (مع جميع الأعمدة المطلوبة)
@@ -327,6 +331,8 @@ INSERT INTO public.users (username, password_hash, full_name, role, is_active) V
 CREATE INDEX idx_collection_records_field_agent ON public.collection_records(field_agent_id);
 CREATE INDEX idx_collection_records_status ON public.collection_records(status);
 CREATE INDEX idx_collection_records_submitted_at ON public.collection_records(submitted_at);
+CREATE INDEX idx_collection_records_locked_by ON public.collection_records(locked_by);
+CREATE INDEX idx_collection_records_lock_expires_at ON public.collection_records(lock_expires_at);
 CREATE INDEX idx_activity_logs_user_id ON public.activity_logs(user_id);
 CREATE INDEX idx_activity_logs_created_at ON public.activity_logs(created_at);
 CREATE INDEX idx_record_photos_record_id ON public.record_photos(record_id);
