@@ -481,10 +481,10 @@ export const dbOperations = {
 
       const stats = {
         total: data.length,
-        pending: data.filter(r => !r.is_refused && r.status === 'pending').length,
-        completed: data.filter(r => !r.is_refused && r.status === 'completed').length,
-        reviewed: data.filter(r => !r.is_refused && r.status === 'reviewed').length,
-        refused: data.filter(r => r.is_refused === true).length
+        pending: data.filter(r => r.status === 'pending').length,
+        completed: data.filter(r => r.status === 'completed').length,
+        reviewed: 0, // لم تعد مستخدمة
+        refused: data.filter(r => r.status === 'refused').length
       };
 
       return stats;

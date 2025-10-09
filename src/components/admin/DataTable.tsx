@@ -47,7 +47,7 @@ export function DataTable({
     meter_number: '',
     address: '',
     last_reading: '',
-    status: 'pending' as 'pending' | 'completed',
+    status: 'pending' as 'pending' | 'completed' | 'refused',
     // الترميز الجديد
     new_zone: '',
     new_block: '',
@@ -394,7 +394,7 @@ export function DataTable({
                     </tr>
                     <tr>
                         <td class="label">الحالة</td>
-                        <td class="value">${record.is_refused ? 'امتنع العميل عن الدفع' : (record.status === 'pending' ? 'قيد المراجعة' : 'مكتمل')}</td>
+                        <td class="value">${record.status === 'refused' ? 'امتنع' : (record.status === 'pending' ? 'قيد المراجعة' : 'مكتمل')}</td>
                     </tr>
                     ${record.notes ? `
                     <tr>
@@ -454,7 +454,7 @@ export function DataTable({
       meter_number: record.meter_number || '',
       address: record.address || '',
       last_reading: record.last_reading || '',
-      status: getRecordStatus(record) as 'pending' | 'completed',
+      status: getRecordStatus(record) as 'pending' | 'completed' | 'refused',
       // الترميز الجديد
       new_zone: record.new_zone || '',
       new_block: record.new_block || '',
@@ -667,6 +667,7 @@ export function DataTable({
                 <option value="">جميع الحالات</option>
                 <option value="pending">قيد المراجعة</option>
                 <option value="completed">مكتمل</option>
+                <option value="refused">امتنع</option>
               </select>
             </div>
           </div>
@@ -1464,6 +1465,17 @@ export function DataTable({
                       }`}
                     >
                       مكتمل
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditForm({ ...editForm, status: 'refused' })}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        editForm.status === 'refused'
+                          ? 'bg-red-500 text-white shadow-lg'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800'
+                      }`}
+                    >
+                      امتنع
                     </button>
                   </div>
                 </div>

@@ -23,7 +23,7 @@ export interface CollectionRecord {
   meter_number: string | null;
   address: string | null;
   last_reading: string | null;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'completed' | 'refused';
   submitted_at: string;
   updated_at: string;
   completed_by: string | null;
@@ -49,7 +49,7 @@ export interface UpdateRecordData {
   meter_number: string;
   address: string;
   last_reading: string;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'completed' | 'refused';
   // الترميز الجديد
   new_zone: string | null;
   new_block: string | null;

@@ -71,7 +71,7 @@ CREATE TABLE public.collection_records (
     last_reading VARCHAR(20),
     meter_photo_url TEXT,
     invoice_photo_url TEXT,
-    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'reviewed')),
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'refused')),
     is_refused BOOLEAN DEFAULT false,
     notes TEXT,
     gps_latitude DECIMAL(10, 8),
