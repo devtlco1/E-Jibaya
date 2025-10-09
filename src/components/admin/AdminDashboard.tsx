@@ -176,10 +176,11 @@ export function AdminDashboard() {
               message: `تم إضافة سجل جديد: ${newRecord.subscriber_name || 'غير محدد'}`
             });
             
-            // Refresh records if we're on the first page
-            if (currentPage === 1) {
-              loadRecords();
-            }
+            // Always refresh records for new records
+            loadRecords();
+            
+            // Also refresh stats
+            loadFieldAgentsCount();
           } else if (payload.eventType === 'UPDATE') {
             // Record updated
             const updatedRecord = payload.new as CollectionRecord;
@@ -191,6 +192,9 @@ export function AdminDashboard() {
             
             // Refresh current page
             loadRecords();
+            
+            // Also refresh stats
+            loadFieldAgentsCount();
           } else if (payload.eventType === 'DELETE') {
             // Record deleted
             addNotification({
@@ -201,6 +205,9 @@ export function AdminDashboard() {
             
             // Refresh current page
             loadRecords();
+            
+            // Also refresh stats
+            loadFieldAgentsCount();
           }
         }
       )
