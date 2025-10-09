@@ -50,6 +50,8 @@ export function AdminDashboard() {
   // Real-time updates
   const realtimeSubscription = useRef<any>(null);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  const lastRecordCount = useRef<number>(0);
   const [filters, setFilters] = useState<FilterState>({
     subscriber_name: '',
     account_number: '',
@@ -86,6 +88,11 @@ export function AdminDashboard() {
   useEffect(() => {
     if (user && dbOperations.supabase) {
       setupRealtimeSubscription();
+      
+      // Start polling as fallback
+      setTimeout(() => {
+        startPolling();
+      }, 2000); // Start polling after 2 seconds
     }
 
     // Cleanup on unmount
@@ -93,6 +100,7 @@ export function AdminDashboard() {
       if (realtimeSubscription.current && dbOperations.supabase) {
         dbOperations.supabase.removeChannel(realtimeSubscription.current);
       }
+      stopPolling();
     };
   }, [user]);
 
@@ -132,6 +140,9 @@ export function AdminDashboard() {
         setTotalPages(recordsResult.totalPages);
         setAllRecords(allRecordsResult);
         setAllRecordsStats(statsResult);
+        
+        // Update last record count for polling
+        lastRecordCount.current = recordsResult.total;
       }
     } catch (error) {
       console.error('Error loading records:', error);
@@ -229,6 +240,46 @@ export function AdminDashboard() {
           });
         }
       });
+  };
+
+  // Polling fallback for real-time updates
+  const startPolling = () => {
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+    }
+
+    pollingInterval.current = setInterval(async () => {
+      try {
+        // Get current record count
+        const result = await dbOperations.getRecordsWithPagination(1, 1, {});
+        const currentCount = result.total;
+
+        // If count increased, there's a new record
+        if (currentCount > lastRecordCount.current && lastRecordCount.current > 0) {
+          console.log('New record detected via polling!');
+          addNotification({
+            type: 'success',
+            title: 'سجل جديد',
+            message: 'تم إضافة سجل جديد إلى النظام'
+          });
+          
+          // Refresh current data
+          loadRecords();
+          loadFieldAgentsCount();
+        }
+
+        lastRecordCount.current = currentCount;
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }, 3000); // Check every 3 seconds
+  };
+
+  const stopPolling = () => {
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+      pollingInterval.current = null;
+    }
   };
 
   const loadFieldAgentsCount = async () => {
@@ -410,9 +461,9 @@ export function AdminDashboard() {
             <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse">
               {/* Real-time connection indicator */}
               <div className="flex items-center space-x-2 space-x-reverse">
-                <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
                 <span className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">
-                  {isRealtimeConnected ? 'مباشر' : 'غير متصل'}
+                  {isRealtimeConnected ? 'مباشر' : 'فحص دوري'}
                 </span>
               </div>
               
