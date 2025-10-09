@@ -41,7 +41,7 @@ export function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   // Optimize items per page for mobile
   const [itemsPerPage, setItemsPerPage] = useState(() => {
-    return window.innerWidth <= 768 ? 5 : 10;
+    return window.innerWidth <= 768 ? 10 : 10;
   });
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
