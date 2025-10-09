@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { CollectionRecord, FilterState } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -59,6 +59,10 @@ export function DataTable({
   const [selectedRecordForPhotos, setSelectedRecordForPhotos] = useState<string | null>(null);
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [selectedRecordForLocation, setSelectedRecordForLocation] = useState<string | null>(null);
+  
+  // Refs for image zoom
+  const invoiceImageRef = useRef<HTMLImageElement>(null);
+  const meterImageRef = useRef<HTMLImageElement>(null);
   const [imageZoom, setImageZoom] = useState(1);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -1294,72 +1298,8 @@ export function DataTable({
 
             {/* Content - Split Layout */}
             <div className="flex h-[calc(90vh-120px)]">
-              {/* Left Side - Photos */}
-              <div className="w-1/2 p-6 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
-                <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">الصور المرفقة</h4>
-                
-                {editingRecord.meter_photo_url && (
-                  <div className="mb-6">
-                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                      <Camera className="w-4 h-4 ml-2 text-blue-600" />
-                      صورة المقياس
-                    </h5>
-                    <div className="relative">
-                      <img 
-                        src={editingRecord.meter_photo_url} 
-                        alt="صورة المقياس" 
-                        className="w-full h-80 object-contain rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
-                      />
-                      <button
-                        onClick={() => handleImageClick(editingRecord.meter_photo_url!, 'صورة المقياس')}
-                        className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-opacity"
-                        title="تكبير الصورة"
-                      >
-                        <ZoomIn className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                      📊 رقم المقياس • آخر قراءة
-                    </p>
-                  </div>
-                )}
-
-                {editingRecord.invoice_photo_url && (
-                  <div>
-                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                      <FileText className="w-4 h-4 ml-2 text-green-600" />
-                      صورة الفاتورة
-                    </h5>
-                    <div className="relative">
-                      <img 
-                        src={editingRecord.invoice_photo_url} 
-                        alt="صورة الفاتورة" 
-                        className="w-full h-80 object-contain rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
-                      />
-                      <button
-                        onClick={() => handleImageClick(editingRecord.invoice_photo_url!, 'صورة الفاتورة')}
-                        className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-opacity"
-                        title="تكبير الصورة"
-                      >
-                        <ZoomIn className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                      📄 اسم المشترك • رقم الحساب • العنوان • الترميز الجديد
-                    </p>
-                  </div>
-                )}
-                
-                {!editingRecord.meter_photo_url && !editingRecord.invoice_photo_url && (
-                  <div className="text-center py-12">
-                    <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400">لا توجد صور مرفقة</p>
-                  </div>
-                )}
-              </div>
-
               {/* Right Side - Form */}
-              <div className="w-1/2 p-6 overflow-y-auto">
+              <div className="w-1/2 p-6 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
                 <div className="space-y-6">
                   {/* بيانات صورة الفاتورة */}
                   <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -1550,6 +1490,92 @@ export function DataTable({
                     حفظ التغييرات
                   </button>
                 </div>
+              </div>
+
+              {/* Left Side - Photos with Internal Zoom */}
+              <div className="w-1/2 p-6 overflow-y-auto">
+                <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">الصور المرفقة</h4>
+                
+                {editingRecord.invoice_photo_url && (
+                  <div className="mb-6">
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <FileText className="w-4 h-4 ml-2 text-green-600" />
+                      صورة الفاتورة
+                    </h5>
+                    <div className="relative bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+                      <img 
+                        ref={invoiceImageRef}
+                        src={editingRecord.invoice_photo_url} 
+                        alt="صورة الفاتورة" 
+                        className="w-full h-80 object-contain cursor-zoom-in transition-transform duration-200 hover:scale-105"
+                        onClick={() => handleImageClick(editingRecord.invoice_photo_url!, 'صورة الفاتورة')}
+                      />
+                      <div className="absolute top-2 right-2 flex space-x-1 space-x-reverse">
+                        <button
+                          onClick={() => {
+                            if (invoiceImageRef.current) {
+                              const currentScale = invoiceImageRef.current.style.transform.includes('scale(1.5)') ? 1.5 : 1;
+                              const newScale = currentScale === 1 ? 1.5 : 1;
+                              invoiceImageRef.current.style.transform = `scale(${newScale})`;
+                              invoiceImageRef.current.style.cursor = newScale === 1.5 ? 'zoom-out' : 'zoom-in';
+                            }
+                          }}
+                          className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-opacity"
+                          title="تكبير/تصغير"
+                        >
+                          <ZoomIn className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                      📄 اسم المشترك • رقم الحساب • العنوان • الترميز الجديد
+                    </p>
+                  </div>
+                )}
+
+                {editingRecord.meter_photo_url && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <Camera className="w-4 h-4 ml-2 text-blue-600" />
+                      صورة المقياس
+                    </h5>
+                    <div className="relative bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+                      <img 
+                        ref={meterImageRef}
+                        src={editingRecord.meter_photo_url} 
+                        alt="صورة المقياس" 
+                        className="w-full h-80 object-contain cursor-zoom-in transition-transform duration-200 hover:scale-105"
+                        onClick={() => handleImageClick(editingRecord.meter_photo_url!, 'صورة المقياس')}
+                      />
+                      <div className="absolute top-2 right-2 flex space-x-1 space-x-reverse">
+                        <button
+                          onClick={() => {
+                            if (meterImageRef.current) {
+                              const currentScale = meterImageRef.current.style.transform.includes('scale(1.5)') ? 1.5 : 1;
+                              const newScale = currentScale === 1 ? 1.5 : 1;
+                              meterImageRef.current.style.transform = `scale(${newScale})`;
+                              meterImageRef.current.style.cursor = newScale === 1.5 ? 'zoom-out' : 'zoom-in';
+                            }
+                          }}
+                          className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-opacity"
+                          title="تكبير/تصغير"
+                        >
+                          <ZoomIn className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                      📊 رقم المقياس • آخر قراءة
+                    </p>
+                  </div>
+                )}
+                
+                {!editingRecord.meter_photo_url && !editingRecord.invoice_photo_url && (
+                  <div className="text-center py-12">
+                    <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">لا توجد صور مرفقة</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
