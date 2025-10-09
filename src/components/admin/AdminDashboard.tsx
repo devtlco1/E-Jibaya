@@ -89,10 +89,8 @@ export function AdminDashboard() {
     if (user && dbOperations.supabase) {
       setupRealtimeSubscription();
       
-      // Start polling as fallback
-      setTimeout(() => {
-        startPolling();
-      }, 2000); // Start polling after 2 seconds
+      // Start polling as fallback immediately
+      startPolling();
     }
 
     // Cleanup on unmount
@@ -242,25 +240,31 @@ export function AdminDashboard() {
       });
   };
 
-  // Polling fallback for real-time updates
+  // Smart polling fallback for real-time updates
   const startPolling = () => {
     if (pollingInterval.current) {
       clearInterval(pollingInterval.current);
     }
 
+    console.log('Starting smart polling for new records...');
     pollingInterval.current = setInterval(async () => {
       try {
-        // Get current record count
+        // Get latest record timestamp
         const result = await dbOperations.getRecordsWithPagination(1, 1, {});
         const currentCount = result.total;
-
+        
         // If count increased, there's a new record
         if (currentCount > lastRecordCount.current && lastRecordCount.current > 0) {
-          console.log('New record detected via polling!');
+          console.log('New record detected via polling! Count:', currentCount);
+          
+          // Get the latest record to show in notification
+          const latestRecords = await dbOperations.getRecordsWithPagination(1, 1, {});
+          const latestRecord = latestRecords.data[0];
+          
           addNotification({
             type: 'success',
             title: 'سجل جديد',
-            message: 'تم إضافة سجل جديد إلى النظام'
+            message: `تم إضافة سجل جديد: ${latestRecord?.subscriber_name || 'غير محدد'}`
           });
           
           // Refresh current data
@@ -272,7 +276,7 @@ export function AdminDashboard() {
       } catch (error) {
         console.error('Polling error:', error);
       }
-    }, 3000); // Check every 3 seconds
+    }, 2000); // Check every 2 seconds for faster response
   };
 
   const stopPolling = () => {
