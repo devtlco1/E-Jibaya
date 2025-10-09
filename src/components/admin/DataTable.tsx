@@ -1278,218 +1278,273 @@ export function DataTable({
       {/* Edit Modal */}
       {editingRecord && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  تعديل السجل
-                </h3>
-                <button
-                  onClick={() => setEditingRecord(null)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                تعديل السجل - {editingRecord.subscriber_name || 'غير محدد'}
+              </h3>
+              <button
+                onClick={() => setEditingRecord(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Photos Section */}
-              <div className="mb-6">
+            {/* Content - Split Layout */}
+            <div className="flex h-[calc(90vh-120px)]">
+              {/* Left Side - Photos */}
+              <div className="w-1/2 p-6 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
                 <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">الصور المرفقة</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {editingRecord.meter_photo_url && (
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">صورة المقياس</h5>
+                
+                {editingRecord.meter_photo_url && (
+                  <div className="mb-6">
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <Camera className="w-4 h-4 ml-2 text-blue-600" />
+                      صورة المقياس
+                    </h5>
+                    <div className="relative">
                       <img 
                         src={editingRecord.meter_photo_url} 
                         alt="صورة المقياس" 
-                        className="w-full h-64 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => handleImageClick(editingRecord.meter_photo_url!, 'صورة المقياس')}
+                        className="w-full h-80 object-contain rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
                       />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">انقر للتكبير</p>
+                      <button
+                        onClick={() => handleImageClick(editingRecord.meter_photo_url!, 'صورة المقياس')}
+                        className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-opacity"
+                        title="تكبير الصورة"
+                      >
+                        <ZoomIn className="w-4 h-4" />
+                      </button>
                     </div>
-                  )}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                      📊 رقم المقياس • آخر قراءة
+                    </p>
+                  </div>
+                )}
 
-                  {editingRecord.invoice_photo_url && (
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">صورة الفاتورة</h5>
+                {editingRecord.invoice_photo_url && (
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <FileText className="w-4 h-4 ml-2 text-green-600" />
+                      صورة الفاتورة
+                    </h5>
+                    <div className="relative">
                       <img 
                         src={editingRecord.invoice_photo_url} 
                         alt="صورة الفاتورة" 
-                        className="w-full h-64 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => handleImageClick(editingRecord.invoice_photo_url!, 'صورة الفاتورة')}
+                        className="w-full h-80 object-contain rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
                       />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">انقر للتكبير</p>
+                      <button
+                        onClick={() => handleImageClick(editingRecord.invoice_photo_url!, 'صورة الفاتورة')}
+                        className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-opacity"
+                        title="تكبير الصورة"
+                      >
+                        <ZoomIn className="w-4 h-4" />
+                      </button>
                     </div>
-                  )}
-                </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                      📄 اسم المشترك • رقم الحساب • العنوان • الترميز الجديد
+                    </p>
+                  </div>
+                )}
                 
                 {!editingRecord.meter_photo_url && !editingRecord.invoice_photo_url && (
-                  <p className="text-gray-500 dark:text-gray-400 text-center py-8">لا توجد صور مرفقة</p>
+                  <div className="text-center py-12">
+                    <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 dark:text-gray-400">لا توجد صور مرفقة</p>
+                  </div>
                 )}
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    اسم المشترك
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.subscriber_name}
-                    onChange={(e) => setEditForm({ ...editForm, subscriber_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="أدخل اسم المشترك"
-                  />
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    رقم الحساب
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.account_number}
-                    onChange={(e) => setEditForm({ ...editForm, account_number: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="أدخل رقم الحساب"
-                  />
-                </div>
+              {/* Right Side - Form */}
+              <div className="w-1/2 p-6 overflow-y-auto">
+                <div className="space-y-6">
+                  {/* بيانات صورة الفاتورة */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center">
+                      <FileText className="w-4 h-4 ml-2" />
+                      بيانات صورة الفاتورة
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          اسم المشترك
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.subscriber_name}
+                          onChange={(e) => setEditForm({ ...editForm, subscriber_name: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل اسم المشترك"
+                        />
+                      </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    رقم المقياس
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.meter_number}
-                    onChange={(e) => setEditForm({ ...editForm, meter_number: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="أدخل رقم المقياس"
-                  />
-                </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          رقم الحساب
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.account_number}
+                          onChange={(e) => setEditForm({ ...editForm, account_number: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل رقم الحساب"
+                        />
+                      </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    العنوان
-                  </label>
-                  <textarea
-                    value={editForm.address}
-                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="أدخل العنوان"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    آخر قراءة
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.last_reading}
-                    onChange={(e) => setEditForm({ ...editForm, last_reading: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="أدخل آخر قراءة"
-                  />
-                </div>
-
-                {/* الترميز الجديد */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-2" />
-                    الترميز الجديد
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        الزون
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.new_zone}
-                        onChange={(e) => setEditForm({ ...editForm, new_zone: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل الزون"
-                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          العنوان
+                        </label>
+                        <textarea
+                          value={editForm.address}
+                          onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل العنوان"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        البلوك
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.new_block}
-                        onChange={(e) => setEditForm({ ...editForm, new_block: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل البلوك"
-                      />
+                  </div>
+
+                  {/* بيانات صورة المقياس */}
+                  <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                    <h4 className="text-sm font-semibold text-green-800 dark:text-green-200 mb-4 flex items-center">
+                      <Camera className="w-4 h-4 ml-2" />
+                      بيانات صورة المقياس
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          رقم المقياس
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.meter_number}
+                          onChange={(e) => setEditForm({ ...editForm, meter_number: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل رقم المقياس"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          آخر قراءة
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.last_reading}
+                          onChange={(e) => setEditForm({ ...editForm, last_reading: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل آخر قراءة"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        الهوم
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.new_home}
-                        onChange={(e) => setEditForm({ ...editForm, new_home: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="أدخل الهوم"
-                      />
+                  </div>
+
+                  {/* الترميز الجديد */}
+                  <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <h4 className="text-sm font-semibold text-purple-800 dark:text-purple-200 mb-4 flex items-center">
+                      <MapPin className="w-4 h-4 ml-2" />
+                      الترميز الجديد
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          الزون
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.new_zone}
+                          onChange={(e) => setEditForm({ ...editForm, new_zone: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل الزون"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          البلوك
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.new_block}
+                          onChange={(e) => setEditForm({ ...editForm, new_block: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل البلوك"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          الهوم
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.new_home}
+                          onChange={(e) => setEditForm({ ...editForm, new_home: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل الهوم"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* الحالة */}
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                      <Shield className="w-4 h-4 ml-2" />
+                      حالة السجل
+                    </h4>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, status: 'pending' })}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          editForm.status === 'pending'
+                            ? 'bg-yellow-500 text-white shadow-lg'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800'
+                        }`}
+                      >
+                        قيد المراجعة
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, status: 'completed' })}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          editForm.status === 'completed'
+                            ? 'bg-green-500 text-white shadow-lg'
+                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
+                        }`}
+                      >
+                        مكتمل
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, status: 'refused' })}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          editForm.status === 'refused'
+                            ? 'bg-red-500 text-white shadow-lg'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800'
+                        }`}
+                      >
+                        امتنع
+                      </button>
                     </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    الحالة
-                  </label>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setEditForm({ ...editForm, status: 'pending' })}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        editForm.status === 'pending'
-                          ? 'bg-yellow-500 text-white shadow-lg'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800'
-                      }`}
-                    >
-                      قيد المراجعة
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditForm({ ...editForm, status: 'completed' })}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        editForm.status === 'completed'
-                          ? 'bg-green-500 text-white shadow-lg'
-                          : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
-                      }`}
-                    >
-                      مكتمل
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditForm({ ...editForm, status: 'refused' })}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        editForm.status === 'refused'
-                          ? 'bg-red-500 text-white shadow-lg'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800'
-                      }`}
-                    >
-                      امتنع
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-2 space-x-reverse pt-4">
+                {/* Footer */}
+                <div className="flex justify-end space-x-2 space-x-reverse pt-6 border-t border-gray-200 dark:border-gray-700">
                   <button
                     onClick={() => setEditingRecord(null)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                   >
                     إلغاء
                   </button>
                   <button
                     onClick={handleSaveEdit}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center"
+                    className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center"
                   >
                     <Save className="w-4 h-4 ml-2" />
                     حفظ التغييرات

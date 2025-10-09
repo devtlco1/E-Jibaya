@@ -267,7 +267,7 @@ export function AdminDashboard() {
             message: `تم إضافة سجل جديد: ${latestRecord?.subscriber_name || 'غير محدد'}`
           });
           
-          // Refresh current data
+          // Refresh current data with current filters
           loadRecords();
           loadFieldAgentsCount();
         }
@@ -294,7 +294,7 @@ export function AdminDashboard() {
         setTimeout(async () => {
           const users = await dbOperations.getUsers();
           const activeFieldAgents = users.filter(user => 
-            (user.role === 'field_agent' || user.role === 'employee') && 
+            user.role === 'field_agent' && 
             user.is_active && 
             !user.username.includes('(محذوف)')
           );
@@ -304,7 +304,7 @@ export function AdminDashboard() {
         // For desktop: load immediately
         const users = await dbOperations.getUsers();
         const activeFieldAgents = users.filter(user => 
-          (user.role === 'field_agent' || user.role === 'employee') && 
+          user.role === 'field_agent' && 
           user.is_active && 
           !user.username.includes('(محذوف)')
         );
