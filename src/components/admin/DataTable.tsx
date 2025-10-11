@@ -1406,13 +1406,6 @@ export function DataTable({
                   <ZoomOut className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={handleResetZoom}
-                  className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-colors"
-                  title="إعادة تعيين"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                </button>
-                <button
                   onClick={handleZoomIn}
                   className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-colors"
                   title="تكبير"
@@ -1425,6 +1418,13 @@ export function DataTable({
                   title={`دوران (${imageRotation}°)`}
                 >
                   <RotateCcw className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleResetZoom}
+                  className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-colors"
+                  title="إعادة تعيين"
+                >
+                  <Maximize2 className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setZoomedImage(null)}
