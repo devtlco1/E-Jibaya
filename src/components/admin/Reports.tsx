@@ -340,7 +340,6 @@ export function Reports({ records }: ReportsProps) {
                     <th>النوع</th>
                     <th>الحالة</th>
                     ${filters.includeImages ? '<th>مقياس</th><th>فاتورة</th>' : ''}
-                    <th>ملاحظات</th>
                 </tr>
             </thead>
             <tbody>
@@ -364,7 +363,6 @@ export function Reports({ records }: ReportsProps) {
                     <td>${record.meter_photo_url ? `<span class="image-ref">${extractImageId(record.meter_photo_url)}</span>` : '-'}</td>
                     <td>${record.invoice_photo_url ? `<span class="image-ref">${extractImageId(record.invoice_photo_url)}</span>` : '-'}</td>
                     ` : ''}
-                    <td>${record.notes ? record.notes.substring(0, 20) + (record.notes.length > 20 ? '...' : '') : '-'}</td>
                 </tr>
                 `).join('')}
             </tbody>
