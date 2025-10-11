@@ -537,8 +537,8 @@ export function Reports({ records }: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الرابع: الحالة والتدقيق */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* الصف الرابع: الحالة، التدقيق، الصنف، نوع المقياس */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الحالة
@@ -569,10 +569,7 @@ export function Reports({ records }: ReportsProps) {
                 <option value="غير مدقق">غير مدقق</option>
               </select>
             </div>
-          </div>
 
-          {/* الصف الخامس: الصنف ونوع المقياس */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الصنف
