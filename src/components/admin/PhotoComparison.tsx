@@ -101,11 +101,6 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         [`${photoType}_photo_verified`]: !prev[`${photoType}_photo_verified` as keyof CollectionRecord]
       } : null);
 
-      // Notify parent component of the update
-      if (onRecordUpdate) {
-        onRecordUpdate(record.id, updateData);
-      }
-
       // Update verification status after photo verification change
       setTimeout(() => {
         updateVerificationStatus();
@@ -144,6 +139,14 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
             ...prev,
             verification_status: newStatus
           };
+        } else {
+          // Even if verification status doesn't change, notify parent of photo verification changes
+          if (onRecordUpdate) {
+            onRecordUpdate(prev.id, {
+              meter_photo_verified: prev.meter_photo_verified,
+              invoice_photo_verified: prev.invoice_photo_verified
+            });
+          }
         }
         
         return prev;
