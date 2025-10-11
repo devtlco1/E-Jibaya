@@ -206,10 +206,14 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   };
 
   const handlePhotoVerification = async (photoType: 'meter' | 'invoice') => {
-    if (!record || isUpdatingStatus) return;
+    if (!record || isUpdatingStatus) {
+      console.log('Photo verification blocked - record:', !!record, 'isUpdating:', isUpdatingStatus);
+      return;
+    }
 
     try {
       setIsUpdatingStatus(true);
+      console.log(`Starting photo verification for ${photoType}`);
       
       const currentValue = record[`${photoType}_photo_verified` as keyof CollectionRecord] as boolean;
       const newValue = !currentValue;
@@ -248,12 +252,10 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         message: `${statusText} ${photoTypeText} بنجاح`
       });
 
-      // Update verification status after photo verification change
-      setTimeout(() => {
-        updateVerificationStatus();
-      }, 300);
-
       console.log(`${photoType} photo verification toggled`);
+      
+      // Update verification status immediately without timeout
+      updateVerificationStatus();
     } catch (error) {
       console.error('Error updating photo verification:', error);
     } finally {
@@ -276,12 +278,10 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         p.id === photoId ? { ...p, verified: newVerifiedStatus } : p
       ));
 
-      // Update verification status after additional photo verification change
-      setTimeout(() => {
-        updateVerificationStatus();
-      }, 300);
-
       console.log(`Additional photo ${photoId} verification toggled to ${newVerifiedStatus}`);
+      
+      // Update verification status immediately
+      updateVerificationStatus();
     } catch (error) {
       console.error('Error updating additional photo verification:', error);
     }
@@ -289,10 +289,14 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
 
   // Function to update verification status when all photos are verified
   const updateVerificationStatus = async () => {
-    if (!record || isUpdatingStatus) return;
+    if (!record || isUpdatingStatus) {
+      console.log('updateVerificationStatus blocked - record:', !!record, 'isUpdating:', isUpdatingStatus);
+      return;
+    }
 
     try {
       setIsUpdatingStatus(true);
+      console.log('Starting updateVerificationStatus');
       
       // Get current state
       const currentRecord = record;
