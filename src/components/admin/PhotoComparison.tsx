@@ -94,7 +94,14 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     }
   };
 
-  const getOriginalPhotos = () => {
+
+
+  const formatDate = (dateString: string) => {
+    return formatDateTime(dateString);
+  };
+
+  // Get current original photos with updated verification status
+  const originalPhotos = useMemo(() => {
     if (!record) return { meter: null, invoice: null };
     
     return {
@@ -119,19 +126,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         verified: record.invoice_photo_verified || false
       } : null
     };
-  };
-
-
-  const formatDate = (dateString: string) => {
-    return formatDateTime(dateString);
-  };
-
-  // Get current original photos with updated verification status
-  const originalPhotos = useMemo(() => getOriginalPhotos(), [
-    record, 
-    record?.meter_photo_verified, 
-    record?.invoice_photo_verified
-  ]);
+  }, [record, record?.meter_photo_verified, record?.invoice_photo_verified]);
 
   // دوال التحكم في التكبير والحركة
   const handleZoomIn = () => {
