@@ -91,7 +91,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     try {
       const updateData = {
         [`${photoType}_photo_verified`]: !record[`${photoType}_photo_verified` as keyof CollectionRecord]
-      };
+      } as any;
 
       await dbOperations.updateRecord(record.id, updateData);
       
@@ -126,7 +126,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         
         if (prev.verification_status !== newStatus) {
           // Update the record in database
-          dbOperations.updateRecord(prev.id, { verification_status: newStatus }).then(() => {
+          dbOperations.updateRecord(prev.id, { verification_status: newStatus } as any).then(() => {
             // Notify parent component of the verification status update
             if (onRecordUpdate) {
               onRecordUpdate(prev.id, { verification_status: newStatus });
