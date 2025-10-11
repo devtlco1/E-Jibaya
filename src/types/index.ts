@@ -35,9 +35,6 @@ export interface CollectionRecord {
   locked_by: string | null;
   locked_at: string | null;
   lock_expires_at: string | null;
-  // قفل مقارنة الصور
-  photo_viewing_by: string | null;
-  photo_viewing_at: string | null;
   // الصنف
   category: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | 'انارة' | 'محولة خاصة' | null;
   // نوع المقياس
