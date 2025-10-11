@@ -63,7 +63,10 @@ export function AdminDashboard() {
     new_zone: '',
     new_block: '',
     // التدقيق
-    verification_status: ''
+    verification_status: '',
+    // فلاتر إضافية
+    category: '',
+    phase: ''
   });
   const [allRecordsStats, setAllRecordsStats] = useState({
     total: 0,
@@ -382,6 +385,14 @@ export function AdminDashboard() {
     }
 
     if (currentFilters.verification_status && record.verification_status !== currentFilters.verification_status) {
+      return false;
+    }
+
+    if (currentFilters.category && record.category !== currentFilters.category) {
+      return false;
+    }
+
+    if (currentFilters.phase && record.phase !== currentFilters.phase) {
       return false;
     }
 

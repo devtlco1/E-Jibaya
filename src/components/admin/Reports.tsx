@@ -274,7 +274,7 @@ export function Reports({ records }: ReportsProps) {
                     <th>آخر قراءة</th>
                     <th>الترميز الجديد</th>
                     <th>الصنف</th>
-                    <th>المرحلة</th>
+                    <th>نوع المقياس</th>
                     <th>الحالة</th>
                     ${filters.includeImages ? '<th>صورة المقياس</th><th>صورة الفاتورة</th>' : ''}
                     <th>الملاحظات</th>

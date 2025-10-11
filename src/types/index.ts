@@ -37,7 +37,7 @@ export interface CollectionRecord {
   lock_expires_at: string | null;
   // الصنف
   category: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | 'انارة' | 'محولة خاصة' | null;
-  // المرحلة
+  // نوع المقياس
   phase: 'احادي' | 'ثلاثي' | 'سي تي' | null;
   // تدقيق الصور
   meter_photo_verified: boolean;
@@ -92,6 +92,9 @@ export interface FilterState {
   new_block: string;
   // التدقيق
   verification_status: string;
+  // فلاتر إضافية
+  category: string;
+  phase: string;
 }
 
 export interface ActivityLog {
