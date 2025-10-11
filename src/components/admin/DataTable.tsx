@@ -571,6 +571,8 @@ export function DataTable({
   const handleSaveEdit = async () => {
     if (editingRecord && currentUser) {
       try {
+        console.log('بدء حفظ السجل:', editForm);
+        
         // التحقق من البيانات المطلوبة قبل تغيير الحالة إلى "مكتمل" أو "قيد المراجعة"
         if (editForm.status === 'completed' || editForm.status === 'pending') {
           const requiredFields = [
@@ -588,6 +590,8 @@ export function DataTable({
             return !value || (typeof value === 'string' && value.trim() === '');
           });
 
+          console.log('الحقول المفقودة:', missingFields);
+
           if (missingFields.length > 0) {
             const statusText = editForm.status === 'completed' ? 'مكتمل' : 'قيد المراجعة';
             addNotification({
@@ -602,9 +606,11 @@ export function DataTable({
         // التحقق من صحة رقم الحساب (لجميع الحالات)
         if (editForm.account_number && editForm.account_number.trim() !== '') {
           const accountNumber = editForm.account_number.trim();
+          console.log('رقم الحساب:', accountNumber, 'الطول:', accountNumber.length);
           
           // التحقق من أن رقم الحساب يحتوي على أرقام فقط
           if (!/^\d+$/.test(accountNumber)) {
+            console.log('رقم الحساب يحتوي على أحرف غير صحيحة');
             addNotification({
               type: 'error',
               title: 'رقم الحساب غير صحيح',
@@ -615,6 +621,7 @@ export function DataTable({
           
           // التحقق من أن رقم الحساب لا يتجاوز 12 رقم
           if (accountNumber.length > 12) {
+            console.log('رقم الحساب طويل جداً');
             addNotification({
               type: 'error',
               title: 'رقم الحساب طويل جداً',
@@ -623,6 +630,8 @@ export function DataTable({
             return;
           }
         }
+
+        console.log('تم اجتياز جميع validation checks بنجاح');
 
         // Handle status and is_refused logic
         let updateData: any = {
