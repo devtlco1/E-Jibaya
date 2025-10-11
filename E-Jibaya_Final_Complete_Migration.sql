@@ -781,7 +781,7 @@ BEGIN
     RAISE NOTICE '=====================================================';
     RAISE NOTICE 'To complete the setup, you need to manually configure Storage policies:';
     RAISE NOTICE '1. Go to Supabase Dashboard > Storage > Settings > Policies';
-    RAISE NOTICE '2. Create a new policy for the "photos" bucket:';
+    RAISE NOTICE '2. Create a new policy for the photos bucket:';
     RAISE NOTICE '   - Policy name: Allow authenticated users to upload photos';
     RAISE NOTICE '   - Target roles: authenticated';
     RAISE NOTICE '   - Operation: INSERT';
