@@ -173,7 +173,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const currentUser = dbOperations.getCurrentUser();
     
     // Log logout activity before clearing user data
-    if (currentUser) {
+    if (currentUser && currentUser.id) {
       try {
         await dbOperations.createActivityLog({
           user_id: currentUser.id,
@@ -184,10 +184,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
       } catch (error) {
         console.warn('Failed to log logout activity:', error);
+        // Continue with logout even if activity log fails
       }
     }
     
-    await dbOperations.logout();
+    try {
+      await dbOperations.logout();
+    } catch (error) {
+      console.warn('Error during logout:', error);
+    }
+    
     setUser(null);
     setLoading(false);
   };

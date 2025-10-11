@@ -538,6 +538,20 @@ export const dbOperations = {
       const client = checkSupabaseConnection();
       if (!client) return false;
 
+      // التحقق من وجود المستخدم قبل إنشاء سجل النشاط
+      if (logData.user_id) {
+        const { data: user, error: userError } = await client
+          .from('users')
+          .select('id')
+          .eq('id', logData.user_id)
+          .single();
+
+        if (userError || !user) {
+          console.warn('User not found for activity log, skipping:', logData.user_id);
+          return false;
+        }
+      }
+
       console.log('Creating activity log:', logData);
 
       const { error } = await client
