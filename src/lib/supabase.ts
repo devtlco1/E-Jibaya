@@ -490,7 +490,7 @@ export const dbOperations = {
       return stats;
     } catch (error) {
       console.error('Get records stats error:', error);
-      return { total: 0, pending: 0, completed: 0, reviewed: 0, refused: 0 };
+      return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
     }
   },
 
@@ -556,15 +556,8 @@ export const dbOperations = {
       if (error) {
         console.error('Get activity logs error:', error);
         console.error('Error details:', error.message, error.details, error.hint);
-        console.error('Error details:', error.message, error.details, error.hint);
         return { data: [], total: 0, totalPages: 0 };
       }
-
-      console.log('Activity logs fetched successfully:', { 
-        dataCount: data?.length || 0, 
-        total: count,
-        firstRecord: data?.[0] 
-      });
 
       console.log('Activity logs fetched successfully:', { 
         dataCount: data?.length || 0, 
