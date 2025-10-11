@@ -494,9 +494,9 @@ export function AdminDashboard() {
                 مرحباً، {user?.full_name}
               </span>
             </div>
-            <div className="flex items-center space-x-3 sm:space-x-4 space-x-reverse">
+            <div className="flex items-center space-x-4 sm:space-x-6 space-x-reverse">
               {/* Real-time connection indicator */}
-              <div className="flex items-center space-x-2 space-x-reverse">
+              <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
                 <div className={`w-2 h-2 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
                 <span className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">
                   {isRealtimeConnected ? 'مباشر' : 'فحص دوري'}
