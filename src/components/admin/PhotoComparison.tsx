@@ -145,6 +145,8 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
 
   const handleRotate = () => {
     setRotation(prev => (prev + 90) % 360);
+    // Reset position when rotating to avoid issues
+    setPosition({ x: 0, y: 0 });
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -501,7 +503,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                     alt={`${selectedPhoto.photo_type === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة'}`}
                     className="max-w-full max-h-full object-contain select-none"
                     style={{ 
-                      transform: `scale(${zoom}) rotate(${rotation}deg) translate(${position.x}px, ${position.y}px)`,
+                      transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${zoom})`,
                       transition: isDragging ? 'none' : 'transform 0.1s ease-out'
                     }}
                     draggable={false}
@@ -528,7 +530,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                   <button
                     onClick={handleRotate}
                     className="p-2 bg-white dark:bg-gray-800 shadow-lg rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    title="دوران"
+                    title={`دوران (${rotation}°)`}
                   >
                     <RotateCw className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                   </button>
@@ -541,11 +543,18 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                   </button>
                 </div>
 
-                {/* مؤشر التكبير */}
+                {/* مؤشر التكبير والدوران */}
                 <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-lg px-3 py-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    {Math.round(zoom * 100)}%
-                  </span>
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                      {Math.round(zoom * 100)}%
+                    </span>
+                    {rotation !== 0 && (
+                      <span className="text-sm text-blue-600 dark:text-blue-400">
+                        {rotation}°
+                      </span>
+                    )}
+                  </div>
                 </div>
               </>
             )}
