@@ -251,32 +251,32 @@ export function AdminDashboard() {
               (updatedRecord.invoice_photo_verified !== oldRecord.invoice_photo_verified) ||
               (updatedRecord.verification_status !== oldRecord.verification_status);
             
+            // Check if this is a photo viewing lock update (تحقق من هذا أولاً!)
+            const isPhotoViewingUpdate = 
+              (updatedRecord.photo_viewing_by !== oldRecord.photo_viewing_by) ||
+              (updatedRecord.photo_viewing_at !== oldRecord.photo_viewing_at);
+            
             // Check if this is a lock status update
             const isLockUpdate = 
               (updatedRecord.locked_by !== oldRecord.locked_by) ||
               (updatedRecord.locked_at !== oldRecord.locked_at);
             
-            // Check if this is a photo viewing lock update
-            const isPhotoViewingUpdate = 
-              (updatedRecord.photo_viewing_by !== oldRecord.photo_viewing_by) ||
-              (updatedRecord.photo_viewing_at !== oldRecord.photo_viewing_at);
-            
-            // Always refresh for lock updates to show lock status immediately
-            if (isLockUpdate) {
-              console.log('Lock status changed - updating lock status locally');
-              
-              // تحديث محلي لحالة القفل فقط - دون إعادة تحميل التاب
-              updateRecordLockStatus(updatedRecord.id, {
-                locked_by: updatedRecord.locked_by,
-                locked_at: updatedRecord.locked_at
-              });
-            } else if (isPhotoViewingUpdate) {
+            // تحديث قفل مقارنة الصور أولاً
+            if (isPhotoViewingUpdate) {
               console.log('Photo viewing status changed - updating locally');
               
               // تحديث محلي لحالة قفل مقارنة الصور
               updatePhotoViewingStatus(updatedRecord.id, {
                 photo_viewing_by: updatedRecord.photo_viewing_by,
                 photo_viewing_at: updatedRecord.photo_viewing_at
+              });
+            } else if (isLockUpdate) {
+              console.log('Lock status changed - updating lock status locally');
+              
+              // تحديث محلي لحالة القفل فقط - دون إعادة تحميل التاب
+              updateRecordLockStatus(updatedRecord.id, {
+                locked_by: updatedRecord.locked_by,
+                locked_at: updatedRecord.locked_at
               });
             } else if (!isVerificationUpdate) {
               addNotification({
