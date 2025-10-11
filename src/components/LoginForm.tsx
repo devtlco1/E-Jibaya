@@ -156,12 +156,12 @@ export function LoginForm() {
             {/* Quick Login Buttons */}
             <div className="space-y-2">
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">تسجيل دخول سريع:</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setUsername('admin');
-                    setPassword('admin123');
+                    setPassword('password123');
                   }}
                   className="px-3 py-2 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
                 >
@@ -170,12 +170,22 @@ export function LoginForm() {
                 <button
                   type="button"
                   onClick={() => {
-                    setUsername('agent1');
-                    setPassword('agent123');
+                    setUsername('field_agent_1');
+                    setPassword('password123');
                   }}
                   className="px-3 py-2 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
                 >
                   👨‍🔧 محصل
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername('employee_1');
+                    setPassword('password123');
+                  }}
+                  className="px-3 py-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                >
+                  👨‍💻 موظف
                 </button>
               </div>
             </div>
