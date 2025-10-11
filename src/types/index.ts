@@ -126,4 +126,5 @@ export interface RecordPhoto {
   created_by: string | null;
   created_at: string;
   notes: string | null;
+  verified: boolean;
 }

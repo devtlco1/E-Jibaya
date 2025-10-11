@@ -112,7 +112,33 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     }
   };
 
-  // Function to update verification status when both photos are verified
+  const handleAdditionalPhotoVerification = async (photoId: string) => {
+    try {
+      const photo = photos.find(p => p.id === photoId);
+      if (!photo) return;
+
+      const newVerifiedStatus = !photo.verified;
+      
+      // Update in database
+      await dbOperations.updatePhotoVerification(photoId, newVerifiedStatus);
+      
+      // Update local state
+      setPhotos(prev => prev.map(p => 
+        p.id === photoId ? { ...p, verified: newVerifiedStatus } : p
+      ));
+
+      // Update verification status after additional photo verification change
+      setTimeout(() => {
+        updateVerificationStatus();
+      }, 200);
+
+      console.log(`Additional photo ${photoId} verification toggled to ${newVerifiedStatus}`);
+    } catch (error) {
+      console.error('Error updating additional photo verification:', error);
+    }
+  };
+
+  // Function to update verification status when all photos are verified
   const updateVerificationStatus = async () => {
     if (!record) return;
 
@@ -121,8 +147,15 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       setRecord(prev => {
         if (!prev) return null;
         
-        const isBothVerified = prev.meter_photo_verified && prev.invoice_photo_verified;
-        const newStatus = isBothVerified ? 'مدقق' : 'غير مدقق';
+        // Check if main photos are verified
+        const mainPhotosVerified = prev.meter_photo_verified && prev.invoice_photo_verified;
+        
+        // Check if all additional photos are verified
+        const allAdditionalPhotosVerified = photos.length === 0 || photos.every(photo => photo.verified);
+        
+        // Record is verified only if both main photos AND all additional photos are verified
+        const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
+        const newStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
         
         if (prev.verification_status !== newStatus) {
           // Update the record in database
@@ -315,7 +348,8 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                             ...originalPhotos.meter,
                             record_id: recordId,
                             created_at: originalPhotos.meter.photo_date,
-                            notes: null
+                            notes: null,
+                            verified: false
                           } : null);
                         }}
                         className={`p-4 rounded-lg border cursor-pointer transition-colors ${
@@ -388,6 +422,20 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               </div>
                             )}
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAdditionalPhotoVerification(photo.id);
+                            }}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            title={photo.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                          >
+                            {photo.verified ? (
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -412,7 +460,8 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                             ...originalPhotos.invoice,
                             record_id: recordId,
                             created_at: originalPhotos.invoice.photo_date,
-                            notes: null
+                            notes: null,
+                            verified: false
                           } : null);
                         }}
                         className={`p-4 rounded-lg border cursor-pointer transition-colors ${
@@ -485,6 +534,20 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               </div>
                             )}
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAdditionalPhotoVerification(photo.id);
+                            }}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            title={photo.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                          >
+                            {photo.verified ? (
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     ))}

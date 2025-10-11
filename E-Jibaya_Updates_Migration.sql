@@ -575,6 +575,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 31. إضافة حقل التحقق للصور الإضافية
+-- Add verified field to record_photos table
+ALTER TABLE public.record_photos
+ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT FALSE;
+
+-- تحديث الصور الموجودة لتكون غير محققة
+UPDATE public.record_photos 
+SET verified = FALSE 
+WHERE verified IS NULL;
+
+-- إضافة فهارس لتحسين الأداء
+CREATE INDEX IF NOT EXISTS idx_record_photos_verified 
+ON public.record_photos(verified);
+
+CREATE INDEX IF NOT EXISTS idx_record_photos_record_id_verified 
+ON public.record_photos(record_id, verified);
+
 -- إنهاء الملف
 -- تم إنشاء جميع التحديثات المطلوبة بنجاح
 -- يمكن تشغيل هذا الملف على قاعدة البيانات لتطبيق جميع التحديثات

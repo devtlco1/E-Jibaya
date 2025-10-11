@@ -791,6 +791,28 @@ export const dbOperations = {
     }
   },
 
+  async updatePhotoVerification(photoId: string, verified: boolean): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return false;
+
+      const { error } = await client
+        .from('record_photos')
+        .update({ verified })
+        .eq('id', photoId);
+
+      if (error) {
+        console.error('Update photo verification error:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Update photo verification error:', error);
+      return false;
+    }
+  },
+
   // ==============================================
   // Backup Functions
   // ==============================================
