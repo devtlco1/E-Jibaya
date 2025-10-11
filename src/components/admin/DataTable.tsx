@@ -570,6 +570,16 @@ export function DataTable({
 
   // دالة للتحقق من صحة البيانات المطلوبة
   const isFormValid = () => {
+    console.log('فحص صحة النموذج:', {
+      status: editForm.status,
+      subscriber_name: editForm.subscriber_name,
+      account_number: editForm.account_number,
+      meter_number: editForm.meter_number,
+      last_reading: editForm.last_reading,
+      region: editForm.region,
+      category: editForm.category,
+      phase: editForm.phase
+    });
     // التحقق من البيانات المطلوبة للحالات "مكتمل" و "قيد المراجعة"
     if (editForm.status === 'completed' || editForm.status === 'pending') {
       const requiredFields = [
@@ -592,7 +602,7 @@ export function DataTable({
       }
     }
 
-    // التحقق من صحة رقم الحساب
+    // التحقق من صحة رقم الحساب (لجميع الحالات)
     if (editForm.account_number && editForm.account_number.trim() !== '') {
       const accountNumber = editForm.account_number.trim();
       
@@ -607,7 +617,9 @@ export function DataTable({
       }
     }
 
-    return true;
+    const isValid = true;
+    console.log('نتيجة فحص صحة النموذج:', isValid);
+    return isValid;
   };
 
   const handleSaveEdit = async () => {
