@@ -234,24 +234,10 @@ export function AdminDashboard() {
             
             // Always refresh for lock updates to show lock status immediately
             if (isLockUpdate) {
-              console.log('Lock status changed - refreshing records immediately');
+              console.log('Lock status changed - updating lock status silently');
               
-              // Show notification for lock changes
-              if (updatedRecord.locked_by && updatedRecord.locked_by !== user?.id) {
-                addNotification({
-                  type: 'warning',
-                  title: 'سجل مقفل',
-                  message: `السجل "${updatedRecord.subscriber_name || 'غير محدد'}" مقفل حالياً من قبل مستخدم آخر`
-                });
-              } else if (!updatedRecord.locked_by && oldRecord.locked_by) {
-                addNotification({
-                  type: 'info',
-                  title: 'سجل متاح',
-                  message: `السجل "${updatedRecord.subscriber_name || 'غير محدد'}" متاح الآن للتعديل`
-                });
-              }
-              
-              // Force refresh records immediately
+              // تحديث صامت لحالة القفل فقط - بدون إشعارات
+              // تحديث البيانات مع الحفاظ على الفلاتر الحالية
               loadRecords();
             } else if (!isVerificationUpdate) {
               addNotification({

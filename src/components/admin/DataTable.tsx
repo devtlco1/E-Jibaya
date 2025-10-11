@@ -556,11 +556,8 @@ export function DataTable({
       phase: record.phase
       });
 
-      addNotification({
-        type: 'success',
-        title: 'تم قفل السجل',
-        message: 'يمكنك الآن تعديل السجل بأمان - السجل مقفل أمام المستخدمين الآخرين'
-      });
+      // إشعار صامت - لا يظهر للمستخدمين الآخرين
+      console.log('Record locked successfully - UI updated silently');
     } catch (error) {
       console.error('Error locking record:', error);
       addNotification({
@@ -640,7 +637,7 @@ export function DataTable({
         await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
         
         // تحديث فوري لإلغاء القفل في الواجهة
-        console.log('Record saved and unlocked - updating UI immediately');
+        console.log('Record saved and unlocked - updating UI silently');
         
         // Notification will be sent by AdminDashboard.handleUpdateRecord
         setEditingRecord(null);
@@ -664,11 +661,8 @@ export function DataTable({
         // تحديث فوري لإلغاء القفل في الواجهة
         console.log('Record unlocked - updating UI immediately');
         
-        addNotification({
-          type: 'info',
-          title: 'تم إلغاء التعديل',
-          message: 'تم إلغاء قفل السجل'
-        });
+        // إشعار صامت - لا يظهر للمستخدمين الآخرين
+        console.log('Record unlocked successfully - UI updated silently');
       } catch (error) {
         console.error('Error unlocking record:', error);
         addNotification({
