@@ -16,8 +16,22 @@ if (!isSupabaseConfigured) {
   console.warn('Supabase not configured. Please set up Supabase connection.');
 }
 
-// Create Supabase client only if configured, otherwise use null
-export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null;
+// Singleton pattern for Supabase client to avoid multiple instances
+let supabaseInstance: any = null;
+
+const getSupabaseClient = () => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+  
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  
+  return supabaseInstance;
+};
+
+export const supabase = getSupabaseClient();
 
 // Helper function to check if Supabase is available
 const checkSupabaseConnection = () => {
@@ -541,10 +555,10 @@ export const dbOperations = {
 
       const stats = {
         total: data.length,
-        pending: data.filter(r => r.status === 'pending').length,
-        completed: data.filter(r => r.status === 'completed').length,
+        pending: data.filter((r: any) => r.status === 'pending').length,
+        completed: data.filter((r: any) => r.status === 'completed').length,
         verified: 0, // السجلات المدققة
-        refused: data.filter(r => r.status === 'refused').length
+        refused: data.filter((r: any) => r.status === 'refused').length
       };
 
       return stats;
@@ -720,11 +734,11 @@ export const dbOperations = {
         return false;
       }
       
-      console.log('Available buckets:', buckets?.map(b => b.name) || []);
+      console.log('Available buckets:', buckets?.map((b: any) => b.name) || []);
       
-      const photosBucket = buckets?.find(bucket => bucket.name === 'photos');
+      const photosBucket = buckets?.find((bucket: any) => bucket.name === 'photos');
       if (!photosBucket) {
-        console.warn('Photos bucket not found in API response. Available buckets:', buckets?.map(b => b.name) || []);
+        console.warn('Photos bucket not found in API response. Available buckets:', buckets?.map((b: any) => b.name) || []);
         console.log('Attempting to create photos bucket...');
         
         // Try to create the bucket

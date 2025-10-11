@@ -9,8 +9,9 @@ const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard').th
 const FieldAgentApp = lazy(() => import('./components/mobile/FieldAgentApp').then(module => ({ default: module.FieldAgentApp })));
 
 function AppContent() {
+  const { user, loading } = useAuth();
+  
   try {
-    const { user, loading } = useAuth();
 
   if (loading) {
     return (

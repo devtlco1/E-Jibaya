@@ -597,6 +597,48 @@ $$ LANGUAGE plpgsql;
 -- انتهاء Migration
 -- =====================================================
 
+-- Storage RLS Policies
+-- Enable RLS on storage.objects
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
+-- Policy for field agents to upload photos
+CREATE POLICY "Field agents can upload photos" ON storage.objects
+    FOR INSERT WITH CHECK (
+        bucket_id = 'photos' AND
+        auth.role() = 'authenticated' AND
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.uid() 
+            AND role IN ('field_agent', 'admin', 'employee')
+            AND is_active = true
+        )
+    );
+
+-- Policy for all authenticated users to view photos
+CREATE POLICY "Authenticated users can view photos" ON storage.objects
+    FOR SELECT USING (
+        bucket_id = 'photos' AND
+        auth.role() = 'authenticated' AND
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.uid() 
+            AND is_active = true
+        )
+    );
+
+-- Policy for admins to manage photos
+CREATE POLICY "Admins can manage photos" ON storage.objects
+    FOR ALL USING (
+        bucket_id = 'photos' AND
+        auth.role() = 'authenticated' AND
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.uid() 
+            AND role = 'admin'
+            AND is_active = true
+        )
+    );
+
 -- رسالة نجاح
 DO $$
 BEGIN
@@ -604,6 +646,7 @@ BEGIN
     RAISE NOTICE 'E-Jibaya Complete System Migration completed successfully!';
     RAISE NOTICE '=====================================================';
     RAISE NOTICE 'Database structure created with all required tables, indexes, functions, and policies.';
+    RAISE NOTICE 'Storage RLS policies added for photo management.';
     RAISE NOTICE '';
     RAISE NOTICE 'Test users created:';
     RAISE NOTICE '  - admin (password: password123)';
