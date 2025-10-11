@@ -69,6 +69,7 @@ export function DataTable({
   const meterImageRef = useRef<HTMLImageElement>(null);
   const [imageZoom, setImageZoom] = useState(1);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [imageRotation, setImageRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; recordId: string; recordName: string }>({
@@ -609,6 +610,7 @@ export function DataTable({
     setZoomedImage({ url, title });
     setImageZoom(1);
     setImagePosition({ x: 0, y: 0 });
+    setImageRotation(0);
   };
 
   const handleZoomIn = () => {
@@ -621,6 +623,13 @@ export function DataTable({
 
   const handleResetZoom = () => {
     setImageZoom(1);
+    setImagePosition({ x: 0, y: 0 });
+    setImageRotation(0);
+  };
+
+  const handleRotateImage = () => {
+    setImageRotation(prev => (prev + 90) % 360);
+    // Reset position when rotating to avoid issues
     setImagePosition({ x: 0, y: 0 });
   };
 
@@ -1411,6 +1420,13 @@ export function DataTable({
                   <ZoomIn className="w-5 h-5" />
                 </button>
                 <button
+                  onClick={handleRotateImage}
+                  className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-colors"
+                  title={`دوران (${imageRotation}°)`}
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </button>
+                <button
                   onClick={() => setZoomedImage(null)}
                   className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-colors"
                   title="إغلاق"
@@ -1433,7 +1449,7 @@ export function DataTable({
                 alt={zoomedImage.title}
                 className="absolute top-1/2 left-1/2 max-w-none select-none"
                 style={{
-                  transform: `translate(calc(-50% + ${imagePosition.x}px), calc(-50% + ${imagePosition.y}px)) scale(${imageZoom})`,
+                  transform: `translate(calc(-50% + ${imagePosition.x}px), calc(-50% + ${imagePosition.y}px)) rotate(${imageRotation}deg) scale(${imageZoom})`,
                   cursor: imageZoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
                 }}
                 draggable={false}
@@ -1445,6 +1461,7 @@ export function DataTable({
               <p className="text-white text-sm">
                 {imageZoom > 1 ? 'اسحب الصورة للتنقل • ' : ''}
                 التكبير: {Math.round(imageZoom * 100)}%
+                {imageRotation !== 0 && ` • الدوران: ${imageRotation}°`}
                 {imageZoom > 1 && ' • استخدم عجلة الماوس للتكبير/التصغير'}
               </p>
             </div>
