@@ -347,15 +347,15 @@ export function Reports({ records }: ReportsProps) {
                 ${filteredRecords.map((record, index) => `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${formatDate(record.submitted_at).split(' ')[0]}</td>
+                    <td>${formatDate(record.submitted_at)}</td>
                     <td>${getUserName(record.field_agent_id).split(' ')[0]}</td>
                     <td>${record.subscriber_name || '-'}</td>
                     <td>${record.account_number || '-'}</td>
                     <td>${record.meter_number || '-'}</td>
                     <td>${record.region || '-'}</td>
                     <td>${record.last_reading || '-'}</td>
-                    <td>${record.new_zone || record.new_block ? 
-                        `${record.new_zone || ''} ${record.new_block || ''}`.trim() : 
+                    <td>${record.new_zone || record.new_block || record.new_home ? 
+                        `${record.new_zone ? 'ز' + record.new_zone : ''}${record.new_block ? ' ب' + record.new_block : ''}${record.new_home ? ' م' + record.new_home : ''}`.trim() : 
                         '-'}</td>
                     <td>${record.category || '-'}</td>
                     <td>${record.phase || '-'}</td>
