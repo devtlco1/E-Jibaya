@@ -540,7 +540,7 @@ export function DataTable({
         subscriber_name: record.subscriber_name || '',
         account_number: record.account_number || '',
         meter_number: record.meter_number || '',
-        region: record.region || '',
+        region: (record.region && record.region !== 'غير محدد') ? record.region : '',
         last_reading: record.last_reading || '',
         status: getRecordStatus(record) as 'pending' | 'completed' | 'refused',
       // الترميز الجديد
