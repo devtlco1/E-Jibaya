@@ -67,6 +67,34 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       setRecord(recordData);
       setPhotos(photosData);
       
+      // Update original photos with verification status
+      if (recordData) {
+        setOriginalPhotos({
+          meter: recordData.meter_photo_url ? {
+            id: 'meter-original',
+            record_id: recordData.id,
+            photo_type: 'meter',
+            photo_url: recordData.meter_photo_url,
+            photo_date: recordData.submitted_at,
+            created_by: recordData.field_agent_id,
+            created_at: recordData.submitted_at,
+            notes: null,
+            verified: recordData.meter_photo_verified || false
+          } : null,
+          invoice: recordData.invoice_photo_url ? {
+            id: 'invoice-original',
+            record_id: recordData.id,
+            photo_type: 'invoice',
+            photo_url: recordData.invoice_photo_url,
+            photo_date: recordData.submitted_at,
+            created_by: recordData.field_agent_id,
+            created_at: recordData.submitted_at,
+            notes: null,
+            verified: recordData.invoice_photo_verified || false
+          } : null
+        });
+      }
+      
       // Set first photo as selected
       if (photosData.length > 0) {
         setSelectedPhoto(photosData[0]);
@@ -85,6 +113,34 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       const { record: recordData, photos: photosData } = await dbOperations.getRecordWithPhotos(recordId);
       setRecord(recordData);
       setPhotos(photosData);
+      
+      // Update original photos with verification status
+      if (recordData) {
+        setOriginalPhotos({
+          meter: recordData.meter_photo_url ? {
+            id: 'meter-original',
+            record_id: recordData.id,
+            photo_type: 'meter',
+            photo_url: recordData.meter_photo_url,
+            photo_date: recordData.submitted_at,
+            created_by: recordData.field_agent_id,
+            created_at: recordData.submitted_at,
+            notes: null,
+            verified: recordData.meter_photo_verified || false
+          } : null,
+          invoice: recordData.invoice_photo_url ? {
+            id: 'invoice-original',
+            record_id: recordData.id,
+            photo_type: 'invoice',
+            photo_url: recordData.invoice_photo_url,
+            photo_date: recordData.submitted_at,
+            created_by: recordData.field_agent_id,
+            created_at: recordData.submitted_at,
+            notes: null,
+            verified: recordData.invoice_photo_verified || false
+          } : null
+        });
+      }
       
       // Update verification status after refresh
       setTimeout(() => {
