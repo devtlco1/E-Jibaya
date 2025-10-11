@@ -156,7 +156,7 @@ export function LoginForm() {
             {/* Quick Login Buttons */}
             <div className="space-y-2">
               <p className="text-center text-sm text-gray-600 dark:text-gray-400">تسجيل دخول سريع:</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -177,8 +177,6 @@ export function LoginForm() {
                 >
                   👨‍🔧 محصل
                 </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -188,38 +186,6 @@ export function LoginForm() {
                   className="px-3 py-2 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
                 >
                   👨‍💻 موظف
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsername('test');
-                    setPassword('password123');
-                  }}
-                  className="px-3 py-2 text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors"
-                >
-                  🧪 اختبار
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsername('simple');
-                    setPassword('password123');
-                  }}
-                  className="px-3 py-2 text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
-                >
-                  🚀 اختبار بسيط
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsername('easy');
-                    setPassword('123');
-                  }}
-                  className="px-3 py-2 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors"
-                >
-                  ⚡ سهل (123)
                 </button>
               </div>
             </div>

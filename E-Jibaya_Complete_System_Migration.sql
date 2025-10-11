@@ -414,9 +414,9 @@ CREATE POLICY "backup_info_delete_policy" ON public.backup_info
 -- إدراج مستخدمين تجريبيين بكلمات مرور صحيحة
 -- كلمة المرور: password123 (مع saltRounds = 12)
 INSERT INTO public.users (username, password_hash, full_name, role, is_active) VALUES
-('admin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4QZqJqJqJq', 'مدير النظام', 'admin', true),
-('field_agent_1', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4QZqJqJqJq', 'محصل ميداني', 'field_agent', true),
-('employee_1', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4QZqJqJqJq', 'موظف النظام', 'employee', true);
+('admin', '$2b$12$EaVavA4WjV6.E15lthBrAO7dGg.Jpu0ealcybTmBMif8kTUFl85GG', 'مدير النظام', 'admin', true),
+('field_agent_1', '$2b$12$EaVavA4WjV6.E15lthBrAO7dGg.Jpu0ealcybTmBMif8kTUFl85GG', 'محصل ميداني', 'field_agent', true),
+('employee_1', '$2b$12$EaVavA4WjV6.E15lthBrAO7dGg.Jpu0ealcybTmBMif8kTUFl85GG', 'موظف النظام', 'employee', true);
 
 -- =====================================================
 -- 7. إنشاء Triggers للتحديث التلقائي
