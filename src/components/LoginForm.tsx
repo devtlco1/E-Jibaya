@@ -200,16 +200,26 @@ export function LoginForm() {
                   🧪 اختبار
                 </button>
               </div>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setUsername('simple');
-                    setPassword('123');
+                    setPassword('password123');
                   }}
                   className="px-3 py-2 text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
                 >
-                  🚀 اختبار بسيط (123)
+                  🚀 اختبار بسيط
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername('easy');
+                    setPassword('123');
+                  }}
+                  className="px-3 py-2 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors"
+                >
+                  ⚡ سهل (123)
                 </button>
               </div>
             </div>
@@ -218,4 +228,5 @@ export function LoginForm() {
       </div>
     </div>
   );
+}
 }
