@@ -28,6 +28,11 @@ interface ReportFilters {
   // الترميز الجديد
   new_zone: string;
   new_block: string;
+  // الفلاتر الجديدة
+  region: string;
+  verification_status: string;
+  category: string;
+  phase: string;
 }
 
 export function Reports({ records }: ReportsProps) {
@@ -39,12 +44,20 @@ export function Reports({ records }: ReportsProps) {
     includeImages: true,
     // الترميز الجديد
     new_zone: '',
-    new_block: ''
+    new_block: '',
+    // الفلاتر الجديدة
+    region: '',
+    verification_status: '',
+    category: '',
+    phase: ''
   });
   const [users, setUsers] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [filteredRecords, setFilteredRecords] = useState<CollectionRecord[]>([]);
+  const [availableRegions, setAvailableRegions] = useState<string[]>([]);
+  const [availableZones, setAvailableZones] = useState<string[]>([]);
+  const [availableBlocks, setAvailableBlocks] = useState<string[]>([]);
 
   const { addNotification } = useNotifications();
 
@@ -60,6 +73,30 @@ export function Reports({ records }: ReportsProps) {
     };
     loadUsers();
   }, []);
+
+  // Load available filter data
+  React.useEffect(() => {
+    // Load regions
+    const regions = Array.from(new Set(records.map(r => r.region).filter(Boolean))).sort();
+    setAvailableRegions(regions);
+
+    // Load zones
+    const zones = Array.from(new Set(records.map(r => r.new_zone).filter(Boolean))).sort();
+    setAvailableZones(zones);
+
+    // Load blocks based on selected zone
+    if (filters.new_zone) {
+      const blocks = Array.from(new Set(
+        records
+          .filter(r => r.new_zone === filters.new_zone)
+          .map(r => r.new_block)
+          .filter(Boolean)
+      )).sort();
+      setAvailableBlocks(blocks);
+    } else {
+      setAvailableBlocks([]);
+    }
+  }, [records, filters.new_zone]);
 
   // Apply filters to records
   React.useEffect(() => {
@@ -96,6 +133,23 @@ export function Reports({ records }: ReportsProps) {
 
     if (filters.new_block) {
       filtered = filtered.filter(r => r.new_block === filters.new_block);
+    }
+
+    // الفلاتر الجديدة
+    if (filters.region) {
+      filtered = filtered.filter(r => r.region === filters.region);
+    }
+
+    if (filters.verification_status) {
+      filtered = filtered.filter(r => r.verification_status === filters.verification_status);
+    }
+
+    if (filters.category) {
+      filtered = filtered.filter(r => r.category === filters.category);
+    }
+
+    if (filters.phase) {
+      filtered = filtered.filter(r => r.phase === filters.phase);
     }
 
     setFilteredRecords(filtered);
@@ -263,6 +317,10 @@ export function Reports({ records }: ReportsProps) {
             ${filters.fieldAgent ? `<p><strong>المحصل الميداني:</strong> ${getUserName(filters.fieldAgent)}</p>` : ''}
             ${filters.new_zone ? `<p><strong>الزون:</strong> ${filters.new_zone}</p>` : ''}
             ${filters.new_block ? `<p><strong>البلوك:</strong> ${filters.new_block}</p>` : ''}
+            ${filters.region ? `<p><strong>المنطقة:</strong> ${filters.region}</p>` : ''}
+            ${filters.verification_status ? `<p><strong>التدقيق:</strong> ${filters.verification_status}</p>` : ''}
+            ${filters.category ? `<p><strong>الصنف:</strong> ${filters.category}</p>` : ''}
+            ${filters.phase ? `<p><strong>نوع المقياس:</strong> ${filters.phase}</p>` : ''}
         </div>
         ` : ''}
 
@@ -404,24 +462,8 @@ export function Reports({ records }: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الثاني: الحالة والمحصل */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                الحالة
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">جميع الحالات</option>
-                <option value="pending">قيد المراجعة</option>
-                <option value="completed">مكتمل</option>
-                <option value="refused">امتنع</option>
-              </select>
-            </div>
-
+          {/* الصف الثاني: المحصل الميداني */}
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 المحصل الميداني
@@ -441,57 +483,137 @@ export function Reports({ records }: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الثالث: الترميز الجديد */}
-          <div>
-            <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-              <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-2" />
-              الترميز الجديد
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  الزون
-                </label>
-                <select
-                  value={filters.new_zone}
-                  onChange={(e) => {
-                    setFilters({ 
-                      ...filters, 
-                      new_zone: e.target.value,
-                      new_block: '' // إعادة تعيين البلوك عند تغيير الزون
-                    });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">جميع الأزون</option>
-                  {Array.from(new Set(records.map(r => r.new_zone).filter(Boolean))).sort().map(zone => (
-                    <option key={zone} value={zone || ''}>الزون {zone}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  البلوك
-                </label>
-                <select
-                  value={filters.new_block}
-                  onChange={(e) => setFilters({ ...filters, new_block: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  disabled={!filters.new_zone}
-                >
-                  <option value="">جميع البلوكات</option>
-                  {Array.from(new Set(
-                    records
-                      .filter(r => !filters.new_zone || r.new_zone === filters.new_zone)
-                      .map(r => r.new_block)
-                      .filter(Boolean)
-                  )).sort().map(block => (
-                    <option key={block} value={block || ''}>البلوك {block}</option>
-                  ))}
-                </select>
-              </div>
+          {/* الصف الثالث: المنطقة والزون والبلوك */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                المنطقة
+              </label>
+              <select
+                value={filters.region}
+                onChange={(e) => setFilters({ ...filters, region: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع المناطق</option>
+                {availableRegions.map(region => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                الزون
+              </label>
+              <select
+                value={filters.new_zone}
+                onChange={(e) => {
+                  setFilters({ 
+                    ...filters, 
+                    new_zone: e.target.value,
+                    new_block: '' // إعادة تعيين البلوك عند تغيير الزون
+                  });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع الزونات</option>
+                {availableZones.map(zone => (
+                  <option key={zone} value={zone}>{zone}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                البلوك
+              </label>
+              <select
+                value={filters.new_block}
+                onChange={(e) => setFilters({ ...filters, new_block: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                disabled={!filters.new_zone}
+              >
+                <option value="">جميع البلوكات</option>
+                {availableBlocks.map(block => (
+                  <option key={block} value={block}>{block}</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          {/* الصف الرابع: الحالة والتدقيق */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                الحالة
+              </label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع الحالات</option>
+                <option value="pending">قيد المراجعة</option>
+                <option value="completed">مكتمل</option>
+                <option value="refused">امتنع</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                التدقيق
+              </label>
+              <select
+                value={filters.verification_status}
+                onChange={(e) => setFilters({ ...filters, verification_status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع حالات التدقيق</option>
+                <option value="مدقق">مدقق</option>
+                <option value="غير مدقق">غير مدقق</option>
+              </select>
+            </div>
+          </div>
+
+          {/* الصف الخامس: الصنف ونوع المقياس */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                الصنف
+              </label>
+              <select
+                value={filters.category}
+                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع الأصناف</option>
+                <option value="منزلي">منزلي</option>
+                <option value="تجاري">تجاري</option>
+                <option value="صناعي">صناعي</option>
+                <option value="زراعي">زراعي</option>
+                <option value="حكومي">حكومي</option>
+                <option value="انارة">انارة</option>
+                <option value="محولة خاصة">محولة خاصة</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                نوع المقياس
+              </label>
+              <select
+                value={filters.phase}
+                onChange={(e) => setFilters({ ...filters, phase: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع الأنواع</option>
+                <option value="احادي">احادي</option>
+                <option value="ثلاثي">ثلاثي</option>
+                <option value="سي تي">سي تي</option>
+              </select>
+            </div>
+          </div>
+
 
           {/* تضمين الصور */}
           <div className="flex items-center">
