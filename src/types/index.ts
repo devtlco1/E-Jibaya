@@ -67,6 +67,10 @@ export interface UpdateRecordData {
   new_zone: string | null;
   new_block: string | null;
   new_home: string | null;
+  // حقول التحقق من الصور
+  meter_photo_verified?: boolean;
+  invoice_photo_verified?: boolean;
+  verification_status?: 'غير مدقق' | 'مدقق' | null;
 }
 
 export interface AuthContextType {
