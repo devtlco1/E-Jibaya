@@ -133,7 +133,10 @@ CREATE TABLE public.collection_records (
     -- تدقيق الصور (التطويرات الحديثة)
     meter_photo_verified BOOLEAN DEFAULT false,
     invoice_photo_verified BOOLEAN DEFAULT false,
-    verification_status VARCHAR(20) DEFAULT 'غير مدقق' CHECK (verification_status IN ('غير مدقق', 'مدقق'))
+    verification_status VARCHAR(20) DEFAULT 'غير مدقق' CHECK (verification_status IN ('غير مدقق', 'مدقق')),
+    -- قفل مقارنة الصور
+    photo_viewing_by UUID REFERENCES public.users(id),
+    photo_viewing_at TIMESTAMP WITH TIME ZONE
 );
 
 -- جدول الصور الإضافية
@@ -192,24 +195,37 @@ CREATE TABLE public.user_sessions (
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     session_token VARCHAR(255) UNIQUE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_activity TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    ip_address INET,
-    user_agent TEXT
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- جدول معلومات النسخ الاحتياطي
 CREATE TABLE public.backup_info (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     backup_name VARCHAR(255) NOT NULL,
-    backup_type VARCHAR(50) NOT NULL,
-    backup_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    records_count INTEGER,
+    backup_type VARCHAR(50) NOT NULL DEFAULT 'manual',
+    file_name VARCHAR(255),
     file_size BIGINT,
+    file_path TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     status VARCHAR(50) DEFAULT 'completed',
+    description TEXT,
+    backup_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    total_records INTEGER DEFAULT 0,
+    total_photos INTEGER DEFAULT 0,
+    total_users INTEGER DEFAULT 0
+);
+
+-- جدول النسخ الاحتياطي
+CREATE TABLE public.backups (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    backup_name VARCHAR(255) NOT NULL,
+    backup_type VARCHAR(50) NOT NULL CHECK (backup_type IN ('full', 'incremental', 'manual')),
+    file_path TEXT NOT NULL,
+    file_size BIGINT,
     created_by UUID REFERENCES public.users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    status VARCHAR(50) DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed'))
 );
 
 -- جدول سجلات النسخ الاحتياطي
@@ -585,6 +601,7 @@ ALTER TABLE public.record_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.backup_info ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.backups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.backup_logs ENABLE ROW LEVEL SECURITY;
 
 -- سياسات جدول المستخدمين
