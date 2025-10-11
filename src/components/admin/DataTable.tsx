@@ -580,6 +580,10 @@ export function DataTable({
     setShowPhotoComparison(true);
   };
 
+  const handleRecordUpdate = (recordId: string, updates: Partial<CollectionRecord>) => {
+    onUpdateRecord(recordId, updates);
+  };
+
   const handleLocationView = (record: CollectionRecord) => {
     setSelectedRecordForLocation(record.id);
     setShowLocationPopup(true);
@@ -1826,6 +1830,7 @@ export function DataTable({
             setShowPhotoComparison(false);
             setSelectedRecordForPhotos(null);
           }}
+          onRecordUpdate={handleRecordUpdate}
         />
       )}
 

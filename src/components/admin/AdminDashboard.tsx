@@ -671,7 +671,7 @@ export function AdminDashboard() {
             >
               <div className="flex items-center">
                 <Database className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
-                <span className="hidden sm:inline">سجلات الجباية</span>
+                <span className="hidden sm:inline">سجلات المشتركين</span>
                 <span className="sm:hidden">السجلات</span>
               </div>
             </button>

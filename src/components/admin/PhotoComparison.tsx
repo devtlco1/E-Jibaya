@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2 } from 'lucide-react';
+import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
@@ -7,9 +7,10 @@ import { CollectionRecord, RecordPhoto } from '../../types';
 interface PhotoComparisonProps {
   recordId: string;
   onClose: () => void;
+  onRecordUpdate?: (recordId: string, updates: Partial<CollectionRecord>) => void;
 }
 
-export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
+export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComparisonProps) {
   const [record, setRecord] = useState<CollectionRecord | null>(null);
   const [photos, setPhotos] = useState<RecordPhoto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,9 +101,45 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
         [`${photoType}_photo_verified`]: !prev[`${photoType}_photo_verified` as keyof CollectionRecord]
       } : null);
 
+      // Notify parent component of the update
+      if (onRecordUpdate) {
+        onRecordUpdate(record.id, updateData);
+      }
+
+      // Update verification status after photo verification change
+      setTimeout(() => {
+        updateVerificationStatus();
+      }, 100);
+
       console.log(`${photoType} photo verification toggled`);
     } catch (error) {
       console.error('Error updating photo verification:', error);
+    }
+  };
+
+  // Function to update verification status when both photos are verified
+  const updateVerificationStatus = async () => {
+    if (!record) return;
+
+    try {
+      const isBothVerified = record.meter_photo_verified && record.invoice_photo_verified;
+      const newStatus = isBothVerified ? 'مدقق' : 'غير مدقق';
+      
+      if (record.verification_status !== newStatus) {
+        await dbOperations.updateRecord(record.id, { verification_status: newStatus });
+        
+        setRecord(prev => prev ? {
+          ...prev,
+          verification_status: newStatus
+        } : null);
+
+        // Notify parent component of the verification status update
+        if (onRecordUpdate) {
+          onRecordUpdate(record.id, { verification_status: newStatus });
+        }
+      }
+    } catch (error) {
+      console.error('Error updating verification status:', error);
     }
   };
 
@@ -284,6 +321,20 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                               {formatDate(originalPhotos.meter.photo_date)}
                             </div>
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePhotoVerification('meter');
+                            }}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            title={record?.meter_photo_verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                          >
+                            {record?.meter_photo_verified ? (
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     )}
@@ -367,6 +418,20 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                               {formatDate(originalPhotos.invoice.photo_date)}
                             </div>
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePhotoVerification('invoice');
+                            }}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                            title={record?.invoice_photo_verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                          >
+                            {record?.invoice_photo_verified ? (
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     )}
@@ -487,36 +552,9 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
           </div>
         </div>
 
-        {/* Footer with verification buttons */}
+        {/* Footer */}
         <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                تدقيق الصور:
-              </span>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <button
-                  onClick={() => handlePhotoVerification('meter')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    record?.meter_photo_verified
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900/30'
-                  }`}
-                >
-                  {record?.meter_photo_verified ? '✓ صورة المقياس مدققة' : 'تدقيق صورة المقياس'}
-                </button>
-                <button
-                  onClick={() => handlePhotoVerification('invoice')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    record?.invoice_photo_verified
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900/30'
-                  }`}
-                >
-                  {record?.invoice_photo_verified ? '✓ صورة الفاتورة مدققة' : 'تدقيق صورة الفاتورة'}
-                </button>
-              </div>
-            </div>
+          <div className="flex items-center justify-end">
             <button
               onClick={onClose}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
