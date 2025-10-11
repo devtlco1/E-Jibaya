@@ -568,11 +568,51 @@ export function DataTable({
     }
   };
 
+  // دالة للتحقق من صحة البيانات المطلوبة
+  const isFormValid = () => {
+    // التحقق من البيانات المطلوبة للحالات "مكتمل" و "قيد المراجعة"
+    if (editForm.status === 'completed' || editForm.status === 'pending') {
+      const requiredFields = [
+        { field: 'subscriber_name', name: 'اسم المشترك' },
+        { field: 'account_number', name: 'رقم الحساب' },
+        { field: 'meter_number', name: 'رقم المقياس' },
+        { field: 'last_reading', name: 'القراءة الأخيرة' },
+        { field: 'region', name: 'المنطقة' },
+        { field: 'category', name: 'الصنف' },
+        { field: 'phase', name: 'نوع المقياس' }
+      ];
+
+      const missingFields = requiredFields.filter(field => {
+        const value = editForm[field.field as keyof typeof editForm];
+        return !value || (typeof value === 'string' && value.trim() === '');
+      });
+
+      if (missingFields.length > 0) {
+        return false;
+      }
+    }
+
+    // التحقق من صحة رقم الحساب
+    if (editForm.account_number && editForm.account_number.trim() !== '') {
+      const accountNumber = editForm.account_number.trim();
+      
+      // التحقق من أن رقم الحساب يحتوي على أرقام فقط
+      if (!/^\d+$/.test(accountNumber)) {
+        return false;
+      }
+      
+      // التحقق من أن رقم الحساب لا يتجاوز 12 رقم
+      if (accountNumber.length > 12) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleSaveEdit = async () => {
     if (editingRecord && currentUser) {
       try {
-        console.log('بدء حفظ السجل:', editForm);
-        
         // التحقق من البيانات المطلوبة قبل تغيير الحالة إلى "مكتمل" أو "قيد المراجعة"
         if (editForm.status === 'completed' || editForm.status === 'pending') {
           const requiredFields = [
@@ -590,8 +630,6 @@ export function DataTable({
             return !value || (typeof value === 'string' && value.trim() === '');
           });
 
-          console.log('الحقول المفقودة:', missingFields);
-
           if (missingFields.length > 0) {
             const statusText = editForm.status === 'completed' ? 'مكتمل' : 'قيد المراجعة';
             addNotification({
@@ -606,11 +644,9 @@ export function DataTable({
         // التحقق من صحة رقم الحساب (لجميع الحالات)
         if (editForm.account_number && editForm.account_number.trim() !== '') {
           const accountNumber = editForm.account_number.trim();
-          console.log('رقم الحساب:', accountNumber, 'الطول:', accountNumber.length);
           
           // التحقق من أن رقم الحساب يحتوي على أرقام فقط
           if (!/^\d+$/.test(accountNumber)) {
-            console.log('رقم الحساب يحتوي على أحرف غير صحيحة');
             addNotification({
               type: 'error',
               title: 'رقم الحساب غير صحيح',
@@ -621,7 +657,6 @@ export function DataTable({
           
           // التحقق من أن رقم الحساب لا يتجاوز 12 رقم
           if (accountNumber.length > 12) {
-            console.log('رقم الحساب طويل جداً');
             addNotification({
               type: 'error',
               title: 'رقم الحساب طويل جداً',
@@ -630,8 +665,6 @@ export function DataTable({
             return;
           }
         }
-
-        console.log('تم اجتياز جميع validation checks بنجاح');
 
         // Handle status and is_refused logic
         let updateData: any = {
@@ -643,19 +676,13 @@ export function DataTable({
         updateData.status = editForm.status;
         updateData.is_refused = false;
         
-        console.log('بدء تحديث السجل في قاعدة البيانات...');
         await onUpdateRecord(editingRecord.id, updateData);
-        console.log('تم تحديث السجل بنجاح');
         
         // إلغاء قفل السجل بعد الحفظ
-        console.log('إلغاء قفل السجل...');
         await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
-        console.log('تم إلغاء قفل السجل');
         
-        // إغلاق popup التعديل
-        console.log('إغلاق popup التعديل...');
+        // Notification will be sent by AdminDashboard.handleUpdateRecord
         setEditingRecord(null);
-        console.log('تم إغلاق popup التعديل');
       } catch (error) {
         console.error('Error saving record:', error);
         addNotification({
@@ -1957,7 +1984,12 @@ export function DataTable({
                   </button>
                   <button
                     onClick={handleSaveEdit}
-                    className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center"
+                    disabled={!isFormValid()}
+                    className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex items-center ${
+                      isFormValid()
+                        ? 'text-white bg-blue-600 hover:bg-blue-700'
+                        : 'text-gray-400 bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
+                    }`}
                   >
                     <Save className="w-4 h-4 ml-2" />
                     حفظ التغييرات
