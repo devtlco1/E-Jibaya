@@ -27,6 +27,38 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     loadRecordData();
   }, [recordId]);
 
+  // Monitor photos changes to update verification status
+  useEffect(() => {
+    if (record && photos.length > 0) {
+      // Check if any new photos were added (unverified)
+      const hasUnverifiedPhotos = photos.some(photo => !photo.verified);
+      if (hasUnverifiedPhotos && record.verification_status === 'مدقق') {
+        // If record was verified but has unverified photos, change to unverified
+        updateVerificationStatus();
+      }
+    }
+  }, [photos, record]);
+
+  // Monitor for new photos being added
+  useEffect(() => {
+    if (record) {
+      // Set up a timer to check for new photos periodically
+      const interval = setInterval(async () => {
+        try {
+          const { photos: latestPhotos } = await dbOperations.getRecordWithPhotos(recordId);
+          if (latestPhotos.length > photos.length) {
+            // New photos detected, refresh data
+            await refreshData();
+          }
+        } catch (error) {
+          console.error('Error checking for new photos:', error);
+        }
+      }, 5000); // Check every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [record, photos.length, recordId]);
+
   const loadRecordData = async () => {
     try {
       setLoading(true);
@@ -43,6 +75,22 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       console.error('Error loading record data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Function to refresh data when new photos are added
+  const refreshData = async () => {
+    try {
+      const { record: recordData, photos: photosData } = await dbOperations.getRecordWithPhotos(recordId);
+      setRecord(recordData);
+      setPhotos(photosData);
+      
+      // Update verification status after refresh
+      setTimeout(() => {
+        updateVerificationStatus();
+      }, 100);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
     }
   };
 
@@ -146,56 +194,45 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     try {
       setIsUpdatingStatus(true);
       
-      // Get the latest record and photos state
-      setRecord(prev => {
-        if (!prev) return null;
+      // Get current state
+      const currentRecord = record;
+      const currentPhotos = photos;
+      
+      // Check if main photos are verified
+      const mainPhotosVerified = currentRecord.meter_photo_verified && currentRecord.invoice_photo_verified;
+      
+      // Check if all additional photos are verified
+      const allAdditionalPhotosVerified = currentPhotos.length === 0 || currentPhotos.every(photo => photo.verified);
+      
+      // Record is verified only if both main photos AND all additional photos are verified
+      const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
+      const newStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
+      
+      if (currentRecord.verification_status !== newStatus) {
+        // Update the record in database
+        await dbOperations.updateRecord(currentRecord.id, { verification_status: newStatus } as any);
         
-        // Check if main photos are verified
-        const mainPhotosVerified = prev.meter_photo_verified && prev.invoice_photo_verified;
+        // Update local state
+        setRecord(prev => prev ? {
+          ...prev,
+          verification_status: newStatus
+        } : null);
         
-        // Get current photos state
-        setPhotos(currentPhotos => {
-          // Check if all additional photos are verified
-          const allAdditionalPhotosVerified = currentPhotos.length === 0 || currentPhotos.every(photo => photo.verified);
-          
-          // Record is verified only if both main photos AND all additional photos are verified
-          const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
-          const newStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
-          
-          if (prev.verification_status !== newStatus) {
-            // Update the record in database
-            dbOperations.updateRecord(prev.id, { verification_status: newStatus } as any).then(() => {
-              // Notify parent component of the verification status update
-              if (onRecordUpdate) {
-                onRecordUpdate(prev.id, { verification_status: newStatus });
-              }
-              setIsUpdatingStatus(false);
-            }).catch(error => {
-              console.error('Error updating verification status:', error);
-              setIsUpdatingStatus(false);
-            });
-            
-            // Update record state
-            setRecord(prevRecord => prevRecord ? {
-              ...prevRecord,
-              verification_status: newStatus
-            } : null);
-          } else {
-            // Even if verification status doesn't change, notify parent of photo verification changes
-            if (onRecordUpdate) {
-              onRecordUpdate(prev.id, {
-                meter_photo_verified: prev.meter_photo_verified,
-                invoice_photo_verified: prev.invoice_photo_verified
-              });
-            }
-            setIsUpdatingStatus(false);
-          }
-          
-          return currentPhotos;
-        });
-        
-        return prev;
-      });
+        // Notify parent component of the verification status update
+        if (onRecordUpdate) {
+          onRecordUpdate(currentRecord.id, { verification_status: newStatus });
+        }
+      } else {
+        // Even if verification status doesn't change, notify parent of photo verification changes
+        if (onRecordUpdate) {
+          onRecordUpdate(currentRecord.id, {
+            meter_photo_verified: currentRecord.meter_photo_verified,
+            invoice_photo_verified: currentRecord.invoice_photo_verified
+          });
+        }
+      }
+      
+      setIsUpdatingStatus(false);
     } catch (error) {
       console.error('Error updating verification status:', error);
       setIsUpdatingStatus(false);
