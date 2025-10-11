@@ -552,17 +552,6 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center justify-end">
-            <button
-              onClick={onClose}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-            >
-              إغلاق
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
