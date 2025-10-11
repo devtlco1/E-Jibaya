@@ -786,6 +786,20 @@ export const dbOperations = {
       }
 
       console.log('Photo added successfully:', data);
+      
+      // Reset verification status to "غير مدقق" when new photos are added
+      try {
+        await client
+          .from('collection_records')
+          .update({ verification_status: 'غير مدقق' })
+          .eq('id', recordId);
+        
+        console.log('Verification status reset to "غير مدقق" due to new photo');
+      } catch (verificationError) {
+        console.error('Error resetting verification status:', verificationError);
+        // Don't fail the photo upload if verification status update fails
+      }
+      
       return true;
     } catch (error) {
       console.error('Add photo error:', error);
