@@ -598,7 +598,7 @@ export function DataTable({
           }
         }
 
-        // التحقق من صحة رقم الحساب
+        // التحقق من صحة رقم الحساب (لجميع الحالات)
         if (editForm.account_number && editForm.account_number.trim() !== '') {
           const accountNumber = editForm.account_number.trim();
           
