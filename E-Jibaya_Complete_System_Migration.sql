@@ -187,6 +187,31 @@ CREATE TABLE public.backup_info (
     total_users INTEGER DEFAULT 0
 );
 
+-- جدول النسخ الاحتياطي
+CREATE TABLE public.backups (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    backup_name VARCHAR(255) NOT NULL,
+    backup_type VARCHAR(50) NOT NULL CHECK (backup_type IN ('full', 'incremental', 'manual')),
+    file_path TEXT NOT NULL,
+    file_size BIGINT,
+    created_by UUID,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    status VARCHAR(50) DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed')),
+    FOREIGN KEY (created_by) REFERENCES public.users(id)
+);
+
+-- جدول سجلات النسخ الاحتياطي
+CREATE TABLE public.backup_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    backup_type VARCHAR(50) NOT NULL,
+    backup_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    records_count INTEGER,
+    file_size BIGINT,
+    status VARCHAR(50) DEFAULT 'completed',
+    created_by UUID,
+    FOREIGN KEY (created_by) REFERENCES public.users(id)
+);
+
 -- =====================================================
 -- 3. إنشاء الفهارس لتحسين الأداء
 -- =====================================================
