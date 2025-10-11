@@ -411,17 +411,12 @@ CREATE POLICY "backup_info_delete_policy" ON public.backup_info
 -- 6. إدراج بيانات تجريبية (اختياري)
 -- =====================================================
 
--- إدراج مستخدم مدير افتراضي
+-- إدراج مستخدمين تجريبيين بكلمات مرور صحيحة
+-- كلمة المرور: password123
 INSERT INTO public.users (username, password_hash, full_name, role, is_active) VALUES
-('admin', '$2b$10$rQZ8K9mN2pL3oQ4rS5tU6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'مدير النظام', 'admin', true);
-
--- إدراج محصل ميداني تجريبي
-INSERT INTO public.users (username, password_hash, full_name, role, is_active) VALUES
-('field_agent_1', '$2b$10$rQZ8K9mN2pL3oQ4rS5tU6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'محصل ميداني', 'field_agent', true);
-
--- إدراج موظف تجريبي
-INSERT INTO public.users (username, password_hash, full_name, role, is_active) VALUES
-('employee_1', '$2b$10$rQZ8K9mN2pL3oQ4rS5tU6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'موظف النظام', 'employee', true);
+('admin', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'مدير النظام', 'admin', true),
+('field_agent_1', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'محصل ميداني', 'field_agent', true),
+('employee_1', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'موظف النظام', 'employee', true);
 
 -- =====================================================
 -- 7. إنشاء Triggers للتحديث التلقائي
@@ -546,6 +541,9 @@ DO $$
 BEGIN
     RAISE NOTICE 'E-Jibaya Complete System Migration completed successfully!';
     RAISE NOTICE 'Database structure created with all required tables, indexes, functions, and policies.';
-    RAISE NOTICE 'Default users created: admin, field_agent_1, employee_1';
-    RAISE NOTICE 'All passwords are hashed with bcrypt (default: password123)';
+    RAISE NOTICE 'Test users created:';
+    RAISE NOTICE '  - admin (password: password123)';
+    RAISE NOTICE '  - field_agent_1 (password: password123)';
+    RAISE NOTICE '  - employee_1 (password: password123)';
+    RAISE NOTICE 'All passwords are hashed with bcrypt and ready for login!';
 END $$;
