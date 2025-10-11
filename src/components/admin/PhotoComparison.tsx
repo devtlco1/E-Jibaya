@@ -316,15 +316,27 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     setIsDragging(false);
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomStep = 0.2; // تقليل خطوة التكبير لحركة أسرع
-    if (e.deltaY < 0) {
-      setZoom(prev => Math.min(prev + zoomStep, 5));
-    } else {
-      setZoom(prev => Math.max(prev - zoomStep, 0.5));
+  // Add wheel event listener with passive: false
+  useEffect(() => {
+    const handleWheelPassive = (e: Event) => {
+      const wheelEvent = e as WheelEvent;
+      wheelEvent.preventDefault();
+      const zoomStep = 0.2;
+      if (wheelEvent.deltaY < 0) {
+        setZoom(prev => Math.min(prev + zoomStep, 5));
+      } else {
+        setZoom(prev => Math.max(prev - zoomStep, 0.5));
+      }
+    };
+
+    const imageContainer = document.querySelector('.image-container');
+    if (imageContainer) {
+      imageContainer.addEventListener('wheel', handleWheelPassive, { passive: false });
+      return () => {
+        imageContainer.removeEventListener('wheel', handleWheelPassive);
+      };
     }
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -621,8 +633,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
               <>
                 {/* الصورة مع التحكم المتقدم */}
                 <div 
-                  className="w-full h-full flex items-center justify-center overflow-hidden"
-                  onWheel={handleWheel}
+                  className="w-full h-full flex items-center justify-center overflow-hidden image-container"
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
