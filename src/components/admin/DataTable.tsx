@@ -571,8 +571,8 @@ export function DataTable({
   const handleSaveEdit = async () => {
     if (editingRecord && currentUser) {
       try {
-        // التحقق من البيانات المطلوبة قبل تغيير الحالة إلى "مكتمل"
-        if (editForm.status === 'completed') {
+        // التحقق من البيانات المطلوبة قبل تغيير الحالة إلى "مكتمل" أو "قيد المراجعة"
+        if (editForm.status === 'completed' || editForm.status === 'pending') {
           const requiredFields = [
             { field: 'subscriber_name', name: 'اسم المشترك' },
             { field: 'account_number', name: 'رقم الحساب' },
@@ -589,38 +589,40 @@ export function DataTable({
           });
 
           if (missingFields.length > 0) {
+            const statusText = editForm.status === 'completed' ? 'مكتمل' : 'قيد المراجعة';
             addNotification({
               type: 'error',
-              title: 'لا يمكن تغيير الحالة إلى مكتمل',
-              message: `يجب ملء البيانات التالية أولاً: ${missingFields.map(f => f.name).join('، ')}`
+              title: 'لا يمكن تغيير الحالة',
+              message: `لا يمكن تغيير الحالة إلى "${statusText}" بسبب عدم ملء البيانات التالية: ${missingFields.map(f => f.name).join('، ')}`
             });
             return;
           }
-
-          // التحقق من صحة رقم الحساب للحالة "مكتمل"
-          if (editForm.account_number && editForm.account_number.trim() !== '') {
-            const accountNumber = editForm.account_number.trim();
-            
-            if (!/^\d+$/.test(accountNumber)) {
-              addNotification({
-                type: 'error',
-                title: 'رقم الحساب غير صحيح',
-                message: 'رقم الحساب يجب أن يحتوي على أرقام فقط'
-              });
-              return;
-            }
-            
-            if (accountNumber.length > 12) {
-              addNotification({
-                type: 'error',
-                title: 'رقم الحساب طويل جداً',
-                message: 'رقم الحساب يجب أن يكون 12 رقم أو أقل'
-              });
-              return;
-            }
-          }
         }
 
+        // التحقق من صحة رقم الحساب (لجميع الحالات)
+        if (editForm.account_number && editForm.account_number.trim() !== '') {
+          const accountNumber = editForm.account_number.trim();
+          
+          // التحقق من أن رقم الحساب يحتوي على أرقام فقط
+          if (!/^\d+$/.test(accountNumber)) {
+            addNotification({
+              type: 'error',
+              title: 'رقم الحساب غير صحيح',
+              message: 'رقم الحساب يجب أن يحتوي على أرقام فقط'
+            });
+            return;
+          }
+          
+          // التحقق من أن رقم الحساب لا يتجاوز 12 رقم
+          if (accountNumber.length > 12) {
+            addNotification({
+              type: 'error',
+              title: 'رقم الحساب طويل جداً',
+              message: 'رقم الحساب يجب أن يكون 12 رقم أو أقل'
+            });
+            return;
+          }
+        }
 
         // Handle status and is_refused logic
         let updateData: any = {
