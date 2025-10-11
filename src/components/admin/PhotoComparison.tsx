@@ -126,6 +126,9 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     return formatDateTime(dateString);
   };
 
+  // Get current original photos with updated verification status
+  const originalPhotos = useMemo(() => getOriginalPhotos(), [record]);
+
   // دوال التحكم في التكبير والحركة
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev + 0.3, 5));
@@ -356,8 +359,6 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       </div>
     );
   }
-
-  const originalPhotos = useMemo(() => getOriginalPhotos(), [record]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
