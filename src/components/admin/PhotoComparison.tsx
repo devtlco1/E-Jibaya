@@ -3,6 +3,7 @@ import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, Check
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 interface PhotoComparisonProps {
   recordId: string;
@@ -23,6 +24,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialPosition: { x: 0, y: 0 } });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [originalPhotos, setOriginalPhotos] = useState<{ meter: any; invoice: any }>({ meter: null, invoice: null });
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     loadRecordData();
@@ -204,9 +206,11 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   };
 
   const handlePhotoVerification = async (photoType: 'meter' | 'invoice') => {
-    if (!record) return;
+    if (!record || isUpdatingStatus) return;
 
     try {
+      setIsUpdatingStatus(true);
+      
       const currentValue = record[`${photoType}_photo_verified` as keyof CollectionRecord] as boolean;
       const newValue = !currentValue;
       
@@ -235,6 +239,15 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         } : null
       }));
 
+      // Show notification
+      const photoTypeText = photoType === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة';
+      const statusText = newValue ? 'تم التحقق من' : 'تم إلغاء التحقق من';
+      addNotification({
+        type: 'success',
+        title: 'تحديث حالة التحقق',
+        message: `${statusText} ${photoTypeText} بنجاح`
+      });
+
       // Update verification status after photo verification change
       setTimeout(() => {
         updateVerificationStatus();
@@ -243,6 +256,8 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       console.log(`${photoType} photo verification toggled`);
     } catch (error) {
       console.error('Error updating photo verification:', error);
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
