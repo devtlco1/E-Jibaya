@@ -91,10 +91,10 @@ export function AdminDashboard() {
     }
   }, [activeTab]);
 
-  // Setup real-time subscription when component mounts - DISABLED
+  // Setup real-time subscription when component mounts
   useEffect(() => {
     if (user && dbOperations.supabase) {
-      // setupRealtimeSubscription(); // DISABLED - using manual save button instead
+      setupRealtimeSubscription(); // Re-enabled for new records detection
       
       // Start polling as fallback immediately
       startPolling();
@@ -172,11 +172,9 @@ export function AdminDashboard() {
     }
   };
 
-  // Setup real-time subscription - DISABLED (using manual save button instead)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // Setup real-time subscription (re-enabled for new records detection)
   const setupRealtimeSubscription = () => {
-    console.log('Real-time subscription is DISABLED - using manual save button instead');
-    return; // DISABLED
+    console.log('Setting up real-time subscription for new records detection...');
     
     if (!dbOperations.supabase) return;
 
@@ -219,18 +217,28 @@ export function AdminDashboard() {
             // Always refresh stats
             loadFieldAgentsCount();
           } else if (payload.eventType === 'UPDATE') {
-            // Record updated
+            // Record updated - but skip if it's a verification update (to avoid conflicts with save button)
             const updatedRecord = payload.new as CollectionRecord;
-            addNotification({
-              type: 'info',
-              title: 'تحديث سجل',
-              message: `تم تحديث السجل: ${updatedRecord.subscriber_name || 'غير محدد'}`
-            });
+            const oldRecord = payload.old as CollectionRecord;
             
-            // Refresh current page
-            loadRecords();
+            // Check if this is a verification status update
+            const isVerificationUpdate = 
+              (updatedRecord.meter_photo_verified !== oldRecord.meter_photo_verified) ||
+              (updatedRecord.invoice_photo_verified !== oldRecord.invoice_photo_verified) ||
+              (updatedRecord.verification_status !== oldRecord.verification_status);
             
-            // Also refresh stats
+            if (!isVerificationUpdate) {
+              addNotification({
+                type: 'info',
+                title: 'تحديث سجل',
+                message: `تم تحديث السجل: ${updatedRecord.subscriber_name || 'غير محدد'}`
+              });
+              
+              // Refresh current page
+              loadRecords();
+            }
+            
+            // Always refresh stats
             loadFieldAgentsCount();
           } else if (payload.eventType === 'DELETE') {
             // Record deleted

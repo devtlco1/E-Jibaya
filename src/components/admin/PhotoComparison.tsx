@@ -344,14 +344,23 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     try {
       setIsUpdatingStatus(true);
       
+      // Calculate verification status before saving
+      const mainPhotosVerified = record.meter_photo_verified && record.invoice_photo_verified;
+      const allAdditionalPhotosVerified = photos.length === 0 || photos.every(photo => photo.verified);
+      const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
+      const calculatedStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
+      
       // Prepare updates for database
       const updates: any = {
         meter_photo_verified: record.meter_photo_verified,
         invoice_photo_verified: record.invoice_photo_verified,
-        verification_status: record.verification_status
+        verification_status: calculatedStatus
       };
 
       console.log('=== Saving to Database ===');
+      console.log('Calculated verification status:', calculatedStatus);
+      console.log('Main photos verified:', mainPhotosVerified);
+      console.log('Additional photos verified:', allAdditionalPhotosVerified);
       console.log('Updates to save:', updates);
       console.log('Photos to save:', photos.map(p => ({ id: p.id, verified: p.verified })));
 
