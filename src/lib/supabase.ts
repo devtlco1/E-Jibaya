@@ -304,6 +304,44 @@ export const dbOperations = {
         throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
 
+      // حذف السجلات المرتبطة أولاً
+      console.log('Deleting related records for:', id);
+      
+      // حذف سجلات التغييرات
+      const { error: changesError } = await client
+        .from('record_changes_log')
+        .delete()
+        .eq('record_id', id);
+      
+      if (changesError) {
+        console.error('Error deleting record changes:', changesError);
+        throw new Error(`فشل في حذف سجلات التغييرات: ${changesError.message}`);
+      }
+
+      // حذف الصور الإضافية
+      const { error: photosError } = await client
+        .from('record_photos')
+        .delete()
+        .eq('record_id', id);
+      
+      if (photosError) {
+        console.error('Error deleting record photos:', photosError);
+        throw new Error(`فشل في حذف الصور: ${photosError.message}`);
+      }
+
+      // حذف سجل النشاط
+      const { error: activityError } = await client
+        .from('activity_logs')
+        .delete()
+        .eq('target_id', id);
+      
+      if (activityError) {
+        console.error('Error deleting activity logs:', activityError);
+        // لا نوقف العملية إذا فشل حذف سجل النشاط
+        console.warn('Warning: Could not delete activity logs, continuing...');
+      }
+
+      // حذف السجل الرئيسي
       const { error } = await client
         .from('collection_records')
         .delete()
@@ -318,7 +356,7 @@ export const dbOperations = {
       cacheService.clearRecordsCache();
       cacheService.clearUsersCache();
       localStorage.removeItem('ejibaya_cache');
-      console.log('Record deleted successfully - cache cleared');
+      console.log('Record and related data deleted successfully - cache cleared');
       
       return true;
     } catch (error) {
