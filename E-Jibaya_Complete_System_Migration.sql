@@ -33,8 +33,18 @@ DROP POLICY IF EXISTS "backup_info_select_policy" ON public.backup_info;
 DROP POLICY IF EXISTS "backup_info_insert_policy" ON public.backup_info;
 DROP POLICY IF EXISTS "backup_info_update_policy" ON public.backup_info;
 DROP POLICY IF EXISTS "backup_info_delete_policy" ON public.backup_info;
+DROP POLICY IF EXISTS "backups_select_policy" ON public.backups;
+DROP POLICY IF EXISTS "backups_insert_policy" ON public.backups;
+DROP POLICY IF EXISTS "backups_update_policy" ON public.backups;
+DROP POLICY IF EXISTS "backups_delete_policy" ON public.backups;
+DROP POLICY IF EXISTS "backup_logs_select_policy" ON public.backup_logs;
+DROP POLICY IF EXISTS "backup_logs_insert_policy" ON public.backup_logs;
+DROP POLICY IF EXISTS "backup_logs_update_policy" ON public.backup_logs;
+DROP POLICY IF EXISTS "backup_logs_delete_policy" ON public.backup_logs;
 
 -- حذف جميع الجداول (مع CASCADE لحذف المراجع)
+DROP TABLE IF EXISTS public.backup_logs CASCADE;
+DROP TABLE IF EXISTS public.backups CASCADE;
 DROP TABLE IF EXISTS public.backup_info CASCADE;
 DROP TABLE IF EXISTS public.record_locations CASCADE;
 DROP TABLE IF EXISTS public.record_photos CASCADE;
@@ -430,6 +440,32 @@ CREATE POLICY "backup_info_update_policy" ON public.backup_info
     FOR UPDATE USING (true);
 
 CREATE POLICY "backup_info_delete_policy" ON public.backup_info
+    FOR DELETE USING (true);
+
+-- سياسات جدول النسخ الاحتياطي
+CREATE POLICY "backups_select_policy" ON public.backups
+    FOR SELECT USING (true);
+
+CREATE POLICY "backups_insert_policy" ON public.backups
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "backups_update_policy" ON public.backups
+    FOR UPDATE USING (true);
+
+CREATE POLICY "backups_delete_policy" ON public.backups
+    FOR DELETE USING (true);
+
+-- سياسات جدول سجلات النسخ الاحتياطي
+CREATE POLICY "backup_logs_select_policy" ON public.backup_logs
+    FOR SELECT USING (true);
+
+CREATE POLICY "backup_logs_insert_policy" ON public.backup_logs
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "backup_logs_update_policy" ON public.backup_logs
+    FOR UPDATE USING (true);
+
+CREATE POLICY "backup_logs_delete_policy" ON public.backup_logs
     FOR DELETE USING (true);
 
 -- =====================================================
