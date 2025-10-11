@@ -207,9 +207,16 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     if (!record) return;
 
     try {
-      const updateData = {
-        [`${photoType}_photo_verified`]: !record[`${photoType}_photo_verified` as keyof CollectionRecord]
-      } as any;
+      const currentValue = record[`${photoType}_photo_verified` as keyof CollectionRecord] as boolean;
+      const newValue = !currentValue;
+      
+      const updateData: any = {};
+      updateData[`${photoType}_photo_verified`] = newValue;
+
+      console.log(`${photoType} photo verification toggled`);
+      console.log('Current value:', currentValue);
+      console.log('New value:', newValue);
+      console.log('Update data:', updateData);
 
       await dbOperations.updateRecord(record.id, updateData);
       
@@ -218,6 +225,15 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         ...prev,
         [`${photoType}_photo_verified`]: !prev[`${photoType}_photo_verified` as keyof CollectionRecord]
       } : null);
+
+      // Update originalPhotos state
+      setOriginalPhotos(prev => ({
+        ...prev,
+        [photoType]: prev[photoType] ? {
+          ...prev[photoType],
+          verified: newValue
+        } : null
+      }));
 
       // Update verification status after photo verification change
       setTimeout(() => {
