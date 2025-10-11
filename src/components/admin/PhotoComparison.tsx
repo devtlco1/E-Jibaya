@@ -21,6 +21,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialPosition: { x: 0, y: 0 } });
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     loadRecordData();
@@ -104,7 +105,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       // Update verification status after photo verification change
       setTimeout(() => {
         updateVerificationStatus();
-      }, 200);
+      }, 300);
 
       console.log(`${photoType} photo verification toggled`);
     } catch (error) {
@@ -130,7 +131,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       // Update verification status after additional photo verification change
       setTimeout(() => {
         updateVerificationStatus();
-      }, 200);
+      }, 300);
 
       console.log(`Additional photo ${photoId} verification toggled to ${newVerifiedStatus}`);
     } catch (error) {
@@ -140,52 +141,64 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
 
   // Function to update verification status when all photos are verified
   const updateVerificationStatus = async () => {
-    if (!record) return;
+    if (!record || isUpdatingStatus) return;
 
     try {
-      // Get the latest record state
+      setIsUpdatingStatus(true);
+      
+      // Get the latest record and photos state
       setRecord(prev => {
         if (!prev) return null;
         
         // Check if main photos are verified
         const mainPhotosVerified = prev.meter_photo_verified && prev.invoice_photo_verified;
         
-        // Check if all additional photos are verified
-        const allAdditionalPhotosVerified = photos.length === 0 || photos.every(photo => photo.verified);
-        
-        // Record is verified only if both main photos AND all additional photos are verified
-        const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
-        const newStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
-        
-        if (prev.verification_status !== newStatus) {
-          // Update the record in database
-          dbOperations.updateRecord(prev.id, { verification_status: newStatus } as any).then(() => {
-            // Notify parent component of the verification status update
-            if (onRecordUpdate) {
-              onRecordUpdate(prev.id, { verification_status: newStatus });
-            }
-          }).catch(error => {
-            console.error('Error updating verification status:', error);
-          });
+        // Get current photos state
+        setPhotos(currentPhotos => {
+          // Check if all additional photos are verified
+          const allAdditionalPhotosVerified = currentPhotos.length === 0 || currentPhotos.every(photo => photo.verified);
           
-          return {
-            ...prev,
-            verification_status: newStatus
-          };
-        } else {
-          // Even if verification status doesn't change, notify parent of photo verification changes
-          if (onRecordUpdate) {
-            onRecordUpdate(prev.id, {
-              meter_photo_verified: prev.meter_photo_verified,
-              invoice_photo_verified: prev.invoice_photo_verified
+          // Record is verified only if both main photos AND all additional photos are verified
+          const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
+          const newStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
+          
+          if (prev.verification_status !== newStatus) {
+            // Update the record in database
+            dbOperations.updateRecord(prev.id, { verification_status: newStatus } as any).then(() => {
+              // Notify parent component of the verification status update
+              if (onRecordUpdate) {
+                onRecordUpdate(prev.id, { verification_status: newStatus });
+              }
+              setIsUpdatingStatus(false);
+            }).catch(error => {
+              console.error('Error updating verification status:', error);
+              setIsUpdatingStatus(false);
             });
+            
+            // Update record state
+            setRecord(prevRecord => prevRecord ? {
+              ...prevRecord,
+              verification_status: newStatus
+            } : null);
+          } else {
+            // Even if verification status doesn't change, notify parent of photo verification changes
+            if (onRecordUpdate) {
+              onRecordUpdate(prev.id, {
+                meter_photo_verified: prev.meter_photo_verified,
+                invoice_photo_verified: prev.invoice_photo_verified
+              });
+            }
+            setIsUpdatingStatus(false);
           }
-        }
+          
+          return currentPhotos;
+        });
         
         return prev;
       });
     } catch (error) {
       console.error('Error updating verification status:', error);
+      setIsUpdatingStatus(false);
     }
   };
 
