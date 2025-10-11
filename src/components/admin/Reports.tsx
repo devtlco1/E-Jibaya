@@ -77,11 +77,11 @@ export function Reports({ records }: ReportsProps) {
   // Load available filter data
   React.useEffect(() => {
     // Load regions
-    const regions = Array.from(new Set(records.map(r => r.region).filter(Boolean))).sort();
+    const regions = Array.from(new Set(records.map(r => r.region).filter((region): region is string => Boolean(region)))).sort();
     setAvailableRegions(regions);
 
     // Load zones
-    const zones = Array.from(new Set(records.map(r => r.new_zone).filter(Boolean))).sort();
+    const zones = Array.from(new Set(records.map(r => r.new_zone).filter((zone): zone is string => Boolean(zone)))).sort();
     setAvailableZones(zones);
 
     // Load blocks based on selected zone
@@ -90,7 +90,7 @@ export function Reports({ records }: ReportsProps) {
         records
           .filter(r => r.new_zone === filters.new_zone)
           .map(r => r.new_block)
-          .filter(Boolean)
+          .filter((block): block is string => Boolean(block))
       )).sort();
       setAvailableBlocks(blocks);
     } else {
