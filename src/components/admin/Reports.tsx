@@ -212,7 +212,7 @@ export function Reports({ records }: ReportsProps) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `تقرير_الجباية_${formatDateTimeForFilename(new Date())}.html`;
+      link.download = `تقرير_سجلات_المشتركين_${formatDateTimeForFilename(new Date())}.html`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -251,7 +251,7 @@ export function Reports({ records }: ReportsProps) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تقرير الجباية الإلكترونية</title>
+    <title>تقرير سجلات المشتركين</title>
     <style>
         * { font-family: 'Arial', sans-serif; }
         body { margin: 20px; background: #f5f5f5; }
@@ -286,7 +286,7 @@ export function Reports({ records }: ReportsProps) {
 <body>
     <div class="container">
         <div class="header">
-            <h1>تقرير الجباية الإلكترونية</h1>
+            <h1>تقرير سجلات المشتركين</h1>
             <p>تاريخ إنشاء التقرير: ${currentDate}</p>
         </div>
 
@@ -370,7 +370,7 @@ export function Reports({ records }: ReportsProps) {
         </table>
 
         <div class="footer">
-            <p>تم إنشاء هذا التقرير بواسطة نظام الجباية الإلكترونية</p>
+            <p>تم إنشاء هذا التقرير بواسطة نظام سجلات المشتركين</p>
             <p>عدد السجلات في التقرير: ${filteredRecords.length} سجل</p>
         </div>
     </div>
@@ -740,7 +740,7 @@ export function Reports({ records }: ReportsProps) {
               <div className="space-y-4">
                 <div className="text-center">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    تقرير الجباية الإلكترونية
+                    تقرير سجلات المشتركين
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400">
                     عدد السجلات: {filteredRecords.length}
