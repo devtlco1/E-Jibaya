@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
@@ -22,6 +22,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialPosition: { x: 0, y: 0 } });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [originalPhotos, setOriginalPhotos] = useState<{ meter: any; invoice: any }>({ meter: null, invoice: null });
 
   useEffect(() => {
     loadRecordData();
@@ -100,11 +101,14 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     return formatDateTime(dateString);
   };
 
-  // Get current original photos with updated verification status
-  const originalPhotos = useMemo(() => {
-    if (!record) return { meter: null, invoice: null };
+  // Update original photos when record changes
+  useEffect(() => {
+    if (!record) {
+      setOriginalPhotos({ meter: null, invoice: null });
+      return;
+    }
     
-    return {
+    setOriginalPhotos({
       meter: record.meter_photo_url ? {
         id: 'original-meter',
         photo_url: record.meter_photo_url,
@@ -125,7 +129,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         notes: null,
         verified: record.invoice_photo_verified || false
       } : null
-    };
+    });
   }, [record, record?.meter_photo_verified, record?.invoice_photo_verified]);
 
   // دوال التحكم في التكبير والحركة
