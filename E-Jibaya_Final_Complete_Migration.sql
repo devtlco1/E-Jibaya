@@ -564,9 +564,8 @@ SELECT
     bi.records_count,
     bi.file_size,
     bi.status,
-    u.full_name as created_by_name
+    bi.created_at
 FROM public.backup_info bi
-LEFT JOIN public.users u ON bi.created_by = u.id
 ORDER BY bi.backup_date DESC;
 
 -- =====================================================
