@@ -193,11 +193,23 @@ export function LoginForm() {
                   type="button"
                   onClick={() => {
                     setUsername('test');
-                    setPassword('123456');
+                    setPassword('password123');
                   }}
                   className="px-3 py-2 text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors"
                 >
                   🧪 اختبار
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername('simple');
+                    setPassword('123');
+                  }}
+                  className="px-3 py-2 text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                >
+                  🚀 اختبار بسيط (123)
                 </button>
               </div>
             </div>
