@@ -556,7 +556,7 @@ export function DataTable({
       addNotification({
         type: 'success',
         title: 'تم قفل السجل',
-        message: 'يمكنك الآن تعديل السجل بأمان'
+        message: 'يمكنك الآن تعديل السجل بأمان - السجل مقفل أمام المستخدمين الآخرين'
       });
     } catch (error) {
       console.error('Error locking record:', error);

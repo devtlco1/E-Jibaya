@@ -227,15 +227,42 @@ export function AdminDashboard() {
               (updatedRecord.invoice_photo_verified !== oldRecord.invoice_photo_verified) ||
               (updatedRecord.verification_status !== oldRecord.verification_status);
             
+            // Check if this is a lock status update
+            const isLockUpdate = 
+              (updatedRecord.locked_by !== oldRecord.locked_by) ||
+              (updatedRecord.locked_at !== oldRecord.locked_at);
+            
             if (!isVerificationUpdate) {
-              addNotification({
-                type: 'info',
-                title: 'تحديث سجل',
-                message: `تم تحديث السجل: ${updatedRecord.subscriber_name || 'غير محدد'}`
-              });
-              
-              // Refresh current page
-              loadRecords();
+              // Always refresh for lock updates to show lock status immediately
+              if (isLockUpdate) {
+                console.log('Lock status changed - refreshing records immediately');
+                
+                // Show notification for lock changes
+                if (updatedRecord.locked_by && updatedRecord.locked_by !== user?.id) {
+                  addNotification({
+                    type: 'warning',
+                    title: 'سجل مقفل',
+                    message: `السجل "${updatedRecord.subscriber_name || 'غير محدد'}" مقفل حالياً من قبل مستخدم آخر`
+                  });
+                } else if (!updatedRecord.locked_by && oldRecord.locked_by) {
+                  addNotification({
+                    type: 'info',
+                    title: 'سجل متاح',
+                    message: `السجل "${updatedRecord.subscriber_name || 'غير محدد'}" متاح الآن للتعديل`
+                  });
+                }
+                
+                loadRecords();
+              } else {
+                addNotification({
+                  type: 'info',
+                  title: 'تحديث سجل',
+                  message: `تم تحديث السجل: ${updatedRecord.subscriber_name || 'غير محدد'}`
+                });
+                
+                // Refresh current page
+                loadRecords();
+              }
             }
             
             // Always refresh stats
