@@ -370,7 +370,9 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       }
 
       // Update main record in database
-      await dbOperations.updateRecord(record.id, updates);
+      console.log('Sending to database:', updates);
+      const result = await dbOperations.updateRecord(record.id, updates);
+      console.log('Database update result:', result);
       
       // Mark as saved
       setHasUnsavedChanges(false);
@@ -380,7 +382,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         onRecordUpdate(record.id, updates);
       }
       
-      console.log('Photo verification saved to database');
+      console.log('Photo verification saved to database successfully');
       
     } catch (error) {
       console.error('Error saving photo verification:', error);

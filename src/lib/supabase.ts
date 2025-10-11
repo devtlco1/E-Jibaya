@@ -270,6 +270,9 @@ export const dbOperations = {
       }
 
       console.log('Updating record:', { id, updates });
+      console.log('Verification status being sent:', (updates as any).verification_status);
+      console.log('Meter photo verified:', (updates as any).meter_photo_verified);
+      console.log('Invoice photo verified:', (updates as any).invoice_photo_verified);
 
       const { data, error } = await client
         .from('collection_records')
