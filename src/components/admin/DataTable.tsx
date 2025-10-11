@@ -535,6 +535,9 @@ export function DataTable({
       // قفل السجل
       await dbOperations.lockRecord(record.id, currentUser.id);
       
+      // تحديث فوري للقفل في الواجهة
+      console.log('Record locked - updating UI immediately');
+      
       setEditingRecord(record);
       setEditForm({
         subscriber_name: record.subscriber_name || '',
@@ -636,6 +639,9 @@ export function DataTable({
         // إلغاء قفل السجل بعد الحفظ
         await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
         
+        // تحديث فوري لإلغاء القفل في الواجهة
+        console.log('Record saved and unlocked - updating UI immediately');
+        
         // Notification will be sent by AdminDashboard.handleUpdateRecord
         setEditingRecord(null);
       } catch (error) {
@@ -654,6 +660,9 @@ export function DataTable({
       try {
         // إلغاء قفل السجل عند إلغاء التعديل
         await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
+        
+        // تحديث فوري لإلغاء القفل في الواجهة
+        console.log('Record unlocked - updating UI immediately');
         
         addNotification({
           type: 'info',
