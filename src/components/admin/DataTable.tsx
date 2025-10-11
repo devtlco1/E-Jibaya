@@ -19,6 +19,7 @@ interface DataTableProps {
   loading: boolean;
   onPageChange: (page: number) => void;
   onRecordUpdate?: (recordId: string, updates: Partial<CollectionRecord>) => void;
+  onPhotoViewingUpdate?: (recordId: string, updates: Partial<CollectionRecord>) => void;
   onItemsPerPageChange: (itemsPerPage: number) => void;
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
@@ -39,7 +40,8 @@ export function DataTable({
   onFiltersChange, 
   onUpdateRecord, 
   onDeleteRecord,
-  onRecordUpdate
+  onRecordUpdate,
+  onPhotoViewingUpdate
 }: DataTableProps) {
   const [viewingRecord, setViewingRecord] = useState<CollectionRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<CollectionRecord | null>(null);
@@ -705,7 +707,28 @@ export function DataTable({
     setViewingRecord(record);
   };
 
-  const handlePhotoComparison = (record: CollectionRecord) => {
+  const handlePhotoComparison = async (record: CollectionRecord) => {
+    if (currentUser) {
+      try {
+        // قفل مقارنة الصور
+        const locked = await dbOperations.lockPhotoViewing(record.id, currentUser.id);
+        if (locked) {
+          // تحديث محلي لحالة قفل مقارنة الصور
+          if (onPhotoViewingUpdate) {
+            onPhotoViewingUpdate(record.id, {
+              photo_viewing_by: currentUser.id,
+              photo_viewing_at: new Date().toISOString()
+            });
+          }
+          console.log('Photo viewing locked successfully');
+        } else {
+          console.log('Photo viewing is already locked by another user');
+        }
+      } catch (error) {
+        console.error('Error locking photo viewing:', error);
+      }
+    }
+    
     setSelectedRecordForPhotos(record.id);
     setShowPhotoComparison(true);
   };
@@ -2070,7 +2093,24 @@ export function DataTable({
       {showPhotoComparison && selectedRecordForPhotos && (
         <PhotoComparison
           recordId={selectedRecordForPhotos}
-          onClose={() => {
+          onClose={async () => {
+            // إلغاء قفل مقارنة الصور عند الإغلاق
+            if (selectedRecordForPhotos && currentUser) {
+              try {
+                await dbOperations.unlockPhotoViewing(selectedRecordForPhotos, currentUser.id);
+                // تحديث محلي لحالة قفل مقارنة الصور
+                if (onPhotoViewingUpdate) {
+                  onPhotoViewingUpdate(selectedRecordForPhotos, {
+                    photo_viewing_by: null,
+                    photo_viewing_at: null
+                  });
+                }
+                console.log('Photo viewing unlocked successfully');
+              } catch (error) {
+                console.error('Error unlocking photo viewing:', error);
+              }
+            }
+            
             setShowPhotoComparison(false);
             setSelectedRecordForPhotos(null);
           }}

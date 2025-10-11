@@ -121,6 +121,18 @@ export function AdminDashboard() {
     console.log('Record lock status updated locally without page refresh');
   };
 
+  // تحديث حالة قفل مقارنة الصور محلياً
+  const updatePhotoViewingStatus = (recordId: string, updates: Partial<CollectionRecord>) => {
+    setRecords(prevRecords => 
+      prevRecords.map(record => 
+        record.id === recordId 
+          ? { ...record, ...updates }
+          : record
+      )
+    );
+    console.log('Photo viewing status updated locally without page refresh');
+  };
+
   const loadRecords = async () => {
     setLoading(true);
     try {
@@ -244,6 +256,11 @@ export function AdminDashboard() {
               (updatedRecord.locked_by !== oldRecord.locked_by) ||
               (updatedRecord.locked_at !== oldRecord.locked_at);
             
+            // Check if this is a photo viewing lock update
+            const isPhotoViewingUpdate = 
+              (updatedRecord.photo_viewing_by !== oldRecord.photo_viewing_by) ||
+              (updatedRecord.photo_viewing_at !== oldRecord.photo_viewing_at);
+            
             // Always refresh for lock updates to show lock status immediately
             if (isLockUpdate) {
               console.log('Lock status changed - updating lock status locally');
@@ -252,6 +269,14 @@ export function AdminDashboard() {
               updateRecordLockStatus(updatedRecord.id, {
                 locked_by: updatedRecord.locked_by,
                 locked_at: updatedRecord.locked_at
+              });
+            } else if (isPhotoViewingUpdate) {
+              console.log('Photo viewing status changed - updating locally');
+              
+              // تحديث محلي لحالة قفل مقارنة الصور
+              updatePhotoViewingStatus(updatedRecord.id, {
+                photo_viewing_by: updatedRecord.photo_viewing_by,
+                photo_viewing_at: updatedRecord.photo_viewing_at
               });
             } else if (!isVerificationUpdate) {
               addNotification({
@@ -805,6 +830,7 @@ export function AdminDashboard() {
             onUpdateRecord={handleUpdateRecord}
             onDeleteRecord={handleDeleteRecord}
             onRecordUpdate={updateRecordLockStatus}
+            onPhotoViewingUpdate={updatePhotoViewingStatus}
           />
         ) : activeTab === 'users' ? (
           <UserManagement onUserStatusChange={refreshFieldAgentsCount} />

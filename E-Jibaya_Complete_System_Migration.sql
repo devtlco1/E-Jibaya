@@ -110,6 +110,9 @@ CREATE TABLE public.collection_records (
     locked_by UUID REFERENCES public.users(id),
     locked_at TIMESTAMP WITH TIME ZONE,
     lock_expires_at TIMESTAMP WITH TIME ZONE,
+    -- قفل مقارنة الصور
+    photo_viewing_by UUID REFERENCES public.users(id),
+    photo_viewing_at TIMESTAMP WITH TIME ZONE,
     -- الصنف
     category VARCHAR(50) CHECK (category IN ('منزلي', 'تجاري', 'صناعي', 'زراعي', 'حكومي', 'انارة', 'محولة خاصة')),
     -- نوع المقياس
