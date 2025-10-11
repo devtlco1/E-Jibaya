@@ -81,7 +81,6 @@ export function DataTable({
   const [availableRegions, setAvailableRegions] = useState<string[]>([]);
   const [availableZones, setAvailableZones] = useState<string[]>([]);
   const [availableBlocks, setAvailableBlocks] = useState<string[]>([]);
-  const [newRegionInput, setNewRegionInput] = useState('');
 
   const { addNotification } = useNotifications();
   const { user: currentUser } = useAuth();
@@ -587,11 +586,7 @@ export function DataTable({
         // إلغاء قفل السجل بعد الحفظ
         await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
         
-        addNotification({
-          type: 'success',
-          title: 'تم التحديث بنجاح',
-          message: 'تم حفظ التغييرات على السجل وإلغاء القفل'
-        });
+        // Notification will be sent by AdminDashboard.handleUpdateRecord
         setEditingRecord(null);
       } catch (error) {
         console.error('Error saving record:', error);
@@ -757,186 +752,174 @@ export function DataTable({
         </div>
         
         {showFilters && (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                اسم المشترك
-              </label>
-              <input
-                type="text"
-                value={filters.subscriber_name}
-                onChange={(e) => onFiltersChange({ ...filters, subscriber_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                placeholder="البحث..."
-              />
+          <div className="p-4 space-y-4">
+            {/* الصف الأول: اسم المشترك، رقم الحساب، رقم المقياس */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  اسم المشترك
+                </label>
+                <input
+                  type="text"
+                  value={filters.subscriber_name}
+                  onChange={(e) => onFiltersChange({ ...filters, subscriber_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                  placeholder="البحث..."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  رقم الحساب
+                </label>
+                <input
+                  type="text"
+                  value={filters.account_number}
+                  onChange={(e) => onFiltersChange({ ...filters, account_number: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                  placeholder="البحث..."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  رقم المقياس
+                </label>
+                <input
+                  type="text"
+                  value={filters.meter_number}
+                  onChange={(e) => onFiltersChange({ ...filters, meter_number: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                  placeholder="البحث..."
+                />
+              </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                رقم الحساب
-              </label>
-              <input
-                type="text"
-                value={filters.account_number}
-                onChange={(e) => onFiltersChange({ ...filters, account_number: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                placeholder="البحث..."
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                رقم المقياس
-              </label>
-              <input
-                type="text"
-                value={filters.meter_number}
-                onChange={(e) => onFiltersChange({ ...filters, meter_number: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                placeholder="البحث..."
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                المنطقة
-              </label>
-              <div className="flex gap-2">
+
+            {/* الصف الثاني: المنطقة، الزون، البلوك */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  المنطقة
+                </label>
                 <select
                   value={filters.region}
                   onChange={(e) => onFiltersChange({ ...filters, region: e.target.value })}
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
                 >
                   <option value="">جميع المناطق</option>
                   {availableRegions.map(region => (
                     <option key={region} value={region}>{region}</option>
                   ))}
                 </select>
-                <input
-                  type="text"
-                  value={newRegionInput}
-                  onChange={(e) => setNewRegionInput(e.target.value)}
-                  placeholder="إضافة منطقة جديدة"
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                />
-                <button
-                  onClick={() => {
-                    if (newRegionInput.trim()) {
-                      onFiltersChange({ ...filters, region: newRegionInput.trim() });
-                      setNewRegionInput('');
-                    }
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  الزون
+                </label>
+                <select
+                  value={filters.new_zone}
+                  onChange={(e) => {
+                    onFiltersChange({ ...filters, new_zone: e.target.value, new_block: '' });
                   }}
-                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
                 >
-                  إضافة
-                </button>
+                  <option value="">جميع الزونات</option>
+                  {availableZones.map(zone => (
+                    <option key={zone} value={zone}>{zone}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  البلوك
+                </label>
+                <select
+                  value={filters.new_block}
+                  onChange={(e) => onFiltersChange({ ...filters, new_block: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                  disabled={!filters.new_zone}
+                >
+                  <option value="">جميع البلوكات</option>
+                  {availableBlocks.map(block => (
+                    <option key={block} value={block}>{block}</option>
+                  ))}
+                </select>
               </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                الحالة
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-              >
-                <option value="">جميع الحالات</option>
-                <option value="pending">قيد المراجعة</option>
-                <option value="completed">مكتمل</option>
-                <option value="refused">امتنع</option>
-              </select>
+
+            {/* الصف الثالث: الحالة، التدقيق */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  الحالة
+                </label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">جميع الحالات</option>
+                  <option value="pending">قيد المراجعة</option>
+                  <option value="completed">مكتمل</option>
+                  <option value="refused">امتنع</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  التدقيق
+                </label>
+                <select
+                  value={filters.verification_status}
+                  onChange={(e) => onFiltersChange({ ...filters, verification_status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">جميع حالات التدقيق</option>
+                  <option value="مدقق">مدقق</option>
+                  <option value="غير مدقق">غير مدقق</option>
+                </select>
+              </div>
             </div>
 
-            {/* فلتر التدقيق */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                التدقيق
-              </label>
-              <select
-                value={filters.verification_status}
-                onChange={(e) => onFiltersChange({ ...filters, verification_status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-              >
-                <option value="">جميع حالات التدقيق</option>
-                <option value="مدقق">مدقق</option>
-                <option value="غير مدقق">غير مدقق</option>
-              </select>
-            </div>
+            {/* الصف الرابع: الصنف، نوع المقياس */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  الصنف
+                </label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">جميع الأصناف</option>
+                  <option value="منزلي">منزلي</option>
+                  <option value="تجاري">تجاري</option>
+                  <option value="صناعي">صناعي</option>
+                  <option value="زراعي">زراعي</option>
+                  <option value="حكومي">حكومي</option>
+                  <option value="انارة">انارة</option>
+                  <option value="محولة خاصة">محولة خاصة</option>
+                </select>
+              </div>
 
-            {/* فلتر الزون والبلوك */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                الزون
-              </label>
-              <select
-                value={filters.new_zone}
-                onChange={(e) => {
-                  onFiltersChange({ ...filters, new_zone: e.target.value, new_block: '' });
-                }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-              >
-                <option value="">جميع الزونات</option>
-                {availableZones.map(zone => (
-                  <option key={zone} value={zone}>{zone}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                البلوك
-              </label>
-              <select
-                value={filters.new_block}
-                onChange={(e) => onFiltersChange({ ...filters, new_block: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                disabled={!filters.new_zone}
-              >
-                <option value="">جميع البلوكات</option>
-                {availableBlocks.map(block => (
-                  <option key={block} value={block}>{block}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* فلتر الصنف */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                الصنف
-              </label>
-              <select
-                value={filters.category}
-                onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-              >
-                <option value="">جميع الأصناف</option>
-                <option value="منزلي">منزلي</option>
-                <option value="تجاري">تجاري</option>
-                <option value="صناعي">صناعي</option>
-                <option value="زراعي">زراعي</option>
-                <option value="حكومي">حكومي</option>
-                <option value="انارة">انارة</option>
-                <option value="محولة خاصة">محولة خاصة</option>
-              </select>
-            </div>
-
-            {/* فلتر نوع المقياس */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                نوع المقياس
-              </label>
-              <select
-                value={filters.phase}
-                onChange={(e) => onFiltersChange({ ...filters, phase: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-              >
-                <option value="">جميع الأنواع</option>
-                <option value="احادي">احادي</option>
-                <option value="ثلاثي">ثلاثي</option>
-                <option value="سي تي">سي تي</option>
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  نوع المقياس
+                </label>
+                <select
+                  value={filters.phase}
+                  onChange={(e) => onFiltersChange({ ...filters, phase: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">جميع الأنواع</option>
+                  <option value="احادي">احادي</option>
+                  <option value="ثلاثي">ثلاثي</option>
+                  <option value="سي تي">سي تي</option>
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -1701,12 +1684,12 @@ export function DataTable({
                             }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="أدخل رقم الحساب (12 رقم فقط)"
+                          placeholder="أدخل رقم الحساب (حد أقصى 12 رقم)"
                           maxLength={12}
                         />
-                        {editForm.account_number && editForm.account_number.length < 12 && (
-                          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                            يجب أن يكون رقم الحساب 12 رقم
+                        {editForm.account_number && editForm.account_number.length > 12 && (
+                          <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                            الحد الأقصى لرقم الحساب هو 12 رقم
                           </p>
                         )}
                       </div>

@@ -29,10 +29,10 @@ SET account_number = NULL
 WHERE account_number IS NOT NULL 
   AND (LENGTH(account_number) != 12 OR account_number !~ '^[0-9]+$');
 
--- إضافة constraint للتحقق من رقم الحساب
+-- إضافة constraint للتحقق من رقم الحساب (حد أقصى 12 رقم)
 ALTER TABLE public.collection_records 
 ADD CONSTRAINT check_account_number_format 
-CHECK (account_number IS NULL OR (LENGTH(account_number) = 12 AND account_number ~ '^[0-9]+$'));
+CHECK (account_number IS NULL OR (LENGTH(account_number) <= 12 AND account_number ~ '^[0-9]+$'));
 
 -- 5. تحديث الجدول لضمان التوافق مع النظام الجديد
 -- إضافة قيم افتراضية للأعمدة الجديدة
