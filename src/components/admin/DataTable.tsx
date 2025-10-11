@@ -120,7 +120,7 @@ export function DataTable({
           .neq('region', '');
         
         if (regionsResult?.data) {
-          const uniqueRegions = [...new Set(regionsResult.data.map(r => r.region).filter(Boolean))];
+          const uniqueRegions = [...new Set(regionsResult.data.map((r: any) => r.region).filter(Boolean))] as string[];
           setAvailableRegions(uniqueRegions);
         }
 
@@ -132,7 +132,7 @@ export function DataTable({
           .neq('new_zone', '');
         
         if (zonesResult?.data) {
-          const uniqueZones = [...new Set(zonesResult.data.map(r => r.new_zone).filter(Boolean))];
+          const uniqueZones = [...new Set(zonesResult.data.map((r: any) => r.new_zone).filter(Boolean))] as string[];
           setAvailableZones(uniqueZones);
         }
 
@@ -145,10 +145,10 @@ export function DataTable({
             .not('new_block', 'is', null)
             .neq('new_block', '');
           
-          if (blocksResult?.data) {
-            const uniqueBlocks = [...new Set(blocksResult.data.map(r => r.new_block).filter(Boolean))];
-            setAvailableBlocks(uniqueBlocks);
-          }
+        if (blocksResult?.data) {
+          const uniqueBlocks = [...new Set(blocksResult.data.map((r: any) => r.new_block).filter(Boolean))] as string[];
+          setAvailableBlocks(uniqueBlocks);
+        }
         } else {
           setAvailableBlocks([]);
         }

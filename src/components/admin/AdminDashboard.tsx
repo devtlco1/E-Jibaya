@@ -193,7 +193,7 @@ export function AdminDashboard() {
           schema: 'public', 
           table: 'collection_records' 
         }, 
-        (payload) => {
+        (payload: any) => {
           console.log('Real-time update received:', payload);
           
           if (payload.eventType === 'INSERT') {
@@ -256,7 +256,7 @@ export function AdminDashboard() {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         console.log('Real-time subscription status:', status);
         setIsRealtimeConnected(status === 'SUBSCRIBED');
         
