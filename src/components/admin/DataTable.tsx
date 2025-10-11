@@ -568,89 +568,32 @@ export function DataTable({
     }
   };
 
-  // دالة للتحقق من صحة البيانات المطلوبة
-  const isFormValid = () => {
-    console.log('فحص صحة النموذج:', {
-      status: editForm.status,
-      subscriber_name: editForm.subscriber_name,
-      account_number: editForm.account_number,
-      meter_number: editForm.meter_number,
-      last_reading: editForm.last_reading,
-      region: editForm.region,
-      category: editForm.category,
-      phase: editForm.phase
-    });
-    // التحقق من البيانات المطلوبة للحالات "مكتمل" و "قيد المراجعة"
-    if (editForm.status === 'completed' || editForm.status === 'pending') {
-      const requiredFields = [
-        { field: 'subscriber_name', name: 'اسم المشترك' },
-        { field: 'account_number', name: 'رقم الحساب' },
-        { field: 'meter_number', name: 'رقم المقياس' },
-        { field: 'last_reading', name: 'القراءة الأخيرة' },
-        { field: 'region', name: 'المنطقة' },
-        { field: 'category', name: 'الصنف' },
-        { field: 'phase', name: 'نوع المقياس' }
-      ];
-
-      const missingFields = requiredFields.filter(field => {
-        const value = editForm[field.field as keyof typeof editForm];
-        return !value || (typeof value === 'string' && value.trim() === '');
-      });
-
-      if (missingFields.length > 0) {
-        return false;
-      }
-    }
-
-    // التحقق من صحة رقم الحساب (لجميع الحالات)
-    if (editForm.account_number && editForm.account_number.trim() !== '') {
-      const accountNumber = editForm.account_number.trim();
-      
-      // التحقق من أن رقم الحساب يحتوي على أرقام فقط
-      if (!/^\d+$/.test(accountNumber)) {
-        return false;
-      }
-      
-      // التحقق من أن رقم الحساب لا يتجاوز 12 رقم
-      if (accountNumber.length > 12) {
-        return false;
-      }
-    }
-
-    const isValid = true;
-    console.log('نتيجة فحص صحة النموذج:', isValid);
-    return isValid;
-  };
-
   const handleSaveEdit = async () => {
     if (editingRecord && currentUser) {
       try {
-        // التحقق من البيانات المطلوبة قبل تغيير الحالة إلى "مكتمل" أو "قيد المراجعة"
-        if (editForm.status === 'completed' || editForm.status === 'pending') {
-          const requiredFields = [
-            { field: 'subscriber_name', name: 'اسم المشترك' },
-            { field: 'account_number', name: 'رقم الحساب' },
-            { field: 'meter_number', name: 'رقم المقياس' },
-            { field: 'last_reading', name: 'القراءة الأخيرة' },
-            { field: 'region', name: 'المنطقة' },
-            { field: 'category', name: 'الصنف' },
-            { field: 'phase', name: 'نوع المقياس' }
-          ];
+        // التحقق من البيانات المطلوبة لجميع الحالات
+        const requiredFields = [
+          { field: 'subscriber_name', name: 'اسم المشترك' },
+          { field: 'account_number', name: 'رقم الحساب' },
+          { field: 'meter_number', name: 'رقم المقياس' },
+          { field: 'last_reading', name: 'القراءة الأخيرة' },
+          { field: 'region', name: 'المنطقة' },
+          { field: 'category', name: 'الصنف' },
+          { field: 'phase', name: 'نوع المقياس' }
+        ];
 
-          const missingFields = requiredFields.filter(field => {
-            const value = editForm[field.field as keyof typeof editForm];
-            return !value || (typeof value === 'string' && value.trim() === '');
+        const missingFields = requiredFields.filter(field => {
+          const value = editForm[field.field as keyof typeof editForm];
+          return !value || (typeof value === 'string' && value.trim() === '');
+        });
+
+        if (missingFields.length > 0) {
+          addNotification({
+            type: 'error',
+            title: 'لا يمكن حفظ السجل',
+            message: `يجب ملء البيانات التالية أولاً: ${missingFields.map(f => f.name).join('، ')}`
           });
-
-          if (missingFields.length > 0) {
-            const statusText = editForm.status === 'completed' ? 'مكتمل' : 'قيد المراجعة';
-            addNotification({
-              type: 'error',
-              title: 'لا يمكن تغيير الحالة',
-              message: `لا يمكن تغيير الحالة إلى "${statusText}" بسبب عدم ملء البيانات التالية: ${missingFields.map(f => f.name).join('، ')}`
-            });
-            return;
-          }
+          return;
         }
 
         // التحقق من صحة رقم الحساب (لجميع الحالات)
@@ -1996,12 +1939,7 @@ export function DataTable({
                   </button>
                   <button
                     onClick={handleSaveEdit}
-                    disabled={!isFormValid()}
-                    className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex items-center ${
-                      isFormValid()
-                        ? 'text-white bg-blue-600 hover:bg-blue-700'
-                        : 'text-gray-400 bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
-                    }`}
+                    className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center"
                   >
                     <Save className="w-4 h-4 ml-2" />
                     حفظ التغييرات
