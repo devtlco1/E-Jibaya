@@ -598,6 +598,31 @@ export function DataTable({
           }
         }
 
+        // التحقق من صحة رقم الحساب
+        if (editForm.account_number && editForm.account_number.trim() !== '') {
+          const accountNumber = editForm.account_number.trim();
+          
+          // التحقق من أن رقم الحساب يحتوي على أرقام فقط
+          if (!/^\d+$/.test(accountNumber)) {
+            addNotification({
+              type: 'error',
+              title: 'رقم الحساب غير صحيح',
+              message: 'رقم الحساب يجب أن يحتوي على أرقام فقط'
+            });
+            return;
+          }
+          
+          // التحقق من أن رقم الحساب لا يتجاوز 12 رقم
+          if (accountNumber.length > 12) {
+            addNotification({
+              type: 'error',
+              title: 'رقم الحساب طويل جداً',
+              message: 'رقم الحساب يجب أن يكون 12 رقم أو أقل'
+            });
+            return;
+          }
+        }
+
         // Handle status and is_refused logic
         let updateData: any = {
           ...editForm,
