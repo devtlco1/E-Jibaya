@@ -127,7 +127,11 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   };
 
   // Get current original photos with updated verification status
-  const originalPhotos = useMemo(() => getOriginalPhotos(), [record]);
+  const originalPhotos = useMemo(() => getOriginalPhotos(), [
+    record, 
+    record?.meter_photo_verified, 
+    record?.invoice_photo_verified
+  ]);
 
   // دوال التحكم في التكبير والحركة
   const handleZoomIn = () => {
