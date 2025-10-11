@@ -109,7 +109,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       // Update verification status after photo verification change
       setTimeout(() => {
         updateVerificationStatus();
-      }, 100);
+      }, 200);
 
       console.log(`${photoType} photo verification toggled`);
     } catch (error) {
@@ -122,22 +122,32 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     if (!record) return;
 
     try {
-      const isBothVerified = record.meter_photo_verified && record.invoice_photo_verified;
-      const newStatus = isBothVerified ? 'مدقق' : 'غير مدقق';
-      
-      if (record.verification_status !== newStatus) {
-        await dbOperations.updateRecord(record.id, { verification_status: newStatus });
+      // Get the latest record state
+      setRecord(prev => {
+        if (!prev) return null;
         
-        setRecord(prev => prev ? {
-          ...prev,
-          verification_status: newStatus
-        } : null);
-
-        // Notify parent component of the verification status update
-        if (onRecordUpdate) {
-          onRecordUpdate(record.id, { verification_status: newStatus });
+        const isBothVerified = prev.meter_photo_verified && prev.invoice_photo_verified;
+        const newStatus = isBothVerified ? 'مدقق' : 'غير مدقق';
+        
+        if (prev.verification_status !== newStatus) {
+          // Update the record in database
+          dbOperations.updateRecord(prev.id, { verification_status: newStatus }).then(() => {
+            // Notify parent component of the verification status update
+            if (onRecordUpdate) {
+              onRecordUpdate(prev.id, { verification_status: newStatus });
+            }
+          }).catch(error => {
+            console.error('Error updating verification status:', error);
+          });
+          
+          return {
+            ...prev,
+            verification_status: newStatus
+          };
         }
-      }
+        
+        return prev;
+      });
     } catch (error) {
       console.error('Error updating verification status:', error);
     }
