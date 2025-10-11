@@ -598,46 +598,50 @@ $$ LANGUAGE plpgsql;
 -- =====================================================
 
 -- Storage RLS Policies
--- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- Note: Storage RLS policies need to be set up manually in Supabase Dashboard
+-- Go to Storage > Settings > Policies and add the following policies:
 
--- Policy for field agents to upload photos
-CREATE POLICY "Field agents can upload photos" ON storage.objects
-    FOR INSERT WITH CHECK (
-        bucket_id = 'photos' AND
-        auth.role() = 'authenticated' AND
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role IN ('field_agent', 'admin', 'employee')
-            AND is_active = true
-        )
-    );
+-- 1. Policy for field agents to upload photos:
+-- CREATE POLICY "Field agents can upload photos" ON storage.objects
+--     FOR INSERT WITH CHECK (
+--         bucket_id = 'photos' AND
+--         auth.role() = 'authenticated' AND
+--         EXISTS (
+--             SELECT 1 FROM users 
+--             WHERE id = auth.uid() 
+--             AND role IN ('field_agent', 'admin', 'employee')
+--             AND is_active = true
+--         )
+--     );
 
--- Policy for all authenticated users to view photos
-CREATE POLICY "Authenticated users can view photos" ON storage.objects
-    FOR SELECT USING (
-        bucket_id = 'photos' AND
-        auth.role() = 'authenticated' AND
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND is_active = true
-        )
-    );
+-- 2. Policy for all authenticated users to view photos:
+-- CREATE POLICY "Authenticated users can view photos" ON storage.objects
+--     FOR SELECT USING (
+--         bucket_id = 'photos' AND
+--         auth.role() = 'authenticated' AND
+--         EXISTS (
+--             SELECT 1 FROM users 
+--             WHERE id = auth.uid() 
+--             AND is_active = true
+--         )
+--     );
 
--- Policy for admins to manage photos
-CREATE POLICY "Admins can manage photos" ON storage.objects
-    FOR ALL USING (
-        bucket_id = 'photos' AND
-        auth.role() = 'authenticated' AND
-        EXISTS (
-            SELECT 1 FROM users 
-            WHERE id = auth.uid() 
-            AND role = 'admin'
-            AND is_active = true
-        )
-    );
+-- 3. Policy for admins to manage photos:
+-- CREATE POLICY "Admins can manage photos" ON storage.objects
+--     FOR ALL USING (
+--         bucket_id = 'photos' AND
+--         auth.role() = 'authenticated' AND
+--         EXISTS (
+--             SELECT 1 FROM users 
+--             WHERE id = auth.uid() 
+--             AND role = 'admin'
+--             AND is_active = true
+--         )
+--     );
+
+-- Alternative: Create a simple public bucket policy
+-- This allows all authenticated users to upload and view photos
+-- You can restrict this further in the application code
 
 -- رسالة نجاح
 DO $$
@@ -646,7 +650,21 @@ BEGIN
     RAISE NOTICE 'E-Jibaya Complete System Migration completed successfully!';
     RAISE NOTICE '=====================================================';
     RAISE NOTICE 'Database structure created with all required tables, indexes, functions, and policies.';
-    RAISE NOTICE 'Storage RLS policies added for photo management.';
+    RAISE NOTICE '';
+    RAISE NOTICE 'IMPORTANT: Storage RLS Policies Setup Required!';
+    RAISE NOTICE '=====================================================';
+    RAISE NOTICE 'To complete the setup, you need to manually configure Storage policies:';
+    RAISE NOTICE '1. Go to Supabase Dashboard > Storage > Settings > Policies';
+    RAISE NOTICE '2. Create a new policy for the "photos" bucket:';
+    RAISE NOTICE '   - Policy name: "Allow authenticated users to upload photos"';
+    RAISE NOTICE '   - Target roles: authenticated';
+    RAISE NOTICE '   - Operation: INSERT';
+    RAISE NOTICE '   - Policy definition: bucket_id = ''photos''';
+    RAISE NOTICE '3. Create another policy for viewing photos:';
+    RAISE NOTICE '   - Policy name: "Allow authenticated users to view photos"';
+    RAISE NOTICE '   - Target roles: authenticated';
+    RAISE NOTICE '   - Operation: SELECT';
+    RAISE NOTICE '   - Policy definition: bucket_id = ''photos''';
     RAISE NOTICE '';
     RAISE NOTICE 'Test users created:';
     RAISE NOTICE '  - admin (password: password123)';
