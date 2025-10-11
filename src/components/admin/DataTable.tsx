@@ -571,6 +571,33 @@ export function DataTable({
   const handleSaveEdit = async () => {
     if (editingRecord && currentUser) {
       try {
+        // التحقق من البيانات المطلوبة قبل تغيير الحالة إلى "مكتمل"
+        if (editForm.status === 'completed') {
+          const requiredFields = [
+            { field: 'subscriber_name', name: 'اسم المشترك' },
+            { field: 'account_number', name: 'رقم الحساب' },
+            { field: 'meter_number', name: 'رقم المقياس' },
+            { field: 'last_reading', name: 'القراءة الأخيرة' },
+            { field: 'region', name: 'المنطقة' },
+            { field: 'category', name: 'الصنف' },
+            { field: 'phase', name: 'نوع المقياس' }
+          ];
+
+          const missingFields = requiredFields.filter(field => {
+            const value = editForm[field.field as keyof typeof editForm];
+            return !value || (typeof value === 'string' && value.trim() === '');
+          });
+
+          if (missingFields.length > 0) {
+            addNotification({
+              type: 'error',
+              title: 'لا يمكن تغيير الحالة',
+              message: `لا يمكن تغيير الحالة إلى "مكتمل" بسبب عدم ملء البيانات التالية: ${missingFields.map(f => f.name).join('، ')}`
+            });
+            return;
+          }
+        }
+
         // Handle status and is_refused logic
         let updateData: any = {
           ...editForm,
