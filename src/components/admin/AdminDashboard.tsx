@@ -91,10 +91,10 @@ export function AdminDashboard() {
     }
   }, [activeTab]);
 
-  // Setup real-time subscription when component mounts
+  // Setup real-time subscription when component mounts - DISABLED
   useEffect(() => {
     if (user && dbOperations.supabase) {
-      setupRealtimeSubscription();
+      // setupRealtimeSubscription(); // DISABLED - using manual save button instead
       
       // Start polling as fallback immediately
       startPolling();
@@ -172,19 +172,23 @@ export function AdminDashboard() {
     }
   };
 
-  // Setup real-time subscription
+  // Setup real-time subscription - DISABLED (using manual save button instead)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const setupRealtimeSubscription = () => {
+    console.log('Real-time subscription is DISABLED - using manual save button instead');
+    return; // DISABLED
+    
     if (!dbOperations.supabase) return;
 
     // Clean up existing subscription
     if (realtimeSubscription.current) {
-      dbOperations.supabase.removeChannel(realtimeSubscription.current);
+      dbOperations.supabase?.removeChannel(realtimeSubscription.current);
     }
 
     console.log('Setting up real-time subscription for collection_records...');
     
     realtimeSubscription.current = dbOperations.supabase
-      .channel('collection_records_changes')
+      ?.channel('collection_records_changes')
       .on('postgres_changes', 
         { 
           event: '*', 
@@ -264,7 +268,7 @@ export function AdminDashboard() {
       });
   };
 
-  // Smart polling fallback for real-time updates
+  // Smart polling fallback for real-time updates (still active for new records)
   const startPolling = () => {
     if (pollingInterval.current) {
       clearInterval(pollingInterval.current);
