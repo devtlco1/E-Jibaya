@@ -60,7 +60,7 @@ export const dbOperations = {
       const { data: users, error } = await client
         .from('users')
         .select('*')
-        .eq('email', username);
+        .eq('username', username);
 
       if (error) {
         console.error('Login query error:', error.message);
@@ -92,7 +92,7 @@ export const dbOperations = {
         return null;
       }
       
-      console.log('Authentication successful for user:', { id: user.id, email: user.email, role: user.role });
+      console.log('Authentication successful for user:', { id: user.id, username: user.username, role: user.role });
       
       // Store user data with login timestamp
       localStorage.setItem('ejibaya_user', JSON.stringify(user));
@@ -105,7 +105,7 @@ export const dbOperations = {
           action: 'login',
           target_type: 'system',
           target_name: 'النظام',
-          details: { email: user.email, role: user.role }
+          details: { username: user.username, role: user.role }
         });
       } catch (logError) {
         console.warn('Failed to log login activity:', logError);
