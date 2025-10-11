@@ -192,6 +192,26 @@ export function FieldAgentApp() {
       return;
     }
 
+    // التحقق من صحة رقم الحساب
+    if (searchAccount.length < 1 || searchAccount.length > 12) {
+      addNotification({
+        type: 'error',
+        title: 'رقم حساب غير صحيح',
+        message: 'رقم الحساب يجب أن يكون بين 1 و 12 رقم'
+      });
+      return;
+    }
+
+    // التحقق من أن جميع الأحرف أرقام
+    if (!/^\d+$/.test(searchAccount)) {
+      addNotification({
+        type: 'error',
+        title: 'رقم حساب غير صحيح',
+        message: 'رقم الحساب يجب أن يحتوي على أرقام فقط'
+      });
+      return;
+    }
+
     setIsSearching(true);
     try {
       const records = await dbOperations.getRecords();
@@ -652,8 +672,17 @@ export function FieldAgentApp() {
                 <input
                   type="text"
                   value={searchAccount}
-                  onChange={(e) => setSearchAccount(e.target.value)}
-                  placeholder="أدخل رقم الحساب للبحث..."
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // السماح فقط بالأرقام
+                    if (/^\d*$/.test(value)) {
+                      // الحد الأقصى 12 رقم
+                      if (value.length <= 12) {
+                        setSearchAccount(value);
+                      }
+                    }
+                  }}
+                  placeholder="أدخل رقم الحساب للبحث (1-12 رقم)..."
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 />
                 <button
