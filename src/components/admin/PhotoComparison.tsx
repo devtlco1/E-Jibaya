@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle } from 'lucide-react';
+import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
-import { useNotifications } from '../../contexts/NotificationContext';
 
 interface PhotoComparisonProps {
   recordId: string;
@@ -24,7 +23,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialPosition: { x: 0, y: 0 } });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [originalPhotos, setOriginalPhotos] = useState<{ meter: any; invoice: any }>({ meter: null, invoice: null });
-  const { addNotification } = useNotifications();
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     loadRecordData();
@@ -226,9 +225,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       console.log('New value:', newValue);
       console.log('Update data:', updateData);
 
-      await dbOperations.updateRecord(record.id, updateData);
-      
-      // Update local state
+      // Update local state only (no database update yet)
       setRecord(prev => prev ? {
         ...prev,
         [`${photoType}_photo_verified`]: !prev[`${photoType}_photo_verified` as keyof CollectionRecord]
@@ -243,18 +240,12 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         } : null
       }));
 
-      // Show notification
-      const photoTypeText = photoType === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة';
-      const statusText = newValue ? 'تم التحقق من' : 'تم إلغاء التحقق من';
-      addNotification({
-        type: 'success',
-        title: 'تحديث حالة التحقق',
-        message: `${statusText} ${photoTypeText} بنجاح`
-      });
+      // Mark as having unsaved changes
+      setHasUnsavedChanges(true);
 
-      console.log(`${photoType} photo verification toggled`);
+      console.log(`${photoType} photo verification toggled (local only)`);
       
-      // Update verification status immediately without timeout
+      // Update verification status locally
       updateVerificationStatus();
     } catch (error) {
       console.error('Error updating photo verification:', error);
@@ -270,17 +261,17 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
 
       const newVerifiedStatus = !photo.verified;
       
-      // Update in database
-      await dbOperations.updatePhotoVerification(photoId, newVerifiedStatus);
-      
-      // Update local state
+      // Update local state only (no database update yet)
       setPhotos(prev => prev.map(p => 
         p.id === photoId ? { ...p, verified: newVerifiedStatus } : p
       ));
 
-      console.log(`Additional photo ${photoId} verification toggled to ${newVerifiedStatus}`);
+      // Mark as having unsaved changes
+      setHasUnsavedChanges(true);
+
+      console.log(`Additional photo ${photoId} verification toggled to ${newVerifiedStatus} (local only)`);
       
-      // Update verification status immediately
+      // Update verification status locally
       updateVerificationStatus();
     } catch (error) {
       console.error('Error updating additional photo verification:', error);
@@ -313,32 +304,59 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       const newStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
       
       if (currentRecord.verification_status !== newStatus) {
-        // Update the record in database
-        await dbOperations.updateRecord(currentRecord.id, { verification_status: newStatus } as any);
-        
-        // Update local state
+        // Update local state only (no database update yet)
         setRecord(prev => prev ? {
           ...prev,
           verification_status: newStatus
         } : null);
         
-        // Notify parent component of the verification status update
-        if (onRecordUpdate) {
-          onRecordUpdate(currentRecord.id, { verification_status: newStatus });
-        }
-      } else {
-        // Even if verification status doesn't change, notify parent of photo verification changes
-        if (onRecordUpdate) {
-          onRecordUpdate(currentRecord.id, {
-            meter_photo_verified: currentRecord.meter_photo_verified,
-            invoice_photo_verified: currentRecord.invoice_photo_verified
-          });
-        }
+        // Mark as having unsaved changes
+        setHasUnsavedChanges(true);
+        
+        console.log(`Verification status updated locally: ${newStatus}`);
       }
       
       setIsUpdatingStatus(false);
     } catch (error) {
       console.error('Error updating verification status:', error);
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!record) return;
+
+    try {
+      setIsUpdatingStatus(true);
+      
+      // Prepare updates for database
+      const updates: any = {
+        meter_photo_verified: record.meter_photo_verified,
+        invoice_photo_verified: record.invoice_photo_verified,
+        verification_status: record.verification_status
+      };
+
+      // Update additional photos in database
+      for (const photo of photos) {
+        await dbOperations.updatePhotoVerification(photo.id, photo.verified);
+      }
+
+      // Update main record in database
+      await dbOperations.updateRecord(record.id, updates);
+      
+      // Mark as saved
+      setHasUnsavedChanges(false);
+      
+      // Show success notification
+      if (onRecordUpdate) {
+        onRecordUpdate(record.id, updates);
+      }
+      
+      console.log('Photo verification saved to database');
+      
+    } catch (error) {
+      console.error('Error saving photo verification:', error);
+    } finally {
       setIsUpdatingStatus(false);
     }
   };
@@ -799,6 +817,20 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
             )}
           </div>
         </div>
+
+        {/* زر الحفظ */}
+        {hasUnsavedChanges && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <button
+              onClick={handleSave}
+              disabled={isUpdatingStatus}
+              className="flex items-center space-x-2 space-x-reverse bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg shadow-lg transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              <span>{isUpdatingStatus ? 'جاري الحفظ...' : 'حفظ تدقيق الصور'}</span>
+            </button>
+          </div>
+        )}
 
       </div>
     </div>
