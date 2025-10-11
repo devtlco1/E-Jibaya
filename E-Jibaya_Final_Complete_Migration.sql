@@ -34,10 +34,6 @@ DROP POLICY IF EXISTS "backup_info_select_policy" ON public.backup_info;
 DROP POLICY IF EXISTS "backup_info_insert_policy" ON public.backup_info;
 DROP POLICY IF EXISTS "backup_info_update_policy" ON public.backup_info;
 DROP POLICY IF EXISTS "backup_info_delete_policy" ON public.backup_info;
-DROP POLICY IF EXISTS "backups_select_policy" ON public.backups;
-DROP POLICY IF EXISTS "backups_insert_policy" ON public.backups;
-DROP POLICY IF EXISTS "backups_update_policy" ON public.backups;
-DROP POLICY IF EXISTS "backups_delete_policy" ON public.backups;
 DROP POLICY IF EXISTS "backup_logs_select_policy" ON public.backup_logs;
 DROP POLICY IF EXISTS "backup_logs_insert_policy" ON public.backup_logs;
 DROP POLICY IF EXISTS "backup_logs_update_policy" ON public.backup_logs;
@@ -45,7 +41,6 @@ DROP POLICY IF EXISTS "backup_logs_delete_policy" ON public.backup_logs;
 
 -- حذف جميع الجداول (مع CASCADE لحذف المراجع)
 DROP TABLE IF EXISTS public.backup_logs CASCADE;
-DROP TABLE IF EXISTS public.backups CASCADE;
 DROP TABLE IF EXISTS public.backup_info CASCADE;
 DROP TABLE IF EXISTS public.record_locations CASCADE;
 DROP TABLE IF EXISTS public.record_photos CASCADE;
@@ -133,10 +128,7 @@ CREATE TABLE public.collection_records (
     -- تدقيق الصور (التطويرات الحديثة)
     meter_photo_verified BOOLEAN DEFAULT false,
     invoice_photo_verified BOOLEAN DEFAULT false,
-    verification_status VARCHAR(20) DEFAULT 'غير مدقق' CHECK (verification_status IN ('غير مدقق', 'مدقق')),
-    -- قفل مقارنة الصور
-    photo_viewing_by UUID REFERENCES public.users(id),
-    photo_viewing_at TIMESTAMP WITH TIME ZONE
+    verification_status VARCHAR(20) DEFAULT 'غير مدقق' CHECK (verification_status IN ('غير مدقق', 'مدقق'))
 );
 
 -- جدول الصور الإضافية
@@ -216,17 +208,6 @@ CREATE TABLE public.backup_info (
     total_users INTEGER DEFAULT 0
 );
 
--- جدول النسخ الاحتياطي
-CREATE TABLE public.backups (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    backup_name VARCHAR(255) NOT NULL,
-    backup_type VARCHAR(50) NOT NULL CHECK (backup_type IN ('full', 'incremental', 'manual')),
-    file_path TEXT NOT NULL,
-    file_size BIGINT,
-    created_by UUID REFERENCES public.users(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    status VARCHAR(50) DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed'))
-);
 
 -- جدول سجلات النسخ الاحتياطي
 CREATE TABLE public.backup_logs (
@@ -292,7 +273,6 @@ CREATE INDEX idx_user_sessions_expires_at ON public.user_sessions(expires_at);
 CREATE INDEX idx_backup_info_backup_type ON public.backup_info(backup_type);
 CREATE INDEX idx_backup_info_backup_date ON public.backup_info(backup_date);
 CREATE INDEX idx_backup_info_status ON public.backup_info(status);
-CREATE INDEX idx_backup_info_created_by ON public.backup_info(created_by);
 
 -- فهارس جدول سجلات النسخ الاحتياطي
 CREATE INDEX idx_backup_logs_backup_type ON public.backup_logs(backup_type);
@@ -601,7 +581,6 @@ ALTER TABLE public.record_locations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.backup_info ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.backups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.backup_logs ENABLE ROW LEVEL SECURITY;
 
 -- سياسات جدول المستخدمين
@@ -684,18 +663,6 @@ CREATE POLICY "backup_info_update_policy" ON public.backup_info
     FOR UPDATE USING (true);
 
 CREATE POLICY "backup_info_delete_policy" ON public.backup_info
-    FOR DELETE USING (true);
-
-CREATE POLICY "backups_select_policy" ON public.backups
-    FOR SELECT USING (true);
-
-CREATE POLICY "backups_insert_policy" ON public.backups
-    FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "backups_update_policy" ON public.backups
-    FOR UPDATE USING (true);
-
-CREATE POLICY "backups_delete_policy" ON public.backups
     FOR DELETE USING (true);
 
 CREATE POLICY "backup_logs_select_policy" ON public.backup_logs
@@ -796,7 +763,7 @@ BEGIN
     RAISE NOTICE '=====================================================';
     RAISE NOTICE 'Database structure created with all required tables, indexes, functions, and policies.';
     RAISE NOTICE '';
-    RAISE NOTICE 'Latest Features Included:';
+    RAISE NOTICE 'System Features (100% Used):';
     RAISE NOTICE '=====================================================';
     RAISE NOTICE '✅ Enhanced Record Locking System';
     RAISE NOTICE '✅ Photo Verification System';
@@ -807,6 +774,7 @@ BEGIN
     RAISE NOTICE '✅ Background Refresh Optimization';
     RAISE NOTICE '✅ Silent Lock Updates';
     RAISE NOTICE '✅ Preserved Filter States';
+    RAISE NOTICE '✅ Complete System Match - No Unused Fields';
     RAISE NOTICE '';
     RAISE NOTICE 'IMPORTANT: Storage RLS Policies Setup Required!';
     RAISE NOTICE '=====================================================';
