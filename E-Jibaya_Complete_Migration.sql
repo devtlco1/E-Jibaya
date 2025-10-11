@@ -169,7 +169,8 @@ CREATE INDEX IF NOT EXISTS idx_backups_created_at ON public.backups(created_at);
 -- =====================================================
 
 -- دالة إحصائيات السجلات
-CREATE OR REPLACE FUNCTION get_records_stats()
+DROP FUNCTION IF EXISTS get_records_stats();
+CREATE FUNCTION get_records_stats()
 RETURNS TABLE (
     total BIGINT,
     pending BIGINT,
