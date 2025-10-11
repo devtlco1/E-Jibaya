@@ -233,7 +233,7 @@ VALUES (
 -- إدراج محصل ميداني افتراضي
 INSERT INTO public.users (id, full_name, email, password_hash, role, is_active)
 VALUES (
-    'field-agent-001',
+    'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     'محصل ميداني',
     'field@ejibaya.com',
     '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- password
