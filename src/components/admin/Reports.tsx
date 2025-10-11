@@ -211,16 +211,21 @@ export function Reports({ records }: ReportsProps) {
         .filters-info { background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .filters-info h3 { margin: 0 0 10px 0; color: #1e40af; }
         .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .table th, .table td { border: 1px solid #d1d5db; padding: 12px; text-align: right; }
-        .table th { background: #f3f4f6; font-weight: bold; color: #374151; }
+        .table th, .table td { border: 1px solid #d1d5db; padding: 6px 8px; text-align: right; font-size: 11px; }
+        .table th { background: #f3f4f6; font-weight: bold; color: #374151; font-size: 10px; }
         .table tr:nth-child(even) { background: #f9fafb; }
+        .table { font-size: 11px; }
         .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
         .status-pending { background: #fef3c7; color: #92400e; }
         .status-completed { background: #d1fae5; color: #065f46; }
         .status-refused { background: #fee2e2; color: #991b1b; }
         .image-ref { background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 11px; }
         .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #d1d5db; text-align: center; color: #6b7280; font-size: 14px; }
-        @media print { body { background: white; } .container { box-shadow: none; } }
+        @media print { 
+          body { background: white; } 
+          .container { box-shadow: none; }
+          @page { size: A4 landscape; margin: 0.5in; }
+        }
     </style>
 </head>
 <body>
@@ -265,43 +270,43 @@ export function Reports({ records }: ReportsProps) {
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>تاريخ الإنشاء</th>
-                    <th>المحصل الميداني</th>
-                    <th>اسم المشترك</th>
-                    <th>رقم الحساب</th>
-                    <th>رقم المقياس</th>
-                    <th>العنوان</th>
-                    <th>آخر قراءة</th>
-                    <th>الترميز الجديد</th>
+                    <th>التاريخ</th>
+                    <th>المحصل</th>
+                    <th>المشترك</th>
+                    <th>الحساب</th>
+                    <th>المقياس</th>
+                    <th>المنطقة</th>
+                    <th>القراءة</th>
+                    <th>الترميز</th>
                     <th>الصنف</th>
-                    <th>نوع المقياس</th>
+                    <th>النوع</th>
                     <th>الحالة</th>
-                    ${filters.includeImages ? '<th>صورة المقياس</th><th>صورة الفاتورة</th>' : ''}
-                    <th>الملاحظات</th>
+                    ${filters.includeImages ? '<th>مقياس</th><th>فاتورة</th>' : ''}
+                    <th>ملاحظات</th>
                 </tr>
             </thead>
             <tbody>
                 ${filteredRecords.map((record, index) => `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${formatDate(record.submitted_at)}</td>
-                    <td>${getUserName(record.field_agent_id)}</td>
-                    <td>${record.subscriber_name || 'غير محدد'}</td>
-                    <td>${record.account_number || 'غير محدد'}</td>
-                    <td>${record.meter_number || 'غير محدد'}</td>
-                    <td>${record.region || 'غير محدد'}</td>
-                    <td>${record.last_reading || 'غير محدد'}</td>
+                    <td>${formatDate(record.submitted_at).split(' ')[0]}</td>
+                    <td>${getUserName(record.field_agent_id).split(' ')[0]}</td>
+                    <td>${record.subscriber_name || '-'}</td>
+                    <td>${record.account_number || '-'}</td>
+                    <td>${record.meter_number || '-'}</td>
+                    <td>${record.region || '-'}</td>
+                    <td>${record.last_reading || '-'}</td>
                     <td>${record.new_zone || record.new_block ? 
                         `${record.new_zone || ''} ${record.new_block || ''}`.trim() : 
-                        'غير محدد'}</td>
-                    <td>${record.category || 'غير محدد'}</td>
-                    <td>${record.phase || 'غير محدد'}</td>
+                        '-'}</td>
+                    <td>${record.category || '-'}</td>
+                    <td>${record.phase || '-'}</td>
                     <td><span class="status status-${record.is_refused ? 'refused' : record.status}">${getStatusText(record)}</span></td>
                     ${filters.includeImages ? `
-                    <td>${record.meter_photo_url ? `<span class="image-ref">${extractImageId(record.meter_photo_url)}</span>` : 'لا توجد'}</td>
-                    <td>${record.invoice_photo_url ? `<span class="image-ref">${extractImageId(record.invoice_photo_url)}</span>` : 'لا توجد'}</td>
+                    <td>${record.meter_photo_url ? `<span class="image-ref">${extractImageId(record.meter_photo_url)}</span>` : '-'}</td>
+                    <td>${record.invoice_photo_url ? `<span class="image-ref">${extractImageId(record.invoice_photo_url)}</span>` : '-'}</td>
                     ` : ''}
-                    <td>${record.notes || 'لا توجد'}</td>
+                    <td>${record.notes ? record.notes.substring(0, 20) + (record.notes.length > 20 ? '...' : '') : '-'}</td>
                 </tr>
                 `).join('')}
             </tbody>
@@ -368,10 +373,12 @@ export function Reports({ records }: ReportsProps) {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
           <Filter className="w-5 h-5 ml-2" />
-          مرشحات التقرير
+          فلاتر التقرير
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-4">
+          {/* الصف الأول: التواريخ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               من تاريخ
@@ -384,54 +391,58 @@ export function Reports({ records }: ReportsProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              إلى تاريخ
-            </label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                إلى تاريخ
+              </label>
+              <input
+                type="date"
+                value={filters.endDate}
+                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              الحالة
-            </label>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">جميع الحالات</option>
-              <option value="pending">قيد المراجعة</option>
-              <option value="completed">مكتمل</option>
-              <option value="refused">امتنع</option>
-            </select>
+          {/* الصف الثاني: الحالة والمحصل */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                الحالة
+              </label>
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع الحالات</option>
+                <option value="pending">قيد المراجعة</option>
+                <option value="completed">مكتمل</option>
+                <option value="refused">امتنع</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                المحصل الميداني
+              </label>
+              <select
+                value={filters.fieldAgent}
+                onChange={(e) => setFilters({ ...filters, fieldAgent: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع المحصلين</option>
+                {users.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
+          {/* الصف الثالث: الترميز الجديد */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              المحصل الميداني
-            </label>
-            <select
-              value={filters.fieldAgent}
-              onChange={(e) => setFilters({ ...filters, fieldAgent: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">جميع المحصلين</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.full_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* الترميز الجديد */}
-          <div className="col-span-full">
             <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
               <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-2" />
               الترميز الجديد
@@ -482,6 +493,7 @@ export function Reports({ records }: ReportsProps) {
             </div>
           </div>
 
+          {/* تضمين الصور */}
           <div className="flex items-center">
             <input
               type="checkbox"
