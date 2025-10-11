@@ -279,10 +279,29 @@ export const dbOperations = {
 
       if (error) {
         console.error('Update record error:', error);
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         throw new Error(`فشل في تحديث السجل: ${error.message}`);
       }
 
       console.log('Record updated successfully:', data);
+      console.log('Updated fields:', Object.keys(updates));
+      console.log('Update result:', data);
+      
+      // التحقق من أن التحديث حدث فعلياً
+      if (data && data.length > 0) {
+        const updatedRecord = data[0];
+        console.log('Verification of updated fields:');
+        Object.keys(updates).forEach(key => {
+          console.log(`${key}: expected=${(updates as any)[key]}, actual=${updatedRecord[key]}`);
+        });
+      } else {
+        console.warn('No data returned from update operation');
+      }
       
       // مسح التخزين المؤقت نهائياً
       cacheService.clearRecordsCache();
