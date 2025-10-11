@@ -1154,5 +1154,163 @@ export const dbOperations = {
         restoredCounts: {}
       };
     }
+  },
+
+  // نظام القفل للسجلات
+  async lockRecord(recordId: string, userId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      // التحقق من أن السجل غير مقفل من قبل مستخدم آخر
+      const { data: existingRecord, error: fetchError } = await client
+        .from('collection_records')
+        .select('locked_by, locked_at, lock_expires_at')
+        .eq('id', recordId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching record for lock:', fetchError);
+        throw new Error(`فشل في جلب بيانات السجل: ${fetchError.message}`);
+      }
+
+      // التحقق من القفل الحالي
+      if (existingRecord.locked_by && existingRecord.locked_by !== userId) {
+        const lockExpiry = new Date(existingRecord.lock_expires_at);
+        const now = new Date();
+        
+        // إذا كان القفل لا يزال صالحاً
+        if (lockExpiry > now) {
+          throw new Error('السجل مقفل حالياً من قبل مستخدم آخر');
+        }
+      }
+
+      // تعيين قفل جديد لمدة 30 دقيقة
+      const lockExpiry = new Date();
+      lockExpiry.setMinutes(lockExpiry.getMinutes() + 30);
+
+      const { error } = await client
+        .from('collection_records')
+        .update({
+          locked_by: userId,
+          locked_at: new Date().toISOString(),
+          lock_expires_at: lockExpiry.toISOString()
+        })
+        .eq('id', recordId);
+
+      if (error) {
+        console.error('Error locking record:', error);
+        throw new Error(`فشل في قفل السجل: ${error.message}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Lock record error:', error);
+      throw error;
+    }
+  },
+
+  async unlockRecord(recordId: string, userId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      const { error } = await client
+        .from('collection_records')
+        .update({
+          locked_by: null,
+          locked_at: null,
+          lock_expires_at: null
+        })
+        .eq('id', recordId)
+        .eq('locked_by', userId); // التأكد من أن المستخدم الحالي هو من قفل السجل
+
+      if (error) {
+        console.error('Error unlocking record:', error);
+        throw new Error(`فشل في إلغاء قفل السجل: ${error.message}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Unlock record error:', error);
+      throw error;
+    }
+  },
+
+  async checkRecordLock(recordId: string): Promise<{ isLocked: boolean; lockedBy?: string; lockExpiresAt?: string }> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      const { data, error } = await client
+        .from('collection_records')
+        .select('locked_by, locked_at, lock_expires_at')
+        .eq('id', recordId)
+        .single();
+
+      if (error) {
+        console.error('Error checking record lock:', error);
+        throw new Error(`فشل في التحقق من حالة القفل: ${error.message}`);
+      }
+
+      if (!data.locked_by) {
+        return { isLocked: false };
+      }
+
+      const lockExpiry = new Date(data.lock_expires_at);
+      const now = new Date();
+
+      // إذا انتهت صلاحية القفل، إلغاؤه تلقائياً
+      if (lockExpiry <= now) {
+        await this.unlockRecord(recordId, data.locked_by);
+        return { isLocked: false };
+      }
+
+      return {
+        isLocked: true,
+        lockedBy: data.locked_by,
+        lockExpiresAt: data.lock_expires_at
+      };
+    } catch (error) {
+      console.error('Check record lock error:', error);
+      throw error;
+    }
+  },
+
+  async extendRecordLock(recordId: string, userId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      // تمديد القفل لمدة 30 دقيقة إضافية
+      const lockExpiry = new Date();
+      lockExpiry.setMinutes(lockExpiry.getMinutes() + 30);
+
+      const { error } = await client
+        .from('collection_records')
+        .update({
+          lock_expires_at: lockExpiry.toISOString()
+        })
+        .eq('id', recordId)
+        .eq('locked_by', userId);
+
+      if (error) {
+        console.error('Error extending record lock:', error);
+        throw new Error(`فشل في تمديد قفل السجل: ${error.message}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Extend record lock error:', error);
+      throw error;
+    }
   }
 };

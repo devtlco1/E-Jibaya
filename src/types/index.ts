@@ -31,6 +31,10 @@ export interface CollectionRecord {
   new_zone: string | null;
   new_block: string | null;
   new_home: string | null;
+  // نظام القفل
+  locked_by: string | null;
+  locked_at: string | null;
+  lock_expires_at: string | null;
 }
 
 export interface CreateRecordData {

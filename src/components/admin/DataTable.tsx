@@ -450,42 +450,117 @@ export function DataTable({
     URL.revokeObjectURL(url);
   };
 
-  const handleEdit = (record: CollectionRecord) => {
-    setEditingRecord(record);
-    setEditForm({
-      subscriber_name: record.subscriber_name || '',
-      account_number: record.account_number || '',
-      meter_number: record.meter_number || '',
-      address: record.address || '',
-      last_reading: record.last_reading || '',
-      status: getRecordStatus(record) as 'pending' | 'completed' | 'refused',
-      // الترميز الجديد
-      new_zone: record.new_zone || '',
-      new_block: record.new_block || '',
-      new_home: record.new_home || ''
-    });
-  };
+  const handleEdit = async (record: CollectionRecord) => {
+    if (!currentUser) {
+      addNotification({
+        type: 'error',
+        title: 'خطأ',
+        message: 'يجب تسجيل الدخول أولاً'
+      });
+      return;
+    }
 
-  const handleSaveEdit = () => {
-    if (editingRecord) {
-      // Handle status and is_refused logic
-      let updateData: any = {
-        ...editForm,
-        completed_by: currentUser?.id || editingRecord.completed_by
-      };
-
-      // Handle status logic
-      updateData.status = editForm.status;
-      updateData.is_refused = false;
+    try {
+      // التحقق من حالة القفل
+      const lockStatus = await dbOperations.checkRecordLock(record.id);
       
-      onUpdateRecord(editingRecord.id, updateData);
+      if (lockStatus.isLocked && lockStatus.lockedBy !== currentUser.id) {
+        addNotification({
+          type: 'error',
+          title: 'السجل مقفل',
+          message: 'هذا السجل مقفل حالياً من قبل مستخدم آخر'
+        });
+        return;
+      }
+
+      // قفل السجل
+      await dbOperations.lockRecord(record.id, currentUser.id);
+      
+      setEditingRecord(record);
+      setEditForm({
+        subscriber_name: record.subscriber_name || '',
+        account_number: record.account_number || '',
+        meter_number: record.meter_number || '',
+        address: record.address || '',
+        last_reading: record.last_reading || '',
+        status: getRecordStatus(record) as 'pending' | 'completed' | 'refused',
+        // الترميز الجديد
+        new_zone: record.new_zone || '',
+        new_block: record.new_block || '',
+        new_home: record.new_home || ''
+      });
+
       addNotification({
         type: 'success',
-        title: 'تم التحديث بنجاح',
-        message: 'تم حفظ التغييرات على السجل'
+        title: 'تم قفل السجل',
+        message: 'يمكنك الآن تعديل السجل بأمان'
       });
-      setEditingRecord(null);
+    } catch (error) {
+      console.error('Error locking record:', error);
+      addNotification({
+        type: 'error',
+        title: 'خطأ في قفل السجل',
+        message: error instanceof Error ? error.message : 'فشل في قفل السجل'
+      });
     }
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingRecord && currentUser) {
+      try {
+        // Handle status and is_refused logic
+        let updateData: any = {
+          ...editForm,
+          completed_by: currentUser.id || editingRecord.completed_by
+        };
+
+        // Handle status logic
+        updateData.status = editForm.status;
+        updateData.is_refused = false;
+        
+        await onUpdateRecord(editingRecord.id, updateData);
+        
+        // إلغاء قفل السجل بعد الحفظ
+        await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
+        
+        addNotification({
+          type: 'success',
+          title: 'تم التحديث بنجاح',
+          message: 'تم حفظ التغييرات على السجل وإلغاء القفل'
+        });
+        setEditingRecord(null);
+      } catch (error) {
+        console.error('Error saving record:', error);
+        addNotification({
+          type: 'error',
+          title: 'خطأ في الحفظ',
+          message: error instanceof Error ? error.message : 'فشل في حفظ التغييرات'
+        });
+      }
+    }
+  };
+
+  const handleCancelEdit = async () => {
+    if (editingRecord && currentUser) {
+      try {
+        // إلغاء قفل السجل عند إلغاء التعديل
+        await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
+        
+        addNotification({
+          type: 'info',
+          title: 'تم إلغاء التعديل',
+          message: 'تم إلغاء قفل السجل'
+        });
+      } catch (error) {
+        console.error('Error unlocking record:', error);
+        addNotification({
+          type: 'warning',
+          title: 'تحذير',
+          message: 'تم إلغاء التعديل لكن فشل في إلغاء القفل'
+        });
+      }
+    }
+    setEditingRecord(null);
   };
 
   const handleView = (record: CollectionRecord) => {
@@ -709,6 +784,9 @@ export function DataTable({
                   الحالة
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  القفل
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   الإجراءات
                 </th>
               </tr>
@@ -861,6 +939,23 @@ export function DataTable({
                     </span>
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {record.locked_by ? (
+                      <div className="flex items-center space-x-1 space-x-reverse">
+                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        <span className="text-xs text-red-600 dark:text-red-400">
+                          مقفل
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-1 space-x-reverse">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          متاح
+                        </span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
                       <button
                         onClick={(e) => {
@@ -887,8 +982,17 @@ export function DataTable({
                           e.stopPropagation();
                           handleEdit(record);
                         }}
-                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 p-1"
-                        title="تعديل"
+                        className={`p-1 ${
+                          record.locked_by && record.locked_by !== currentUser?.id
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300'
+                        }`}
+                        title={
+                          record.locked_by && record.locked_by !== currentUser?.id
+                            ? 'السجل مقفل من قبل مستخدم آخر'
+                            : 'تعديل'
+                        }
+                        disabled={!!(record.locked_by && record.locked_by !== currentUser?.id)}
                       >
                         <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
@@ -1285,11 +1389,19 @@ export function DataTable({
           <div className="bg-white dark:bg-gray-800 rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                تعديل السجل - {editingRecord.subscriber_name || 'غير محدد'}
-              </h3>
+              <div className="flex items-center space-x-3 space-x-reverse">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  تعديل السجل - {editingRecord.subscriber_name || 'غير محدد'}
+                </h3>
+                <div className="flex items-center space-x-1 space-x-reverse">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                    مقفل لك
+                  </span>
+                </div>
+              </div>
               <button
-                onClick={() => setEditingRecord(null)}
+                onClick={handleCancelEdit}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <X className="w-5 h-5" />
@@ -1477,7 +1589,7 @@ export function DataTable({
                 {/* Footer */}
                 <div className="flex justify-end space-x-2 space-x-reverse pt-6 border-t border-gray-200 dark:border-gray-700">
                   <button
-                    onClick={() => setEditingRecord(null)}
+                    onClick={handleCancelEdit}
                     className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
                   >
                     إلغاء

@@ -20,7 +20,8 @@ import {
   Camera,
   FileBarChart,
   UserCheck,
-  HardDrive
+  HardDrive,
+  Lock
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -67,7 +68,8 @@ export function AdminDashboard() {
     pending: 0,
     completed: 0,
     reviewed: 0,
-    refused: 0
+    refused: 0,
+    locked: 0
   });
   const [fieldAgentsCount, setFieldAgentsCount] = useState(0);
 
@@ -120,7 +122,12 @@ export function AdminDashboard() {
           dbOperations.getRecordsStats(),
           dbOperations.getRecords()
         ]).then(([statsResult, allRecordsResult]) => {
-          setAllRecordsStats(statsResult);
+          // حساب السجلات المقفلة
+          const lockedCount = allRecordsResult.filter(record => record.locked_by).length;
+          setAllRecordsStats({
+            ...statsResult,
+            locked: lockedCount
+          });
           setAllRecords(allRecordsResult);
         }).catch(error => {
           console.warn('Background data loading failed:', error);
@@ -137,7 +144,13 @@ export function AdminDashboard() {
         setTotalRecords(recordsResult.total);
         setTotalPages(recordsResult.totalPages);
         setAllRecords(allRecordsResult);
-        setAllRecordsStats(statsResult);
+        
+        // حساب السجلات المقفلة
+        const lockedCount = allRecordsResult.filter(record => record.locked_by).length;
+        setAllRecordsStats({
+          ...statsResult,
+          locked: lockedCount
+        });
         
         // Update last record count for polling
         lastRecordCount.current = recordsResult.total;
@@ -349,6 +362,15 @@ export function AdminDashboard() {
       
       const success = await dbOperations.updateRecord(id, updateData);
       if (success) {
+        // إلغاء قفل السجل بعد التحديث
+        if (user) {
+          try {
+            await dbOperations.unlockRecord(id, user.id);
+          } catch (error) {
+            console.error('Error unlocking record after update:', error);
+          }
+        }
+
         // Log update activity
         if (user && originalRecord) {
           await dbOperations.createActivityLog({
@@ -381,7 +403,12 @@ export function AdminDashboard() {
         
         // Update stats
         const newStats = await dbOperations.getRecordsStats();
-        setAllRecordsStats(newStats);
+        // حساب السجلات المقفلة
+        const lockedCount = allRecords.filter(record => record.locked_by).length;
+        setAllRecordsStats({
+          ...newStats,
+          locked: lockedCount
+        });
         
         addNotification({
           type: 'success',
@@ -429,7 +456,12 @@ export function AdminDashboard() {
         
         // Update stats
         const newStats = await dbOperations.getRecordsStats();
-        setAllRecordsStats(newStats);
+        // حساب السجلات المقفلة
+        const lockedCount = allRecords.filter(record => record.locked_by).length;
+        setAllRecordsStats({
+          ...newStats,
+          locked: lockedCount
+        });
         
         addNotification({
           type: 'success',
@@ -541,6 +573,18 @@ export function AdminDashboard() {
               <div>
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">امتناع</p>
                 <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.refused}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg ml-2 sm:ml-3">
+                <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">مقفلة</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.locked}</p>
               </div>
             </div>
           </div>
