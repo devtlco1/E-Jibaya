@@ -763,7 +763,7 @@ BEGIN
     RAISE NOTICE 'E-Jibaya Final Complete System Migration completed successfully!';
     RAISE NOTICE '=====================================================';
     RAISE NOTICE 'Database structure created with all required tables, indexes, functions, and policies.';
-    RAISE NOTICE '';
+    RAISE NOTICE ' ';
     RAISE NOTICE 'System Features (100% Used):';
     RAISE NOTICE '=====================================================';
     RAISE NOTICE '✅ Enhanced Record Locking System';
@@ -776,7 +776,7 @@ BEGIN
     RAISE NOTICE '✅ Silent Lock Updates';
     RAISE NOTICE '✅ Preserved Filter States';
     RAISE NOTICE '✅ Complete System Match - No Unused Fields';
-    RAISE NOTICE '';
+    RAISE NOTICE ' ';
     RAISE NOTICE 'IMPORTANT: Storage RLS Policies Setup Required!';
     RAISE NOTICE '=====================================================';
     RAISE NOTICE 'To complete the setup, you need to manually configure Storage policies:';
@@ -791,17 +791,17 @@ BEGIN
     RAISE NOTICE '   - Target roles: authenticated';
     RAISE NOTICE '   - Operation: SELECT';
     RAISE NOTICE '   - Policy definition: bucket_id = photos';
-    RAISE NOTICE '';
+    RAISE NOTICE ' ';
     RAISE NOTICE 'Test users created:';
     RAISE NOTICE '  - admin (password: password123)';
     RAISE NOTICE '  - field_agent_1 (password: password123)';
     RAISE NOTICE '  - field_agent_2 (password: password123)';
     RAISE NOTICE '  - employee_1 (password: password123)';
     RAISE NOTICE '  - employee_2 (password: password123)';
-    RAISE NOTICE '';
+    RAISE NOTICE ' ';
     RAISE NOTICE 'All passwords are hashed with bcrypt (saltRounds = 12) and ready for login!';
     RAISE NOTICE 'You can now login to the system with any of these users.';
-    RAISE NOTICE '';
+    RAISE NOTICE ' ';
     RAISE NOTICE 'System Features:';
     RAISE NOTICE '=====================================================';
     RAISE NOTICE '🔒 Advanced Record Locking System';
