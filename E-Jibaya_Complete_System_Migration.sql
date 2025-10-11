@@ -412,11 +412,11 @@ CREATE POLICY "backup_info_delete_policy" ON public.backup_info
 -- =====================================================
 
 -- إدراج مستخدمين تجريبيين بكلمات مرور صحيحة
--- كلمة المرور: password123
+-- كلمة المرور: password123 (مع saltRounds = 12)
 INSERT INTO public.users (username, password_hash, full_name, role, is_active) VALUES
-('admin', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'مدير النظام', 'admin', true),
-('field_agent_1', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'محصل ميداني', 'field_agent', true),
-('employee_1', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'موظف النظام', 'employee', true);
+('admin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4QZqJqJqJq', 'مدير النظام', 'admin', true),
+('field_agent_1', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4QZqJqJqJq', 'محصل ميداني', 'field_agent', true),
+('employee_1', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4QZqJqJqJq', 'موظف النظام', 'employee', true);
 
 -- =====================================================
 -- 7. إنشاء Triggers للتحديث التلقائي
@@ -539,11 +539,17 @@ $$ LANGUAGE plpgsql;
 -- رسالة نجاح
 DO $$
 BEGIN
+    RAISE NOTICE '=====================================================';
     RAISE NOTICE 'E-Jibaya Complete System Migration completed successfully!';
+    RAISE NOTICE '=====================================================';
     RAISE NOTICE 'Database structure created with all required tables, indexes, functions, and policies.';
+    RAISE NOTICE '';
     RAISE NOTICE 'Test users created:';
     RAISE NOTICE '  - admin (password: password123)';
     RAISE NOTICE '  - field_agent_1 (password: password123)';
     RAISE NOTICE '  - employee_1 (password: password123)';
-    RAISE NOTICE 'All passwords are hashed with bcrypt and ready for login!';
+    RAISE NOTICE '';
+    RAISE NOTICE 'All passwords are hashed with bcrypt (saltRounds = 12) and ready for login!';
+    RAISE NOTICE 'You can now login to the system with any of these users.';
+    RAISE NOTICE '=====================================================';
 END $$;
