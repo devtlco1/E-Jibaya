@@ -7,7 +7,8 @@
 -- =====================================================
 
 -- جدول المستخدمين
-CREATE TABLE IF NOT EXISTS public.users (
+DROP TABLE IF EXISTS public.users CASCADE;
+CREATE TABLE public.users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -19,7 +20,8 @@ CREATE TABLE IF NOT EXISTS public.users (
 );
 
 -- جدول سجلات الجباية
-CREATE TABLE IF NOT EXISTS public.collection_records (
+DROP TABLE IF EXISTS public.collection_records CASCADE;
+CREATE TABLE public.collection_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     subscriber_name VARCHAR(255),
     account_number VARCHAR(12),
@@ -66,7 +68,8 @@ CREATE TABLE IF NOT EXISTS public.collection_records (
 );
 
 -- جدول سجلات التغييرات
-CREATE TABLE IF NOT EXISTS public.record_changes_log (
+DROP TABLE IF EXISTS public.record_changes_log CASCADE;
+CREATE TABLE public.record_changes_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     record_id UUID REFERENCES public.collection_records(id) ON DELETE CASCADE,
     field_name VARCHAR(255) NOT NULL,
@@ -77,7 +80,8 @@ CREATE TABLE IF NOT EXISTS public.record_changes_log (
 );
 
 -- جدول سجل النشاط
-CREATE TABLE IF NOT EXISTS public.activity_logs (
+DROP TABLE IF EXISTS public.activity_logs CASCADE;
+CREATE TABLE public.activity_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.users(id),
     action VARCHAR(100) NOT NULL,
@@ -91,7 +95,8 @@ CREATE TABLE IF NOT EXISTS public.activity_logs (
 );
 
 -- جدول الصور الإضافية
-CREATE TABLE IF NOT EXISTS public.record_photos (
+DROP TABLE IF EXISTS public.record_photos CASCADE;
+CREATE TABLE public.record_photos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     record_id UUID REFERENCES public.collection_records(id) ON DELETE CASCADE,
     photo_type VARCHAR(20) NOT NULL CHECK (photo_type IN ('meter', 'invoice')),
@@ -104,7 +109,8 @@ CREATE TABLE IF NOT EXISTS public.record_photos (
 );
 
 -- جدول النسخ الاحتياطية
-CREATE TABLE IF NOT EXISTS public.backups (
+DROP TABLE IF EXISTS public.backups CASCADE;
+CREATE TABLE public.backups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     backup_name VARCHAR(255) NOT NULL,
     backup_type VARCHAR(50) NOT NULL CHECK (backup_type IN ('full', 'incremental', 'manual')),
