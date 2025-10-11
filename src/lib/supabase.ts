@@ -851,6 +851,32 @@ export const dbOperations = {
     }
   },
 
+  // Get active field agents count
+  async getActiveFieldAgentsCount(): Promise<number> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        return 0;
+      }
+      
+      const { data, error } = await client
+        .from('users')
+        .select('id')
+        .eq('role', 'field_agent')
+        .eq('is_active', true);
+
+      if (error) {
+        console.error('Get active field agents count error:', error);
+        return 0;
+      }
+
+      return data.length;
+    } catch (error) {
+      console.error('Get active field agents count error:', error);
+      return 0;
+    }
+  },
+
   // ==============================================
   // Backup Functions
   // ==============================================
