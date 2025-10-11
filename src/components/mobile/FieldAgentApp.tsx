@@ -18,7 +18,7 @@ import {
 import { CreateRecordData } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { formatDate } from '../../utils/dateFormatter';
-import { compressImage, validateImageSize, validateImageType } from '../../utils/imageCompression';
+import { validateImageSize, validateImageType } from '../../utils/imageCompression';
 
 export function FieldAgentApp() {
   const { user, logout } = useAuth();
@@ -133,15 +133,7 @@ export function FieldAgentApp() {
     }
 
     try {
-      // ضغط الصورة
-      const compressedFile = await compressImage(file, {
-        maxWidth: 800,
-        maxHeight: 600,
-        quality: 0.8,
-        format: 'jpeg'
-      });
-
-      // تحويل إلى base64 للعرض
+      // تحويل إلى base64 للعرض بدون ضغط
       const reader = new FileReader();
       reader.onload = (event) => {
         const result = event.target?.result as string;
@@ -152,20 +144,20 @@ export function FieldAgentApp() {
           setInvoicePhoto(result);
         }
       };
-      reader.readAsDataURL(compressedFile);
+      reader.readAsDataURL(file);
 
       addNotification({
         type: 'success',
-        title: 'تم تحسين الصورة',
-        message: `تم ضغط الصورة من ${(file.size / 1024 / 1024).toFixed(2)}MB إلى ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`
+        title: 'تم تحميل الصورة',
+        message: `تم تحميل الصورة بحجم ${(file.size / 1024 / 1024).toFixed(2)}MB`
       });
 
     } catch (error) {
-      console.error('Error compressing image:', error);
+      console.error('Error loading image:', error);
       addNotification({
         type: 'error',
-        title: 'خطأ في معالجة الصورة',
-        message: 'حدث خطأ أثناء ضغط الصورة'
+        title: 'خطأ في تحميل الصورة',
+        message: 'حدث خطأ أثناء تحميل الصورة'
       });
     }
   };
