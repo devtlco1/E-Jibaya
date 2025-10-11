@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
@@ -357,7 +357,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     );
   }
 
-  const originalPhotos = getOriginalPhotos();
+  const originalPhotos = useMemo(() => getOriginalPhotos(), [record]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
