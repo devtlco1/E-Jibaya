@@ -109,6 +109,18 @@ export function AdminDashboard() {
     };
   }, [user]);
 
+  // تحديث حالة القفل محلياً دون إعادة تحميل التاب
+  const updateRecordLockStatus = (recordId: string, updates: Partial<CollectionRecord>) => {
+    setRecords(prevRecords => 
+      prevRecords.map(record => 
+        record.id === recordId 
+          ? { ...record, ...updates }
+          : record
+      )
+    );
+    console.log('Record lock status updated locally without page refresh');
+  };
+
   const loadRecords = async () => {
     setLoading(true);
     try {
@@ -234,11 +246,13 @@ export function AdminDashboard() {
             
             // Always refresh for lock updates to show lock status immediately
             if (isLockUpdate) {
-              console.log('Lock status changed - updating lock status silently');
+              console.log('Lock status changed - updating lock status locally');
               
-              // تحديث صامت لحالة القفل فقط - بدون إشعارات
-              // تحديث البيانات مع الحفاظ على الفلاتر الحالية
-              loadRecords();
+              // تحديث محلي لحالة القفل فقط - دون إعادة تحميل التاب
+              updateRecordLockStatus(updatedRecord.id, {
+                locked_by: updatedRecord.locked_by,
+                locked_at: updatedRecord.locked_at
+              });
             } else if (!isVerificationUpdate) {
               addNotification({
                 type: 'info',
@@ -790,6 +804,7 @@ export function AdminDashboard() {
             onFiltersChange={handleFiltersChange}
             onUpdateRecord={handleUpdateRecord}
             onDeleteRecord={handleDeleteRecord}
+            onRecordUpdate={updateRecordLockStatus}
           />
         ) : activeTab === 'users' ? (
           <UserManagement onUserStatusChange={refreshFieldAgentsCount} />

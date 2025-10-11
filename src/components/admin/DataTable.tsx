@@ -18,6 +18,7 @@ interface DataTableProps {
   itemsPerPage: number;
   loading: boolean;
   onPageChange: (page: number) => void;
+  onRecordUpdate?: (recordId: string, updates: Partial<CollectionRecord>) => void;
   onItemsPerPageChange: (itemsPerPage: number) => void;
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
@@ -37,7 +38,8 @@ export function DataTable({
   filters, 
   onFiltersChange, 
   onUpdateRecord, 
-  onDeleteRecord 
+  onDeleteRecord,
+  onRecordUpdate
 }: DataTableProps) {
   const [viewingRecord, setViewingRecord] = useState<CollectionRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<CollectionRecord | null>(null);
@@ -538,6 +540,14 @@ export function DataTable({
       // تحديث فوري للقفل في الواجهة
       console.log('Record locked - updating UI immediately');
       
+      // تحديث محلي لحالة القفل
+      if (onRecordUpdate) {
+        onRecordUpdate(record.id, { 
+          locked_by: currentUser.id, 
+          locked_at: new Date().toISOString() 
+        });
+      }
+      
       setEditingRecord(record);
       setEditForm({
         subscriber_name: record.subscriber_name || '',
@@ -639,6 +649,14 @@ export function DataTable({
         // تحديث فوري لإلغاء القفل في الواجهة
         console.log('Record saved and unlocked - updating UI silently');
         
+        // تحديث محلي لحالة القفل
+        if (onRecordUpdate) {
+          onRecordUpdate(editingRecord.id, { 
+            locked_by: null, 
+            locked_at: null 
+          });
+        }
+        
         // Notification will be sent by AdminDashboard.handleUpdateRecord
         setEditingRecord(null);
       } catch (error) {
@@ -660,6 +678,14 @@ export function DataTable({
         
         // تحديث فوري لإلغاء القفل في الواجهة
         console.log('Record unlocked - updating UI immediately');
+        
+        // تحديث محلي لحالة القفل
+        if (onRecordUpdate) {
+          onRecordUpdate(editingRecord.id, { 
+            locked_by: null, 
+            locked_at: null 
+          });
+        }
         
         // إشعار صامت - لا يظهر للمستخدمين الآخرين
         console.log('Record unlocked successfully - UI updated silently');
