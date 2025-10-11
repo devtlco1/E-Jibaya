@@ -643,13 +643,19 @@ export function DataTable({
         updateData.status = editForm.status;
         updateData.is_refused = false;
         
+        console.log('بدء تحديث السجل في قاعدة البيانات...');
         await onUpdateRecord(editingRecord.id, updateData);
+        console.log('تم تحديث السجل بنجاح');
         
         // إلغاء قفل السجل بعد الحفظ
+        console.log('إلغاء قفل السجل...');
         await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
+        console.log('تم إلغاء قفل السجل');
         
-        // Notification will be sent by AdminDashboard.handleUpdateRecord
+        // إغلاق popup التعديل
+        console.log('إغلاق popup التعديل...');
         setEditingRecord(null);
+        console.log('تم إغلاق popup التعديل');
       } catch (error) {
         console.error('Error saving record:', error);
         addNotification({
