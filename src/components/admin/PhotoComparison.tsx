@@ -293,15 +293,30 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       const currentRecord = record;
       const currentPhotos = photos;
       
+      console.log('=== Verification Status Debug ===');
+      console.log('Current record:', {
+        meter_photo_verified: currentRecord.meter_photo_verified,
+        invoice_photo_verified: currentRecord.invoice_photo_verified,
+        verification_status: currentRecord.verification_status
+      });
+      console.log('Current photos:', currentPhotos.map(p => ({ id: p.id, verified: p.verified })));
+      
       // Check if main photos are verified
       const mainPhotosVerified = currentRecord.meter_photo_verified && currentRecord.invoice_photo_verified;
+      console.log('Main photos verified:', mainPhotosVerified);
       
       // Check if all additional photos are verified
       const allAdditionalPhotosVerified = currentPhotos.length === 0 || currentPhotos.every(photo => photo.verified);
+      console.log('Additional photos verified:', allAdditionalPhotosVerified);
+      console.log('Additional photos count:', currentPhotos.length);
       
       // Record is verified only if both main photos AND all additional photos are verified
       const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
       const newStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
+      
+      console.log('Is all verified:', isAllVerified);
+      console.log('New status:', newStatus);
+      console.log('Current status:', currentRecord.verification_status);
       
       if (currentRecord.verification_status !== newStatus) {
         // Update local state only (no database update yet)
@@ -335,6 +350,10 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         invoice_photo_verified: record.invoice_photo_verified,
         verification_status: record.verification_status
       };
+
+      console.log('=== Saving to Database ===');
+      console.log('Updates to save:', updates);
+      console.log('Photos to save:', photos.map(p => ({ id: p.id, verified: p.verified })));
 
       // Update additional photos in database
       for (const photo of photos) {
