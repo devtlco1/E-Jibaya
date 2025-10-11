@@ -348,7 +348,7 @@ export function Reports({ records }: ReportsProps) {
                 <tr>
                     <td>${index + 1}</td>
                     <td>${formatDate(record.submitted_at)}</td>
-                    <td>${getUserName(record.field_agent_id).split(' ')[0]}</td>
+                    <td>${getUserName(record.field_agent_id)}</td>
                     <td>${record.subscriber_name || '-'}</td>
                     <td>${record.account_number || '-'}</td>
                     <td>${record.meter_number || '-'}</td>
