@@ -103,17 +103,24 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
         photo_url: record.meter_photo_url,
         photo_type: 'meter' as const,
         photo_date: record.submitted_at,
-        created_by: record.field_agent_id
+        created_by: record.field_agent_id,
+        created_at: record.submitted_at,
+        notes: null,
+        verified: record.meter_photo_verified || false
       } : null,
       invoice: record.invoice_photo_url ? {
         id: 'original-invoice',
         photo_url: record.invoice_photo_url,
         photo_type: 'invoice' as const,
         photo_date: record.submitted_at,
-        created_by: record.field_agent_id
+        created_by: record.field_agent_id,
+        created_at: record.submitted_at,
+        notes: null,
+        verified: record.invoice_photo_verified || false
       } : null
     };
   };
+
 
   const formatDate = (dateString: string) => {
     return formatDateTime(dateString);
@@ -426,9 +433,9 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               handlePhotoVerification('meter');
                             }}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                            title={record?.meter_photo_verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                            title={originalPhotos.meter?.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
                           >
-                            {record?.meter_photo_verified ? (
+                            {originalPhotos.meter?.verified ? (
                               <CheckCircle className="w-5 h-5 text-green-500" />
                             ) : (
                               <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
@@ -538,9 +545,9 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               handlePhotoVerification('invoice');
                             }}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                            title={record?.invoice_photo_verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                            title={originalPhotos.invoice?.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
                           >
-                            {record?.invoice_photo_verified ? (
+                            {originalPhotos.invoice?.verified ? (
                               <CheckCircle className="w-5 h-5 text-green-500" />
                             ) : (
                               <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
