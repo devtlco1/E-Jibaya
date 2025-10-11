@@ -561,7 +561,9 @@ SELECT
     bi.backup_name,
     bi.backup_type,
     bi.backup_date,
-    bi.records_count,
+    bi.total_records,
+    bi.total_photos,
+    bi.total_users,
     bi.file_size,
     bi.status,
     bi.created_at
