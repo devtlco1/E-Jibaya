@@ -57,17 +57,19 @@ export function AdminDashboard() {
     subscriber_name: '',
     account_number: '',
     meter_number: '',
-    address: '',
+    region: '',
     status: '',
     // الترميز الجديد
     new_zone: '',
-    new_block: ''
+    new_block: '',
+    // التدقيق
+    verification_status: ''
   });
   const [allRecordsStats, setAllRecordsStats] = useState({
     total: 0,
     pending: 0,
     completed: 0,
-    reviewed: 0,
+    verified: 0,
     refused: 0,
     locked: 0
   });
@@ -192,16 +194,22 @@ export function AdminDashboard() {
           if (payload.eventType === 'INSERT') {
             // New record added
             const newRecord = payload.new as CollectionRecord;
-            addNotification({
-              type: 'success',
-              title: 'سجل جديد',
-              message: `تم إضافة سجل جديد: ${newRecord.subscriber_name || 'غير محدد'}`
-            });
             
-            // Always refresh records for new records
-            loadRecords();
+            // Check if the new record matches current filters
+            const matchesFilters = checkRecordMatchesFilters(newRecord, filters);
             
-            // Also refresh stats
+            if (matchesFilters) {
+              addNotification({
+                type: 'success',
+                title: 'سجل جديد',
+                message: `تم إضافة سجل جديد: ${newRecord.subscriber_name || 'غير محدد'}`
+              });
+              
+              // Only refresh if record matches current filters
+              loadRecords();
+            }
+            
+            // Always refresh stats
             loadFieldAgentsCount();
           } else if (payload.eventType === 'UPDATE') {
             // Record updated
@@ -331,6 +339,53 @@ export function AdminDashboard() {
   // Function to refresh field agents count (called from UserManagement)
   const refreshFieldAgentsCount = () => {
     loadFieldAgentsCount();
+  };
+
+  // Check if a record matches current filters
+  const checkRecordMatchesFilters = (record: CollectionRecord, currentFilters: FilterState): boolean => {
+    // Check status filter
+    if (currentFilters.status) {
+      if (currentFilters.status === 'refused') {
+        if (!record.is_refused) return false;
+      } else {
+        if (record.status !== currentFilters.status || record.is_refused) return false;
+      }
+    }
+
+    // Check other filters
+    if (currentFilters.subscriber_name && 
+        !record.subscriber_name?.toLowerCase().includes(currentFilters.subscriber_name.toLowerCase())) {
+      return false;
+    }
+
+    if (currentFilters.account_number && 
+        !record.account_number?.includes(currentFilters.account_number)) {
+      return false;
+    }
+
+    if (currentFilters.meter_number && 
+        !record.meter_number?.includes(currentFilters.meter_number)) {
+      return false;
+    }
+
+    if (currentFilters.region && 
+        !record.region?.toLowerCase().includes(currentFilters.region.toLowerCase())) {
+      return false;
+    }
+
+    if (currentFilters.new_zone && record.new_zone !== currentFilters.new_zone) {
+      return false;
+    }
+
+    if (currentFilters.new_block && record.new_block !== currentFilters.new_block) {
+      return false;
+    }
+
+    if (currentFilters.verification_status && record.verification_status !== currentFilters.verification_status) {
+      return false;
+    }
+
+    return true;
   };
 
   const handlePageChange = (page: number) => {

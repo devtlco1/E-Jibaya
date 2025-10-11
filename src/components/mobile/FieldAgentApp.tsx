@@ -483,7 +483,7 @@ export function FieldAgentApp() {
       subscriber_name: selectedRecord.subscriber_name,
       account_number: selectedRecord.account_number,
       meter_number: selectedRecord.meter_number,
-      address: selectedRecord.address,
+      region: selectedRecord.region,
       last_reading: selectedRecord.last_reading,
       status: selectedRecord.status,
       gps_latitude: gpsData?.lat || selectedRecord.gps_latitude,

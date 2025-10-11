@@ -461,13 +461,13 @@ export const dbOperations = {
     total: number;
     pending: number;
     completed: number;
-    reviewed: number;
+    verified: number;
     refused: number;
   }> {
     try {
       const client = checkSupabaseConnection();
       if (!client) {
-        return { total: 0, pending: 0, completed: 0, reviewed: 0, refused: 0 };
+        return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
       }
       
       const { data, error } = await client
@@ -476,14 +476,14 @@ export const dbOperations = {
 
       if (error) {
         console.error('Get records stats error:', error);
-        return { total: 0, pending: 0, completed: 0, reviewed: 0, refused: 0 };
+        return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
       }
 
       const stats = {
         total: data.length,
         pending: data.filter(r => r.status === 'pending').length,
         completed: data.filter(r => r.status === 'completed').length,
-        reviewed: 0, // لم تعد مستخدمة
+        verified: 0, // السجلات المدققة
         refused: data.filter(r => r.status === 'refused').length
       };
 

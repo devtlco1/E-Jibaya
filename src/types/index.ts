@@ -21,7 +21,7 @@ export interface CollectionRecord {
   subscriber_name: string | null;
   account_number: string | null;
   meter_number: string | null;
-  address: string | null;
+  region: string | null;
   last_reading: string | null;
   status: 'pending' | 'completed' | 'refused';
   submitted_at: string;
@@ -35,6 +35,15 @@ export interface CollectionRecord {
   locked_by: string | null;
   locked_at: string | null;
   lock_expires_at: string | null;
+  // الصنف
+  category: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | 'انارة' | 'محولة خاصة' | null;
+  // المرحلة
+  phase: 'احادي' | 'ثلاثي' | 'سي تي' | null;
+  // تدقيق الصور
+  meter_photo_verified: boolean;
+  invoice_photo_verified: boolean;
+  // حالة التدقيق
+  verification_status: 'غير مدقق' | 'مدقق' | null;
 }
 
 export interface CreateRecordData {
@@ -51,7 +60,7 @@ export interface UpdateRecordData {
   subscriber_name: string;
   account_number: string;
   meter_number: string;
-  address: string;
+  region: string;
   last_reading: string;
   status: 'pending' | 'completed' | 'refused';
   // الترميز الجديد
@@ -76,11 +85,13 @@ export interface FilterState {
   subscriber_name: string;
   account_number: string;
   meter_number: string;
-  address: string;
+  region: string;
   status: string;
   // الترميز الجديد
   new_zone: string;
   new_block: string;
+  // التدقيق
+  verification_status: string;
 }
 
 export interface ActivityLog {

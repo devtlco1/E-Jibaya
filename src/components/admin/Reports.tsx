@@ -78,7 +78,11 @@ export function Reports({ records }: ReportsProps) {
     }
 
     if (filters.status) {
-      filtered = filtered.filter(r => r.status === filters.status);
+      if (filters.status === 'refused') {
+        filtered = filtered.filter(r => r.is_refused);
+      } else {
+        filtered = filtered.filter(r => r.status === filters.status && !r.is_refused);
+      }
     }
 
     if (filters.fieldAgent) {
@@ -250,7 +254,7 @@ export function Reports({ records }: ReportsProps) {
             <h3>مرشحات التقرير:</h3>
             ${filters.startDate ? `<p><strong>من تاريخ:</strong> ${formatDate(filters.startDate)}</p>` : ''}
             ${filters.endDate ? `<p><strong>إلى تاريخ:</strong> ${formatDate(filters.endDate)}</p>` : ''}
-            ${filters.status ? `<p><strong>الحالة:</strong> ${filters.status === 'refused' ? 'امتنع' : filters.status === 'pending' ? 'قيد المراجعة' : filters.status === 'completed' ? 'مكتمل' : 'تمت المراجعة'}</p>` : ''}
+            ${filters.status ? `<p><strong>الحالة:</strong> ${filters.status === 'refused' ? 'امتنع' : filters.status === 'pending' ? 'قيد المراجعة' : filters.status === 'completed' ? 'مكتمل' : 'ممتنع'}</p>` : ''}
             ${filters.fieldAgent ? `<p><strong>المحصل الميداني:</strong> ${getUserName(filters.fieldAgent)}</p>` : ''}
             ${filters.new_zone ? `<p><strong>الزون:</strong> ${filters.new_zone}</p>` : ''}
             ${filters.new_block ? `<p><strong>البلوك:</strong> ${filters.new_block}</p>` : ''}
@@ -269,6 +273,8 @@ export function Reports({ records }: ReportsProps) {
                     <th>العنوان</th>
                     <th>آخر قراءة</th>
                     <th>الترميز الجديد</th>
+                    <th>الصنف</th>
+                    <th>المرحلة</th>
                     <th>الحالة</th>
                     ${filters.includeImages ? '<th>صورة المقياس</th><th>صورة الفاتورة</th>' : ''}
                     <th>الملاحظات</th>
@@ -283,11 +289,13 @@ export function Reports({ records }: ReportsProps) {
                     <td>${record.subscriber_name || 'غير محدد'}</td>
                     <td>${record.account_number || 'غير محدد'}</td>
                     <td>${record.meter_number || 'غير محدد'}</td>
-                    <td>${record.address || 'غير محدد'}</td>
+                    <td>${record.region || 'غير محدد'}</td>
                     <td>${record.last_reading || 'غير محدد'}</td>
                     <td>${record.new_zone || record.new_block ? 
                         `${record.new_zone || ''} ${record.new_block || ''}`.trim() : 
                         'غير محدد'}</td>
+                    <td>${record.category || 'غير محدد'}</td>
+                    <td>${record.phase || 'غير محدد'}</td>
                     <td><span class="status status-${record.is_refused ? 'refused' : record.status}">${getStatusText(record)}</span></td>
                     ${filters.includeImages ? `
                     <td>${record.meter_photo_url ? `<span class="image-ref">${extractImageId(record.meter_photo_url)}</span>` : 'لا توجد'}</td>
@@ -400,6 +408,7 @@ export function Reports({ records }: ReportsProps) {
               <option value="">جميع الحالات</option>
               <option value="pending">قيد المراجعة</option>
               <option value="completed">مكتمل</option>
+              <option value="refused">امتنع</option>
             </select>
           </div>
 

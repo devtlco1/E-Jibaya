@@ -84,6 +84,28 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
     setRotation(0);
   };
 
+  const handlePhotoVerification = async (photoType: 'meter' | 'invoice') => {
+    if (!record) return;
+
+    try {
+      const updateData = {
+        [`${photoType}_photo_verified`]: !record[`${photoType}_photo_verified` as keyof CollectionRecord]
+      };
+
+      await dbOperations.updateRecord(record.id, updateData);
+      
+      // Update local state
+      setRecord(prev => prev ? {
+        ...prev,
+        [`${photoType}_photo_verified`]: !prev[`${photoType}_photo_verified` as keyof CollectionRecord]
+      } : null);
+
+      console.log(`${photoType} photo verification toggled`);
+    } catch (error) {
+      console.error('Error updating photo verification:', error);
+    }
+  };
+
   const handleRotate = () => {
     setRotation(prev => (prev + 90) % 360);
   };
@@ -462,6 +484,45 @@ export function PhotoComparison({ recordId, onClose }: PhotoComparisonProps) {
                 </div>
               </>
             )}
+          </div>
+        </div>
+
+        {/* Footer with verification buttons */}
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4 space-x-reverse">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                تدقيق الصور:
+              </span>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <button
+                  onClick={() => handlePhotoVerification('meter')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    record?.meter_photo_verified
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900/30'
+                  }`}
+                >
+                  {record?.meter_photo_verified ? '✓ صورة المقياس مدققة' : 'تدقيق صورة المقياس'}
+                </button>
+                <button
+                  onClick={() => handlePhotoVerification('invoice')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    record?.invoice_photo_verified
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900/30'
+                  }`}
+                >
+                  {record?.invoice_photo_verified ? '✓ صورة الفاتورة مدققة' : 'تدقيق صورة الفاتورة'}
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              إغلاق
+            </button>
           </div>
         </div>
       </div>

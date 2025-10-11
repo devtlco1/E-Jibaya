@@ -45,13 +45,17 @@ export function DataTable({
     subscriber_name: '',
     account_number: '',
     meter_number: '',
-    address: '',
+    region: '',
     last_reading: '',
     status: 'pending' as 'pending' | 'completed' | 'refused',
     // الترميز الجديد
     new_zone: '',
     new_block: '',
-    new_home: ''
+    new_home: '',
+    // الصنف
+    category: null as 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | 'انارة' | 'محولة خاصة' | null,
+    // المرحلة
+    phase: null as 'احادي' | 'ثلاثي' | 'سي تي' | null
   });
   const [showFilters, setShowFilters] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
@@ -363,8 +367,8 @@ export function DataTable({
                         <td class="value">${record.last_reading || 'غير محدد'}</td>
                     </tr>
                     <tr>
-                        <td class="label">العنوان</td>
-                        <td class="value">${record.address || 'غير محدد'}</td>
+                        <td class="label">المنطقة</td>
+                        <td class="value">${record.region || 'غير محدد'}</td>
                     </tr>
                     <tr class="coding-row">
                         <td class="label">الترميز الجديد</td>
@@ -481,13 +485,17 @@ export function DataTable({
         subscriber_name: record.subscriber_name || '',
         account_number: record.account_number || '',
         meter_number: record.meter_number || '',
-        address: record.address || '',
+        region: record.region || '',
         last_reading: record.last_reading || '',
         status: getRecordStatus(record) as 'pending' | 'completed' | 'refused',
-        // الترميز الجديد
-        new_zone: record.new_zone || '',
-        new_block: record.new_block || '',
-        new_home: record.new_home || ''
+      // الترميز الجديد
+      new_zone: record.new_zone || '',
+      new_block: record.new_block || '',
+      new_home: record.new_home || '',
+      // الصنف
+      category: record.category,
+      // المرحلة
+      phase: record.phase
       });
 
       addNotification({
@@ -723,12 +731,12 @@ export function DataTable({
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                العنوان
+                المنطقة
               </label>
               <input
                 type="text"
-                value={filters.address}
-                onChange={(e) => onFiltersChange({ ...filters, address: e.target.value })}
+                value={filters.region}
+                onChange={(e) => onFiltersChange({ ...filters, region: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
                 placeholder="البحث..."
               />
@@ -769,7 +777,7 @@ export function DataTable({
                   رقم المقياس
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                  العنوان
+                  المنطقة
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                   آخر قراءة
@@ -785,6 +793,9 @@ export function DataTable({
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   القفل
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  التدقيق
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   الإجراءات
@@ -872,7 +883,7 @@ export function DataTable({
                     className="px-3 sm:px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate cursor-pointer hidden lg:table-cell"
                     onClick={() => handleEdit(record)}
                   >
-                    {record.address || (
+                    {record.region || (
                       <span className="text-gray-400 italic">غير محدد</span>
                     )}
                   </td>
@@ -951,6 +962,29 @@ export function DataTable({
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <span className="text-xs text-green-600 dark:text-green-400">
                           متاح
+                        </span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {record.verification_status ? (
+                      <div className="flex items-center space-x-1 space-x-reverse">
+                        <div className={`w-2 h-2 rounded-full ${
+                          record.verification_status === 'مدقق' ? 'bg-green-500' : 'bg-yellow-500'
+                        }`}></div>
+                        <span className={`text-xs ${
+                          record.verification_status === 'مدقق' 
+                            ? 'text-green-600 dark:text-green-400' 
+                            : 'text-yellow-600 dark:text-yellow-400'
+                        }`}>
+                          {record.verification_status}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-1 space-x-reverse">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          غير محدد
                         </span>
                       </div>
                     )}
@@ -1156,11 +1190,11 @@ export function DataTable({
                       </p>
                     </div>
                   </div>
-                  {viewingRecord.address && (
+                  {viewingRecord.region && (
                     <div className="mt-4 border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">العنوان:</span>
+                      <span className="text-gray-600 dark:text-gray-400 block text-xs">المنطقة:</span>
                       <p className="text-gray-900 dark:text-white font-medium">
-                        {viewingRecord.address}
+                        {viewingRecord.region}
                       </p>
                     </div>
                   )}
@@ -1198,6 +1232,36 @@ export function DataTable({
                           </p>
                         </div>
                       )}
+                    </div>
+                  </div>
+                )}
+
+                {/* الصنف */}
+                {viewingRecord.category && (
+                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                      <FileText className="w-4 h-4 text-orange-600 dark:text-orange-400 ml-2" />
+                      الصنف
+                    </h4>
+                    <div className="flex items-center">
+                      <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-lg text-sm font-medium">
+                        {viewingRecord.category}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* المرحلة */}
+                {viewingRecord.phase && (
+                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                      <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+                      المرحلة
+                    </h4>
+                    <div className="flex items-center">
+                      <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-medium">
+                        {viewingRecord.phase}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -1440,22 +1504,34 @@ export function DataTable({
                         <input
                           type="text"
                           value={editForm.account_number}
-                          onChange={(e) => setEditForm({ ...editForm, account_number: e.target.value })}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow only numbers and limit to 12 digits
+                            if (/^\d*$/.test(value) && value.length <= 12) {
+                              setEditForm({ ...editForm, account_number: value });
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="أدخل رقم الحساب"
+                          placeholder="أدخل رقم الحساب (12 رقم فقط)"
+                          maxLength={12}
                         />
+                        {editForm.account_number && editForm.account_number.length < 12 && (
+                          <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                            يجب أن يكون رقم الحساب 12 رقم
+                          </p>
+                        )}
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          العنوان
+                          المنطقة
                         </label>
-                        <textarea
-                          value={editForm.address}
-                          onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                          rows={3}
+                        <input
+                          type="text"
+                          value={editForm.region}
+                          onChange={(e) => setEditForm({ ...editForm, region: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="أدخل العنوان"
+                          placeholder="أدخل المنطقة"
                         />
                       </div>
                     </div>
@@ -1539,6 +1615,54 @@ export function DataTable({
                           placeholder="أدخل الهوم"
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* الصنف */}
+                  <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <h4 className="text-sm font-semibold text-orange-800 dark:text-orange-200 mb-4 flex items-center">
+                      <FileText className="w-4 h-4 ml-2" />
+                      الصنف
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {['منزلي', 'تجاري', 'صناعي', 'زراعي', 'حكومي', 'انارة', 'محولة خاصة'].map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setEditForm({ ...editForm, category: cat as any })}
+                          className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            editForm.category === cat
+                              ? 'bg-orange-500 text-white shadow-lg'
+                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-orange-100 dark:hover:bg-orange-900/30'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* المرحلة */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-4 flex items-center">
+                      <FileText className="w-4 h-4 ml-2" />
+                      المرحلة
+                    </h4>
+                    <div className="flex gap-2">
+                      {['احادي', 'ثلاثي', 'سي تي'].map((ph) => (
+                        <button
+                          key={ph}
+                          type="button"
+                          onClick={() => setEditForm({ ...editForm, phase: ph as any })}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            editForm.phase === ph
+                              ? 'bg-blue-500 text-white shadow-lg'
+                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                          }`}
+                        >
+                          {ph}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -1640,7 +1764,7 @@ export function DataTable({
                       </div>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                      📄 اسم المشترك • رقم الحساب • العنوان • الترميز الجديد
+                      📄 اسم المشترك • رقم الحساب • المنطقة • الترميز الجديد
                     </p>
                   </div>
                 )}
