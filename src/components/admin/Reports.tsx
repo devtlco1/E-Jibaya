@@ -168,10 +168,11 @@ export function Reports({ records }: ReportsProps) {
   };
 
   const getStatusText = (record: CollectionRecord) => {
-    if (record.is_refused) return 'امتنع';
+    if (record.is_refused) return 'ممتنع';
     switch (record.status) {
       case 'pending': return 'قيد المراجعة';
       case 'completed': return 'مكتمل';
+      case 'refused': return 'ممتنع';
       default: return record.status;
     }
   };
@@ -408,7 +409,7 @@ export function Reports({ records }: ReportsProps) {
 
   const getRecordStatusText = (record: CollectionRecord) => {
     if (record.is_refused) {
-      return 'امتنع';
+      return 'ممتنع';
     }
     return getStatusText(record);
   };
