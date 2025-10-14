@@ -979,6 +979,21 @@ export function DataTable({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  الصور المرفوضة
+                </label>
+                <select
+                  value={filters.rejected_photos || ''}
+                  onChange={(e) => onFiltersChange({ ...filters, rejected_photos: e.target.value as any })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">الكل</option>
+                  <option value="any">يوجد صور مرفوضة</option>
+                  <option value="none">لا توجد صور مرفوضة</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   الصنف
                 </label>
                 <select

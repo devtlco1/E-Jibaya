@@ -104,6 +104,8 @@ export interface FilterState {
   // فلاتر إضافية
   category: string;
   phase: string;
+  // الصور المرفوضة
+  rejected_photos?: 'any' | 'none' | '';
 }
 
 export interface ActivityLog {

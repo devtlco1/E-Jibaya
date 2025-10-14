@@ -454,6 +454,14 @@ export function AdminDashboard() {
       return false;
     }
 
+    // صور مرفوضة
+    if (currentFilters.rejected_photos === 'any') {
+      if (!record.meter_photo_rejected && !record.invoice_photo_rejected) return false;
+    }
+    if (currentFilters.rejected_photos === 'none') {
+      if (record.meter_photo_rejected || record.invoice_photo_rejected) return false;
+    }
+
     if (currentFilters.category && record.category !== currentFilters.category) {
       return false;
     }

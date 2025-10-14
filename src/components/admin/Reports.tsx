@@ -33,6 +33,8 @@ interface ReportFilters {
   verification_status: string;
   category: string;
   phase: string;
+  // الصور المرفوضة
+  rejected_photos?: 'any' | 'none' | '';
 }
 
 export function Reports({ records }: ReportsProps) {
@@ -49,7 +51,9 @@ export function Reports({ records }: ReportsProps) {
     region: '',
     verification_status: '',
     category: '',
-    phase: ''
+    phase: '',
+    // الصور المرفوضة
+    rejected_photos: ''
   });
   const [users, setUsers] = useState<any[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -150,6 +154,14 @@ export function Reports({ records }: ReportsProps) {
 
     if (filters.phase) {
       filtered = filtered.filter(r => r.phase === filters.phase);
+    }
+
+    // الصور المرفوضة
+    if (filters.rejected_photos === 'any') {
+      filtered = filtered.filter(r => r.meter_photo_rejected || r.invoice_photo_rejected);
+    }
+    if (filters.rejected_photos === 'none') {
+      filtered = filtered.filter(r => !r.meter_photo_rejected && !r.invoice_photo_rejected);
     }
 
     setFilteredRecords(filtered);
@@ -537,8 +549,8 @@ export function Reports({ records }: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الرابع: الحالة، التدقيق، الصنف، نوع المقياس */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* الصف الرابع: الحالة، التدقيق، الصور المرفوضة، الصنف، نوع المقياس */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الحالة
@@ -567,6 +579,21 @@ export function Reports({ records }: ReportsProps) {
                 <option value="">جميع حالات التدقيق</option>
                 <option value="مدقق">مدقق</option>
                 <option value="غير مدقق">غير مدقق</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                الصور المرفوضة
+              </label>
+              <select
+                value={filters.rejected_photos || ''}
+                onChange={(e) => setFilters({ ...filters, rejected_photos: e.target.value as any })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">الكل</option>
+                <option value="any">يوجد صور مرفوضة</option>
+                <option value="none">لا توجد صور مرفوضة</option>
               </select>
             </div>
 
