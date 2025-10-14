@@ -193,16 +193,24 @@ export const dbOperations = {
 
       // Apply filters
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
+        if (value !== undefined && value !== null && value !== '') {
           if (key === 'status') {
-            // Handle special case for "refused" status
             if (value === 'refused') {
               query = query.eq('is_refused', true);
             } else {
-              // For other statuses, check that it's not refused AND matches the status
               query = query.eq('is_refused', false).eq('status', value);
             }
-          } else {
+          } else if (key === 'verification_status') {
+            query = query.eq('verification_status', value);
+          } else if (key === 'rejected_photos') {
+            if (value === 'any') {
+              query = query.or('meter_photo_rejected.eq.true,invoice_photo_rejected.eq.true');
+            } else if (value === 'none') {
+              query = query.eq('meter_photo_rejected', false).eq('invoice_photo_rejected', false);
+            }
+          } else if (['new_zone','new_block','category','phase','region'].includes(key)) {
+            query = query.eq(key, value);
+          } else if (['subscriber_name','account_number','meter_number'].includes(key)) {
             query = query.ilike(key, `%${value}%`);
           }
         }
