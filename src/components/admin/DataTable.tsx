@@ -749,11 +749,11 @@ export function DataTable({
   };
 
   const handleZoomIn = () => {
-    setImageZoom(prev => Math.min(prev * 1.5, 5));
+    setImageZoom(prev => Math.min(prev * 1.25, 5));
   };
 
   const handleZoomOut = () => {
-    setImageZoom(prev => Math.max(prev / 1.5, 0.5));
+    setImageZoom(prev => Math.max(prev / 1.25, 0.1));
   };
 
   const handleResetZoom = () => {
@@ -769,7 +769,7 @@ export function DataTable({
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (imageZoom > 1) {
+    if (imageZoom > 0.1) {
       setIsDragging(true);
       setDragStart({
         x: e.clientX - imagePosition.x,
@@ -779,7 +779,7 @@ export function DataTable({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && imageZoom > 1) {
+    if (isDragging && imageZoom > 0.1) {
       setImagePosition({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y
@@ -789,6 +789,16 @@ export function DataTable({
 
   const handleMouseUp = () => {
     setIsDragging(false);
+  };
+
+  const handleWheelZoom = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = Math.sign(e.deltaY);
+    setImageZoom(prev => {
+      const factor = delta > 0 ? 1 / 1.1 : 1.1;
+      const next = prev * factor;
+      return Math.min(Math.max(next, 0.1), 5);
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -1676,6 +1686,7 @@ export function DataTable({
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
+              onWheel={handleWheelZoom}
             >
               <img
                 src={zoomedImage.url}
