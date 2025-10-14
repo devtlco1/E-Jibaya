@@ -131,14 +131,18 @@ export function AdminDashboard() {
 
   // تحديث حالة القفل محلياً دون إعادة تحميل التاب
   const updateRecordLockStatus = (recordId: string, updates: Partial<CollectionRecord>) => {
-    setRecords(prevRecords => 
-      prevRecords.map(record => 
-        record.id === recordId 
-          ? { ...record, ...updates }
-          : record
-      )
-    );
-    console.log('Record lock status updated locally without page refresh');
+    setRecords(prevRecords => {
+      const newRecords = prevRecords.map(record =>
+        record.id === recordId ? { ...record, ...updates } : record
+      );
+
+      // تحديث عدّاد المقفلة فورياً
+      const newLockedCount = newRecords.filter(r => r.locked_by).length;
+      setAllRecordsStats(prev => ({ ...prev, locked: newLockedCount }));
+
+      return newRecords;
+    });
+    console.log('Record lock status updated locally and stats refreshed');
   };
 
   const loadRecords = async () => {
