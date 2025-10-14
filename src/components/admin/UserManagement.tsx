@@ -34,6 +34,10 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // Filter state
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   const { addNotification } = useNotifications();
   const { user: currentUser } = useAuth();
@@ -43,12 +47,23 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     loadUsers();
   }, []);
 
+  // Filter users based on role and status
+  const filteredUsers = users.filter(user => {
+    const roleMatch = !roleFilter || user.role === roleFilter;
+    const statusMatch = !statusFilter || (
+      statusFilter === 'active' ? user.is_active && !user.username.includes('(محذوف)') :
+      statusFilter === 'inactive' ? !user.is_active && !user.username.includes('(محذوف)') :
+      statusFilter === 'deleted' ? user.username.includes('(محذوف)') : true
+    );
+    return roleMatch && statusMatch;
+  });
+
   // Pagination calculations
-  const totalUsers = users.length;
+  const totalUsers = filteredUsers.length;
   const totalPages = Math.ceil(totalUsers / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedUsers = users.slice(startIndex, endIndex);
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
   // Pagination handlers
   const handlePageChange = (page: number) => {
@@ -58,6 +73,17 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const handleItemsPerPageChange = (items: number) => {
     setItemsPerPage(items);
     setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  // Filter handlers
+  const handleRoleFilterChange = (role: string) => {
+    setRoleFilter(role);
+    setCurrentPage(1); // Reset to first page when changing filters
+  };
+
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page when changing filters
   };
 
   const loadUsers = async () => {
@@ -438,6 +464,45 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
           <UserPlus className="w-4 h-4 ml-2" />
           إضافة مستخدم جديد
         </button>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Role Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              الدور
+            </label>
+            <select
+              value={roleFilter}
+              onChange={(e) => handleRoleFilterChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+            >
+              <option value="">جميع الأدوار</option>
+              <option value="admin">مدير</option>
+              <option value="employee">موظف</option>
+              <option value="field_agent">محصل ميداني</option>
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              الحالة
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+            >
+              <option value="">جميع الحالات</option>
+              <option value="active">نشط</option>
+              <option value="inactive">معطل</option>
+              <option value="deleted">محذوف</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Users Table */}
