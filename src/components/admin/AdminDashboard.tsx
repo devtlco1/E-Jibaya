@@ -32,8 +32,9 @@ export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities' | 'backup'>('records');
 
   // Redirect employees to records tab if they try to access restricted tabs
+  // Note: employees now have access to users tab for user management
   useEffect(() => {
-    if (user?.role === 'employee' && (activeTab === 'users' || activeTab === 'activities')) {
+    if (user?.role === 'employee' && activeTab === 'activities') {
       setActiveTab('records');
     }
   }, [user?.role, activeTab]);
@@ -751,7 +752,7 @@ export function AdminDashboard() {
                 <span className="sm:hidden">السجلات</span>
               </div>
             </button>
-            {user?.role === 'admin' && (
+            {(user?.role === 'admin' || user?.role === 'employee') && (
               <button
                 onClick={() => setActiveTab('users')}
                 className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${

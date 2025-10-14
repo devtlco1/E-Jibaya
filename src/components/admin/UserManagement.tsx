@@ -150,6 +150,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   };
 
   const handleEditUser = (user: User) => {
+    // Prevent editing default admin
+    if (user.id === '1') {
+      addNotification({
+        type: 'error',
+        title: 'غير مسموح',
+        message: 'لا يمكن تعديل حساب الأدمن الافتراضي'
+      });
+      return;
+    }
+    
     setEditingUser(user);
     setNewUser({
       username: user.username,
@@ -227,6 +237,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const handleDeleteUser = async (id: string) => {
     const user = users.find(u => u.id === id);
     if (user) {
+      // Prevent deleting default admin
+      if (user.id === '1') {
+        addNotification({
+          type: 'error',
+          title: 'غير مسموح',
+          message: 'لا يمكن إلغاء تفعيل حساب الأدمن الافتراضي'
+        });
+        return;
+      }
+      
       setDeleteConfirm({
         isOpen: true,
         userId: id,
@@ -476,16 +496,23 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       </button>
                       <button
                         onClick={() => handleEditUser(user)}
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        title="تعديل"
+                        disabled={user.id === '1'} // Prevent editing default admin
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={user.id === '1' ? 'لا يمكن تعديل حساب الأدمن الافتراضي' : 'تعديل'}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteUser(user.id)}
-                        disabled={users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin'}
+                        disabled={user.id === '1' || (users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin')}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin' ? 'لا يمكن إلغاء تفعيل آخر مدير' : 'إلغاء تفعيل'}
+                        title={
+                          user.id === '1' 
+                            ? 'لا يمكن إلغاء تفعيل حساب الأدمن الافتراضي' 
+                            : users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin' 
+                              ? 'لا يمكن إلغاء تفعيل آخر مدير' 
+                              : 'إلغاء تفعيل'
+                        }
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

@@ -116,7 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check session validity periodically
   useEffect(() => {
-    const checkSession = () => {
+    const checkSession = async () => {
       try {
         const currentUser = dbOperations.getCurrentUser();
         const loginTime = localStorage.getItem('ejibaya_login_time');
@@ -124,6 +124,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (currentUser && loginTime) {
           const timeDiff = Date.now() - parseInt(loginTime);
           if (timeDiff > SESSION_TIMEOUT) {
+            logout();
+            return;
+          }
+          
+          // Check if user is still active in database
+          const isUserActive = await dbOperations.checkUserStatus(currentUser.id);
+          if (!isUserActive) {
+            console.log('User account has been deactivated, logging out...');
             logout();
           }
         }
@@ -135,7 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
 
-    const interval = setInterval(checkSession, 60000); // Check every minute
+    const interval = setInterval(checkSession, 30000); // Check every 30 seconds for better responsiveness
     return () => clearInterval(interval);
   }, []);
 

@@ -147,6 +147,33 @@ export const dbOperations = {
     return user ? JSON.parse(user) : null;
   },
 
+  // Check if user is still active in database
+  async checkUserStatus(userId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        console.warn('Supabase not configured - assuming user is active');
+        return true;
+      }
+      
+      const { data: user, error } = await client
+        .from('users')
+        .select('is_active')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error checking user status:', error);
+        return true; // Assume active if we can't check
+      }
+      
+      return user?.is_active || false;
+    } catch (error) {
+      console.error('Error checking user status:', error);
+      return true; // Assume active if we can't check
+    }
+  },
+
   // Collection Records
   async getRecordsWithPagination(page: number = 1, limit: number = 10, filters: any = {}): Promise<{
     data: CollectionRecord[];
