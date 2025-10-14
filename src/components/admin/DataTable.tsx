@@ -57,7 +57,9 @@ export function DataTable({
     // الصنف
     category: null as 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | 'انارة' | 'محولة خاصة' | null,
     // نوع المقياس
-    phase: null as 'احادي' | 'ثلاثي' | 'سي تي' | null
+    phase: null as 'احادي' | 'ثلاثي' | 'سي تي' | null,
+    // معامل الضرب (يظهر فقط عند اختيار سي تي)
+    multiplier: ''
   });
   const [showFilters, setShowFilters] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
@@ -563,7 +565,9 @@ export function DataTable({
       // الصنف
       category: record.category,
       // نوع المقياس
-      phase: record.phase
+      phase: record.phase,
+      // معامل الضرب
+      multiplier: record.multiplier || ''
       });
 
       // إشعار صامت - لا يظهر للمستخدمين الآخرين
@@ -634,7 +638,9 @@ export function DataTable({
         // Handle status and is_refused logic
         let updateData: any = {
           ...editForm,
-          completed_by: currentUser.id || editingRecord.completed_by
+          completed_by: currentUser.id || editingRecord.completed_by,
+          // إضافة معامل الضرب إذا كان موجوداً
+          multiplier: editForm.multiplier || null
         };
 
         // Handle status logic
@@ -1866,6 +1872,22 @@ export function DataTable({
                         </button>
                       ))}
                     </div>
+                    
+                    {/* حقل معامل الضرب - يظهر فقط عند اختيار سي تي */}
+                    {editForm.phase === 'سي تي' && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          معامل الضرب (اختياري)
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.multiplier}
+                          onChange={(e) => setEditForm({ ...editForm, multiplier: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل معامل الضرب (رقم أو نص)"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* 5. الترميز الجديد */}

@@ -39,6 +39,8 @@ export interface CollectionRecord {
   category: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | 'انارة' | 'محولة خاصة' | null;
   // نوع المقياس
   phase: 'احادي' | 'ثلاثي' | 'سي تي' | null;
+  // معامل الضرب (يظهر فقط عند اختيار سي تي)
+  multiplier: string | null;
   // تدقيق الصور
   meter_photo_verified: boolean;
   invoice_photo_verified: boolean;
