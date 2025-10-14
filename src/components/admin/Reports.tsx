@@ -549,8 +549,8 @@ export function Reports({ records }: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الرابع: الحالة، التدقيق، الصور المرفوضة، الصنف، نوع المقياس */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {/* الصف الرابع: الحالة، التدقيق، الصور المرفوضة */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الحالة
@@ -596,7 +596,10 @@ export function Reports({ records }: ReportsProps) {
                 <option value="none">لا توجد صور مرفوضة</option>
               </select>
             </div>
+          </div>
 
+          {/* الصف الخامس: الصنف، نوع المقياس */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الصنف
