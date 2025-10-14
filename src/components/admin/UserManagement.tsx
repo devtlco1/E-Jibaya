@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar } from 'lucide-react';
@@ -34,6 +35,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const { addNotification } = useNotifications();
+  const { user: currentUser } = useAuth();
 
   // Load users on component mount
   React.useEffect(() => {
@@ -160,6 +162,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       return;
     }
     
+    // Prevent employees from editing any admin accounts
+    if (currentUser?.role === 'employee' && user.role === 'admin') {
+      addNotification({
+        type: 'error',
+        title: 'غير مسموح',
+        message: 'لا يمكن للموظفين تعديل حسابات المديرين'
+      });
+      return;
+    }
+    
     setEditingUser(user);
     setNewUser({
       username: user.username,
@@ -176,6 +188,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const handleUpdateUser = async () => {
     if (editingUser) {
       try {
+        // Prevent employees from changing user roles to admin
+        if (currentUser?.role === 'employee' && newUser.role === 'admin') {
+          addNotification({
+            type: 'error',
+            title: 'غير مسموح',
+            message: 'لا يمكن للموظفين تعيين دور مدير للمستخدمين'
+          });
+          return;
+        }
+        
         const updates: Partial<User> = {
           username: newUser.username,
           full_name: newUser.full_name,
@@ -496,9 +518,18 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       </button>
                       <button
                         onClick={() => handleEditUser(user)}
-                        disabled={user.id === '1'} // Prevent editing default admin
+                        disabled={
+                          user.id === '1' || // Prevent editing default admin
+                          (currentUser?.role === 'employee' && user.role === 'admin') // Prevent employees from editing admin accounts
+                        }
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={user.id === '1' ? 'لا يمكن تعديل حساب الأدمن الافتراضي' : 'تعديل'}
+                        title={
+                          user.id === '1' 
+                            ? 'لا يمكن تعديل حساب الأدمن الافتراضي'
+                            : (currentUser?.role === 'employee' && user.role === 'admin')
+                              ? 'لا يمكن للموظفين تعديل حسابات المديرين'
+                              : 'تعديل'
+                        }
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -836,12 +867,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                   <select
                     value={newUser.role}
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
-                    disabled={editingUser.id === '1'} // Prevent changing admin role for default admin
+                    disabled={
+                      editingUser.id === '1' || // Prevent changing admin role for default admin
+                      (currentUser?.role === 'employee' && editingUser.role === 'admin') // Prevent employees from changing admin roles
+                    }
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="field_agent">محصل ميداني</option>
                     <option value="employee">موظف</option>
-                    <option value="admin">مدير</option>
+                    {currentUser?.role === 'admin' && <option value="admin">مدير</option>}
                   </select>
                 </div>
 
