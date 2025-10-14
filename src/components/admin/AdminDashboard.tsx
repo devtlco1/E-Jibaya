@@ -214,9 +214,10 @@ export function AdminDashboard() {
     
     if (!dbOperations.supabase) return;
 
-    // Clean up existing subscription
+    // Clean up existing subscription (and null it)
     if (realtimeSubscription.current) {
       dbOperations.supabase?.removeChannel(realtimeSubscription.current);
+      realtimeSubscription.current = null;
     }
 
     console.log('Setting up real-time subscription for collection_records...');
@@ -246,12 +247,17 @@ export function AdminDashboard() {
                 message: `تم إضافة سجل جديد: ${newRecord.subscriber_name || 'غير محدد'}`
               });
               
-              // إضافة السجل الجديد محلياً بدون ريفرش كامل مع الحفاظ على الفلاتر
-              setRecords(prev => [newRecord, ...prev].slice(0, itemsPerPage));
-              setTotalRecords(prev => {
-                const next = prev + 1;
-                setTotalPages(Math.max(1, Math.ceil(next / itemsPerPage)));
-                return next;
+              // إضافة السجل الجديد محلياً بدون ريفرش كامل مع الحفاظ على الفلاتر (مع منع التكرار)
+              setRecords(prev => {
+                if (prev.some(r => r.id === newRecord.id)) return prev;
+                const next = [newRecord, ...prev];
+                // تحديث العدادات فقط إذا فعلاً أُضيف عنصر جديد
+                setTotalRecords(prevTotal => {
+                  const nextTotal = prevTotal + 1;
+                  setTotalPages(Math.max(1, Math.ceil(nextTotal / itemsPerPage)));
+                  return nextTotal;
+                });
+                return next.slice(0, itemsPerPage);
               });
             }
             
@@ -315,9 +321,10 @@ export function AdminDashboard() {
       )
       .subscribe((status: any) => {
         console.log('Real-time subscription status:', status);
-        setIsRealtimeConnected(status === 'SUBSCRIBED');
+        const isOk = status === 'SUBSCRIBED' || status === 'READY';
+        setIsRealtimeConnected(isOk);
         
-        if (status === 'SUBSCRIBED') {
+        if (status === 'SUBSCRIBED' || status === 'READY') {
           addNotification({
             type: 'success',
             title: 'التحديثات المباشرة',
@@ -362,12 +369,16 @@ export function AdminDashboard() {
               message: `تم إضافة سجل جديد: ${latestRecord.subscriber_name || 'غير محدد'}`
             });
 
-            // تحديث محلي بدون ريفرش كامل
-            setRecords(prev => [latestRecord, ...prev].slice(0, itemsPerPage));
-            setTotalRecords(prev => {
-              const next = prev + 1;
-              setTotalPages(Math.max(1, Math.ceil(next / itemsPerPage)));
-              return next;
+            // تحديث محلي بدون ريفرش كامل (مع منع التكرار)
+            setRecords(prev => {
+              if (prev.some(r => r.id === latestRecord.id)) return prev;
+              const next = [latestRecord, ...prev];
+              setTotalRecords(prevTotal => {
+                const nextTotal = prevTotal + 1;
+                setTotalPages(Math.max(1, Math.ceil(nextTotal / itemsPerPage)));
+                return nextTotal;
+              });
+              return next.slice(0, itemsPerPage);
             });
             loadFieldAgentsCount();
           } else {
