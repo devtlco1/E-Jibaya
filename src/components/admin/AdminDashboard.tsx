@@ -246,8 +246,13 @@ export function AdminDashboard() {
                 message: `تم إضافة سجل جديد: ${newRecord.subscriber_name || 'غير محدد'}`
               });
               
-              // Only refresh if record matches current filters
-              loadRecords();
+              // إضافة السجل الجديد محلياً بدون ريفرش كامل مع الحفاظ على الفلاتر
+              setRecords(prev => [newRecord, ...prev].slice(0, itemsPerPage));
+              setTotalRecords(prev => {
+                const next = prev + 1;
+                setTotalPages(Math.max(1, Math.ceil(next / itemsPerPage)));
+                return next;
+              });
             }
             
             // Always refresh stats
@@ -357,8 +362,13 @@ export function AdminDashboard() {
               message: `تم إضافة سجل جديد: ${latestRecord.subscriber_name || 'غير محدد'}`
             });
 
-            // Refresh current data with current filters
-            loadRecords();
+            // تحديث محلي بدون ريفرش كامل
+            setRecords(prev => [latestRecord, ...prev].slice(0, itemsPerPage));
+            setTotalRecords(prev => {
+              const next = prev + 1;
+              setTotalPages(Math.max(1, Math.ceil(next / itemsPerPage)));
+              return next;
+            });
             loadFieldAgentsCount();
           } else {
             // No matching record for current filters; skip notification and heavy refresh
