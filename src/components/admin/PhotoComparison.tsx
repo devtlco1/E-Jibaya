@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save } from 'lucide-react';
+import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save, XCircle } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
@@ -254,6 +254,15 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     }
   };
 
+  const handlePhotoRejection = (photoType: 'meter' | 'invoice') => {
+    if (!record) return;
+    // قلب حالة الرفض محلياً
+    const key = `${photoType}_photo_rejected` as keyof CollectionRecord;
+    const current = (record as any)[key] as boolean | undefined;
+    setRecord(prev => prev ? { ...prev, [key]: !current } as any : prev);
+    setHasUnsavedChanges(true);
+  };
+
   const handleAdditionalPhotoVerification = async (photoId: string) => {
     try {
       const photo = photos.find(p => p.id === photoId);
@@ -354,7 +363,10 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       const updates: any = {
         meter_photo_verified: record.meter_photo_verified,
         invoice_photo_verified: record.invoice_photo_verified,
-        verification_status: calculatedStatus
+        verification_status: calculatedStatus,
+        // حفظ حالات الرفض
+        meter_photo_rejected: record.meter_photo_rejected || false,
+        invoice_photo_rejected: record.invoice_photo_rejected || false
       };
 
       console.log('=== Saving to Database ===');
@@ -582,20 +594,29 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               {formatDate(originalPhotos.meter.photo_date)}
                             </div>
                           </div>
-                          <button
+                          <div className="flex items-center gap-1">
+                            <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handlePhotoVerification('meter');
                             }}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                             title={originalPhotos.meter?.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                          >
-                            {originalPhotos.meter?.verified ? (
-                              <CheckCircle className="w-5 h-5 text-green-500" />
-                            ) : (
-                              <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                            )}
-                          </button>
+                            >
+                              {originalPhotos.meter?.verified ? (
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handlePhotoRejection('meter'); }}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              title={(record?.meter_photo_rejected ? 'إلغاء الرفض' : 'رفض الصورة')}
+                            >
+                              <XCircle className={`w-5 h-5 ${record?.meter_photo_rejected ? 'text-red-600' : 'text-gray-400 hover:text-red-500'}`} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -694,20 +715,29 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               {formatDate(originalPhotos.invoice.photo_date)}
                             </div>
                           </div>
-                          <button
+                          <div className="flex items-center gap-1">
+                            <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handlePhotoVerification('invoice');
                             }}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                             title={originalPhotos.invoice?.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                          >
-                            {originalPhotos.invoice?.verified ? (
-                              <CheckCircle className="w-5 h-5 text-green-500" />
-                            ) : (
-                              <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                            )}
-                          </button>
+                            >
+                              {originalPhotos.invoice?.verified ? (
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handlePhotoRejection('invoice'); }}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              title={(record?.invoice_photo_rejected ? 'إلغاء الرفض' : 'رفض الصورة')}
+                            >
+                              <XCircle className={`w-5 h-5 ${record?.invoice_photo_rejected ? 'text-red-600' : 'text-gray-400 hover:text-red-500'}`} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

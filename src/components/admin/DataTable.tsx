@@ -1235,6 +1235,9 @@ export function DataTable({
                         }`}>
                           {record.verification_status}
                         </span>
+                        {(record.meter_photo_rejected || record.invoice_photo_rejected) && (
+                          <span className="text-red-600 ml-2" title="هناك صورة مرفوضة">▲</span>
+                        )}
                       </div>
                     ) : (
                       <div className="flex items-center space-x-1 space-x-reverse">

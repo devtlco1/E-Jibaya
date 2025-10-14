@@ -44,6 +44,9 @@ export interface CollectionRecord {
   // تدقيق الصور
   meter_photo_verified: boolean;
   invoice_photo_verified: boolean;
+  // رفض الصور
+  meter_photo_rejected?: boolean;
+  invoice_photo_rejected?: boolean;
   // حالة التدقيق
   verification_status: 'غير مدقق' | 'مدقق' | null;
 }
