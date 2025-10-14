@@ -162,12 +162,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       return;
     }
     
-    // Prevent employees from editing any admin accounts
-    if (currentUser?.role === 'employee' && user.role === 'admin') {
+    // صلاحيات الموظف: لا يمكن تعديل أي حساب لدور الموظف أو الأدمن
+    if (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) {
       addNotification({
         type: 'error',
         title: 'غير مسموح',
-        message: 'لا يمكن للموظفين تعديل حسابات المديرين'
+        message: 'لا يمكن للموظفين تعديل حسابات المديرين أو الموظفين الآخرين'
       });
       return;
     }
@@ -188,12 +188,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const handleUpdateUser = async () => {
     if (editingUser) {
       try {
-        // Prevent employees from changing user roles to admin
-        if (currentUser?.role === 'employee' && newUser.role === 'admin') {
+        // صلاحيات الموظف: لا يمكن تغيير الدور إلى مدير أو موظف
+        if (currentUser?.role === 'employee' && (newUser.role === 'admin' || newUser.role === 'employee')) {
           addNotification({
             type: 'error',
             title: 'غير مسموح',
-            message: 'لا يمكن للموظفين تعيين دور مدير للمستخدمين'
+            message: 'لا يمكن للموظفين تعيين دور مدير أو موظف للمستخدمين'
           });
           return;
         }
@@ -265,6 +265,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
           type: 'error',
           title: 'غير مسموح',
           message: 'لا يمكن إلغاء تفعيل حساب الأدمن الافتراضي'
+        });
+        return;
+      }
+      
+      // صلاحيات الموظف: لا يمكن حذف أو تعطيل حسابات الموظفين أو المديرين
+      if (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) {
+        addNotification({
+          type: 'error',
+          title: 'غير مسموح',
+          message: 'لا يمكن للموظفين حذف أو تعطيل حسابات المديرين أو الموظفين الآخرين'
         });
         return;
       }
@@ -520,14 +530,14 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                         onClick={() => handleEditUser(user)}
                         disabled={
                           user.id === '1' || // Prevent editing default admin
-                          (currentUser?.role === 'employee' && user.role === 'admin') // Prevent employees from editing admin accounts
+                          (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) // Prevent employees from editing admin or employee accounts
                         }
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={
                           user.id === '1' 
                             ? 'لا يمكن تعديل حساب الأدمن الافتراضي'
-                            : (currentUser?.role === 'employee' && user.role === 'admin')
-                              ? 'لا يمكن للموظفين تعديل حسابات المديرين'
+                            : (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
+                              ? 'لا يمكن للموظفين تعديل حسابات المديرين أو الموظفين الآخرين'
                               : 'تعديل'
                         }
                       >
@@ -535,14 +545,20 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       </button>
                       <button
                         onClick={() => handleDeleteUser(user.id)}
-                        disabled={user.id === '1' || (users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin')}
+                        disabled={
+                          user.id === '1' || 
+                          (users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin') ||
+                          (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
+                        }
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={
                           user.id === '1' 
                             ? 'لا يمكن إلغاء تفعيل حساب الأدمن الافتراضي' 
                             : users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin' 
                               ? 'لا يمكن إلغاء تفعيل آخر مدير' 
-                              : 'إلغاء تفعيل'
+                              : (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
+                                ? 'لا يمكن للموظفين حذف أو تعطيل حسابات المديرين أو الموظفين الآخرين'
+                                : 'إلغاء تفعيل'
                         }
                       >
                         <Trash2 className="w-4 h-4" />
@@ -869,7 +885,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
                     disabled={
                       editingUser.id === '1' || // Prevent changing admin role for default admin
-                      (currentUser?.role === 'employee' && editingUser.role === 'admin') // Prevent employees from changing admin roles
+                      (currentUser?.role === 'employee' && (editingUser.role === 'admin' || editingUser.role === 'employee')) // Prevent employees from changing admin or employee roles
                     }
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
