@@ -76,6 +76,60 @@ export function DataTable({
   const [imageRotation, setImageRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Inline controls for edit modal images (invoice)
+  const [invZoom, setInvZoom] = useState(1);
+  const [invPos, setInvPos] = useState({ x: 0, y: 0 });
+  const [invRot, setInvRot] = useState(0);
+  const [invDragging, setInvDragging] = useState(false);
+  const [invDragStart, setInvDragStart] = useState({ x: 0, y: 0, ix: 0, iy: 0 });
+
+  const handleInvWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setInvZoom(prev => {
+      const next = prev * (e.deltaY < 0 ? 1.1 : 1 / 1.1);
+      return Math.min(Math.max(next, 0.1), 5);
+    });
+  };
+  const handleInvMouseDown = (e: React.MouseEvent) => {
+    if (invZoom > 1) {
+      setInvDragging(true);
+      setInvDragStart({ x: e.clientX, y: e.clientY, ix: invPos.x, iy: invPos.y });
+    }
+  };
+  const handleInvMouseMove = (e: React.MouseEvent) => {
+    if (invDragging && invZoom > 1) {
+      setInvPos({ x: invDragStart.ix + (e.clientX - invDragStart.x), y: invDragStart.iy + (e.clientY - invDragStart.y) });
+    }
+  };
+  const handleInvMouseUp = () => setInvDragging(false);
+
+  // Inline controls for edit modal images (meter)
+  const [metZoom, setMetZoom] = useState(1);
+  const [metPos, setMetPos] = useState({ x: 0, y: 0 });
+  const [metRot, setMetRot] = useState(0);
+  const [metDragging, setMetDragging] = useState(false);
+  const [metDragStart, setMetDragStart] = useState({ x: 0, y: 0, ix: 0, iy: 0 });
+
+  const handleMetWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setMetZoom(prev => {
+      const next = prev * (e.deltaY < 0 ? 1.1 : 1 / 1.1);
+      return Math.min(Math.max(next, 0.1), 5);
+    });
+  };
+  const handleMetMouseDown = (e: React.MouseEvent) => {
+    if (metZoom > 1) {
+      setMetDragging(true);
+      setMetDragStart({ x: e.clientX, y: e.clientY, ix: metPos.x, iy: metPos.y });
+    }
+  };
+  const handleMetMouseMove = (e: React.MouseEvent) => {
+    if (metDragging && metZoom > 1) {
+      setMetPos({ x: metDragStart.ix + (e.clientX - metDragStart.x), y: metDragStart.iy + (e.clientY - metDragStart.y) });
+    }
+  };
+  const handleMetMouseUp = () => setMetDragging(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; recordId: string; recordName: string }>({
     isOpen: false,
     recordId: '',
@@ -2042,27 +2096,36 @@ export function DataTable({
                       صورة الفاتورة
                     </h5>
                     <div className="relative bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                      <img 
-                        ref={invoiceImageRef}
-                        src={editingRecord.invoice_photo_url} 
-                        alt="صورة الفاتورة" 
-                        className="w-full h-80 object-contain cursor-zoom-in transition-transform duration-200 hover:scale-105"
-                        onClick={() => handleImageClick(editingRecord.invoice_photo_url!, 'صورة الفاتورة')}
-                      />
+                      <div
+                        className="w-full h-80 flex items-center justify-center overflow-hidden"
+                        onWheel={handleInvWheel}
+                        onMouseDown={handleInvMouseDown}
+                        onMouseMove={handleInvMouseMove}
+                        onMouseUp={handleInvMouseUp}
+                        onMouseLeave={handleInvMouseUp}
+                        style={{ cursor: invZoom > 1 ? (invDragging ? 'grabbing' : 'grab') : 'default' }}
+                      >
+                        <img 
+                          ref={invoiceImageRef}
+                          src={editingRecord.invoice_photo_url} 
+                          alt="صورة الفاتورة" 
+                          className="max-w-full max-h-full object-contain select-none"
+                          draggable={false}
+                          style={{ transform: `translate(${invPos.x}px, ${invPos.y}px) rotate(${invRot}deg) scale(${invZoom})`, transition: invDragging ? 'none' : 'transform 0.08s ease-out' }}
+                        />
+                      </div>
                       <div className="absolute top-2 right-2 flex space-x-1 space-x-reverse">
-                        <button
-                          onClick={() => {
-                            if (invoiceImageRef.current) {
-                              const currentScale = invoiceImageRef.current.style.transform.includes('scale(1.5)') ? 1.5 : 1;
-                              const newScale = currentScale === 1 ? 1.5 : 1;
-                              invoiceImageRef.current.style.transform = `scale(${newScale})`;
-                              invoiceImageRef.current.style.cursor = newScale === 1.5 ? 'zoom-out' : 'zoom-in';
-                            }
-                          }}
-                          className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-opacity"
-                          title="تكبير/تصغير"
-                        >
+                        <button onClick={() => setInvZoom(z => Math.min(z * 1.25, 5))} className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70" title="تكبير">
                           <ZoomIn className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setInvZoom(z => Math.max(z / 1.25, 0.1))} className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70" title="تصغير">
+                          <ZoomOut className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setInvRot(r => (r + 90) % 360)} className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70" title="دوران">
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => { setInvZoom(1); setInvPos({ x: 0, y: 0 }); setInvRot(0); }} className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70" title="إعادة تعيين">
+                          <Maximize2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -2079,27 +2142,36 @@ export function DataTable({
                       صورة المقياس
                     </h5>
                     <div className="relative bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                      <img 
-                        ref={meterImageRef}
-                        src={editingRecord.meter_photo_url} 
-                        alt="صورة المقياس" 
-                        className="w-full h-80 object-contain cursor-zoom-in transition-transform duration-200 hover:scale-105"
-                        onClick={() => handleImageClick(editingRecord.meter_photo_url!, 'صورة المقياس')}
-                      />
+                      <div
+                        className="w-full h-80 flex items-center justify-center overflow-hidden"
+                        onWheel={handleMetWheel}
+                        onMouseDown={handleMetMouseDown}
+                        onMouseMove={handleMetMouseMove}
+                        onMouseUp={handleMetMouseUp}
+                        onMouseLeave={handleMetMouseUp}
+                        style={{ cursor: metZoom > 1 ? (metDragging ? 'grabbing' : 'grab') : 'default' }}
+                      >
+                        <img 
+                          ref={meterImageRef}
+                          src={editingRecord.meter_photo_url} 
+                          alt="صورة المقياس" 
+                          className="max-w-full max-h-full object-contain select-none"
+                          draggable={false}
+                          style={{ transform: `translate(${metPos.x}px, ${metPos.y}px) rotate(${metRot}deg) scale(${metZoom})`, transition: metDragging ? 'none' : 'transform 0.08s ease-out' }}
+                        />
+                      </div>
                       <div className="absolute top-2 right-2 flex space-x-1 space-x-reverse">
-                        <button
-                          onClick={() => {
-                            if (meterImageRef.current) {
-                              const currentScale = meterImageRef.current.style.transform.includes('scale(1.5)') ? 1.5 : 1;
-                              const newScale = currentScale === 1 ? 1.5 : 1;
-                              meterImageRef.current.style.transform = `scale(${newScale})`;
-                              meterImageRef.current.style.cursor = newScale === 1.5 ? 'zoom-out' : 'zoom-in';
-                            }
-                          }}
-                          className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70 transition-opacity"
-                          title="تكبير/تصغير"
-                        >
+                        <button onClick={() => setMetZoom(z => Math.min(z * 1.25, 5))} className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70" title="تكبير">
                           <ZoomIn className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setMetZoom(z => Math.max(z / 1.25, 0.1))} className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70" title="تصغير">
+                          <ZoomOut className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setMetRot(r => (r + 90) % 360)} className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70" title="دوران">
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => { setMetZoom(1); setMetPos({ x: 0, y: 0 }); setMetRot(0); }} className="bg-black bg-opacity-50 text-white p-2 rounded-lg hover:bg-opacity-70" title="إعادة تعيين">
+                          <Maximize2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
