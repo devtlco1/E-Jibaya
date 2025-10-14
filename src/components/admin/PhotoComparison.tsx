@@ -646,7 +646,11 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                               title={(record?.meter_photo_rejected ? 'إلغاء الرفض' : 'رفض الصورة')}
                             >
-                              <XCircle className={`w-5 h-5 ${record?.meter_photo_rejected ? 'text-red-600' : 'text-gray-400 hover:text-red-500'}`} />
+                              {record?.meter_photo_rejected ? (
+                                <XCircle className="w-5 h-5 text-red-600" />
+                              ) : (
+                                <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
+                              )}
                             </button>
                           </div>
                         </div>
@@ -783,7 +787,11 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                               title={(record?.invoice_photo_rejected ? 'إلغاء الرفض' : 'رفض الصورة')}
                             >
-                              <XCircle className={`w-5 h-5 ${record?.invoice_photo_rejected ? 'text-red-600' : 'text-gray-400 hover:text-red-500'}`} />
+                              {record?.invoice_photo_rejected ? (
+                                <XCircle className="w-5 h-5 text-red-600" />
+                              ) : (
+                                <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
+                              )}
                             </button>
                           </div>
                         </div>
