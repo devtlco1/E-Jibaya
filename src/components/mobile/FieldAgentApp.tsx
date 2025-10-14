@@ -501,7 +501,8 @@ export function FieldAgentApp() {
       gps_latitude: gpsData?.lat || selectedRecord.gps_latitude,
       gps_longitude: gpsData?.lng || selectedRecord.gps_longitude,
       notes: notes || selectedRecord.notes,
-      is_refused: isRefused,
+      // لا تغيير حالة is_refused إذا كان السجل مكتمل مسبقاً
+      is_refused: selectedRecord.status === 'completed' ? false : isRefused,
       // الترميز الجديد
       new_zone: selectedRecord.new_zone,
       new_block: selectedRecord.new_block,
@@ -560,6 +561,21 @@ export function FieldAgentApp() {
         });
       } catch (logError) {
         console.warn('Failed to log activity:', logError);
+      }
+      
+      // إضافة رسالة توضيحية إذا كان السجل مكتمل مسبقاً
+      if (selectedRecord.status === 'completed' && isRefused) {
+        addNotification({
+          type: 'info',
+          title: 'تم إضافة الصور',
+          message: 'تم إضافة الصور للسجل المكتمل. الحالة تبقى "مكتمل" وليس "امتنع"'
+        });
+      } else {
+        addNotification({
+          type: 'success',
+          title: 'تم إضافة الصور',
+          message: 'تم إضافة الصور للسجل بنجاح'
+        });
       }
       
       setSubmitted(true);
