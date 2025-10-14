@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save, XCircle } from 'lucide-react';
+import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save, XCircle, Ban } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { CollectionRecord, RecordPhoto } from '../../types';
@@ -261,6 +261,38 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     const current = (record as any)[key] as boolean | undefined;
     setRecord(prev => prev ? { ...prev, [key]: !current } as any : prev);
     setHasUnsavedChanges(true);
+  };
+
+  const handleAdditionalPhotoRejection = async (photoId: string) => {
+    if (!record || isUpdatingStatus) {
+      console.log('Additional photo rejection blocked - record:', !!record, 'isUpdating:', isUpdatingStatus);
+      return;
+    }
+    try {
+      setIsUpdatingStatus(true);
+      
+      // Find the photo and toggle its rejected status
+      const photoIndex = photos.findIndex(p => p.id === photoId);
+      if (photoIndex === -1) return;
+      
+      const photo = photos[photoIndex];
+      const newRejectedStatus = !photo.rejected;
+      
+      // Update photo locally
+      setPhotos(prev => prev.map(p => 
+        p.id === photoId ? { ...p, rejected: newRejectedStatus } : p
+      ));
+      
+      setHasUnsavedChanges(true);
+      console.log(`Additional photo ${photoId} rejection toggled (local only):`, newRejectedStatus);
+      
+      // Update verification status
+      updateVerificationStatus();
+    } catch (error) {
+      console.error('Error updating additional photo rejection:', error);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   const handleAdditionalPhotoVerification = async (photoId: string) => {
@@ -655,20 +687,36 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               </div>
                             )}
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAdditionalPhotoVerification(photo.id);
-                            }}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                            title={photo.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                          >
-                            {photo.verified ? (
-                              <CheckCircle className="w-5 h-5 text-green-500" />
-                            ) : (
-                              <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                            )}
-                          </button>
+                          <div className="flex space-x-1 space-x-reverse">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAdditionalPhotoVerification(photo.id);
+                              }}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              title={photo.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                            >
+                              {photo.verified ? (
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAdditionalPhotoRejection(photo.id);
+                              }}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              title={photo.rejected ? 'إلغاء الرفض' : 'رفض الصورة'}
+                            >
+                              {photo.rejected ? (
+                                <XCircle className="w-5 h-5 text-red-600" />
+                              ) : (
+                                <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -776,20 +824,36 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                               </div>
                             )}
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAdditionalPhotoVerification(photo.id);
-                            }}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                            title={photo.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                          >
-                            {photo.verified ? (
-                              <CheckCircle className="w-5 h-5 text-green-500" />
-                            ) : (
-                              <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                            )}
-                          </button>
+                          <div className="flex space-x-1 space-x-reverse">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAdditionalPhotoVerification(photo.id);
+                              }}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              title={photo.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                            >
+                              {photo.verified ? (
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                              )}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAdditionalPhotoRejection(photo.id);
+                              }}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              title={photo.rejected ? 'إلغاء الرفض' : 'رفض الصورة'}
+                            >
+                              {photo.rejected ? (
+                                <XCircle className="w-5 h-5 text-red-600" />
+                              ) : (
+                                <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}

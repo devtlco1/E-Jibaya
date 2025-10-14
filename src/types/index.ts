@@ -138,4 +138,5 @@ export interface RecordPhoto {
   created_at: string;
   notes: string | null;
   verified: boolean;
+  rejected?: boolean;
 }
