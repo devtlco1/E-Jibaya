@@ -24,6 +24,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     full_name: '',
     role: 'field_agent' as 'admin' | 'field_agent' | 'employee'
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; userId: string; userName: string }>({
     isOpen: false,
     userId: '',
@@ -109,6 +110,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         // Add new user locally instead of reloading all data
         setUsers(prevUsers => [result, ...prevUsers]);
         setNewUser({ username: '', password: '', full_name: '', role: 'field_agent' });
+        setShowPassword(false);
         setShowCreateForm(false);
         
         // Log user creation activity
@@ -219,6 +221,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
           );
           setEditingUser(null);
           setNewUser({ username: '', password: '', full_name: '', role: 'field_agent' });
+          setShowPassword(false);
           
           // Log user update activity
           const currentUser = dbOperations.getCurrentUser();
@@ -621,13 +624,22 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     كلمة المرور
                   </label>
-                  <input
-                    type="password"
-                    value={newUser.password}
-                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="أدخل كلمة المرور"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={newUser.password}
+                      onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="أدخل كلمة المرور"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
