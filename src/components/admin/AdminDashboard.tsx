@@ -78,6 +78,25 @@ export function AdminDashboard() {
   });
   const [fieldAgentsCount, setFieldAgentsCount] = useState(0);
 
+  // Keep latest filters in a ref to avoid stale closures inside realtime/polling callbacks
+  const filtersRef = useRef<FilterState>({
+    subscriber_name: '',
+    account_number: '',
+    meter_number: '',
+    region: '',
+    status: '',
+    new_zone: '',
+    new_block: '',
+    verification_status: '',
+    category: '',
+    phase: ''
+  });
+
+  // Sync filtersRef whenever filters state changes
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
   // Load records on component mount
   useEffect(() => {
     loadRecords();
@@ -213,7 +232,7 @@ export function AdminDashboard() {
             const newRecord = payload.new as CollectionRecord;
             
             // Check if the new record matches current filters
-            const matchesFilters = checkRecordMatchesFilters(newRecord, filters);
+            const matchesFilters = checkRecordMatchesFilters(newRecord, filtersRef.current);
             
             if (matchesFilters) {
               addNotification({
@@ -274,7 +293,9 @@ export function AdminDashboard() {
               message: 'تم حذف سجل من النظام'
             });
             
-            // Refresh current page
+            // Refresh current page (respects current filters)
+            loadRecords();
+            // Refresh current page (respects current filters)
             loadRecords();
             
             // Also refresh stats
@@ -311,27 +332,33 @@ export function AdminDashboard() {
     console.log('Starting smart polling for new records...');
     pollingInterval.current = setInterval(async () => {
       try {
-        // Get latest record timestamp
-        const result = await dbOperations.getRecordsWithPagination(1, 1, {});
+        // Use current filters for polling to avoid false positives and preserve UI state
+        const result = await dbOperations.getRecordsWithPagination(1, 1, filtersRef.current);
         const currentCount = result.total;
         
         // If count increased, there's a new record
         if (currentCount > lastRecordCount.current && lastRecordCount.current > 0) {
           console.log('New record detected via polling! Count:', currentCount);
           
-          // Get the latest record to show in notification
-          const latestRecords = await dbOperations.getRecordsWithPagination(1, 1, {});
-          const latestRecord = latestRecords.data[0];
-          
-          addNotification({
-            type: 'success',
-            title: 'سجل جديد',
-            message: `تم إضافة سجل جديد: ${latestRecord?.subscriber_name || 'غير محدد'}`
-          });
-          
-          // Refresh current data with current filters
-          loadRecords();
-          loadFieldAgentsCount();
+          // Get the latest record with current filters only
+          const latestFiltered = await dbOperations.getRecordsWithPagination(1, 1, filtersRef.current);
+          const latestRecord = latestFiltered.data[0];
+
+          if (latestRecord) {
+            // Notify only if the new record matches current filters
+            addNotification({
+              type: 'success',
+              title: 'سجل جديد',
+              message: `تم إضافة سجل جديد: ${latestRecord.subscriber_name || 'غير محدد'}`
+            });
+
+            // Refresh current data with current filters
+            loadRecords();
+            loadFieldAgentsCount();
+          } else {
+            // No matching record for current filters; skip notification and heavy refresh
+            console.log('New record detected but does not match current filters - skipping UI refresh');
+          }
         }
 
         lastRecordCount.current = currentCount;
