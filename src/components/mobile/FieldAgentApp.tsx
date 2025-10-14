@@ -913,7 +913,7 @@ export function FieldAgentApp() {
               className="w-full flex items-center justify-center px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
             >
               <AlertCircle className="w-5 h-5 ml-2" />
-              امتنع عن الدفع
+              امتنع
             </button>
           ) : (
             <button
