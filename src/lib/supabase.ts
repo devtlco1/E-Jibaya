@@ -581,7 +581,7 @@ export const dbOperations = {
       
       const { data, error } = await client
         .from('collection_records')
-        .select('status, is_refused');
+        .select('status, is_refused, verification_status');
 
       if (error) {
         console.error('Get records stats error:', error);
@@ -590,10 +590,11 @@ export const dbOperations = {
 
       const stats = {
         total: data.length,
-        pending: data.filter((r: any) => r.status === 'pending').length,
-        completed: data.filter((r: any) => r.status === 'completed').length,
-        verified: 0, // السجلات المدققة
-        refused: data.filter((r: any) => r.status === 'refused').length
+        // نعتمد منطق الواجهة: الحالات تستثني الممتنع
+        pending: data.filter((r: any) => !r.is_refused && r.status === 'pending').length,
+        completed: data.filter((r: any) => !r.is_refused && r.status === 'completed').length,
+        verified: data.filter((r: any) => r.verification_status === 'مدقق').length,
+        refused: data.filter((r: any) => r.is_refused).length
       };
 
       return stats;
