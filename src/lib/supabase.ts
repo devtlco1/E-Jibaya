@@ -484,7 +484,15 @@ export const dbOperations = {
 
       if (error) {
         console.error('Create user error:', error);
-        throw new Error(`فشل في إنشاء المستخدم: ${error.message}`);
+        // ترجمة رسالة الخطأ إلى العربية
+        let errorMessage = 'فشل في إنشاء المستخدم';
+        const errorMsg = error.message.toLowerCase();
+        if (errorMsg.includes('duplicate key') || errorMsg.includes('username_key') || errorMsg.includes('unique constraint')) {
+          errorMessage = 'اسم المستخدم موجود مسبقاً. يرجى اختيار اسم مستخدم آخر';
+        } else {
+          errorMessage = `فشل في إنشاء المستخدم: ${error.message}`;
+        }
+        throw new Error(errorMessage);
       }
 
       // مسح التخزين المؤقت بعد إنشاء مستخدم جديد

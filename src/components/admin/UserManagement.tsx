@@ -181,10 +181,26 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       }
     } catch (error) {
       console.error('Error creating user:', error);
+      
+      // ترجمة رسالة الخطأ إلى العربية
+      let errorMessage = 'حدث خطأ غير متوقع أثناء إنشاء المستخدم';
+      
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase();
+        if (errorMsg.includes('duplicate key') || errorMsg.includes('username_key') || errorMsg.includes('unique constraint')) {
+          errorMessage = 'اسم المستخدم موجود مسبقاً. يرجى اختيار اسم مستخدم آخر';
+        } else if (errorMsg.includes('فشل في إنشاء المستخدم')) {
+          // إذا كانت الرسالة بالعربية بالفعل، استخدمها
+          errorMessage = error.message;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       addNotification({
         type: 'error',
         title: 'خطأ في الإنشاء',
-        message: error instanceof Error ? error.message : 'حدث خطأ غير متوقع أثناء إنشاء المستخدم'
+        message: errorMessage
       });
     }
   };
@@ -200,14 +216,28 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       return;
     }
     
-    // صلاحيات الموظف: لا يمكن تعديل أي حساب لدور الموظف أو الأدمن
-    if (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) {
-      addNotification({
-        type: 'error',
-        title: 'غير مسموح',
-        message: 'لا يمكن للموظفين تعديل حسابات المديرين أو الموظفين الآخرين'
-      });
-      return;
+    // صلاحيات الموظف: يمكن تعديل حسابه الخاص فقط (كلمة المرور فقط)
+    if (currentUser?.role === 'employee') {
+      // إذا كان الموظف يحاول تعديل حسابه الخاص، اسمح له
+      if (user.id === currentUser.id) {
+        setEditingUser(user);
+        setNewUser({
+          username: user.username,
+          password: '',
+          full_name: user.full_name,
+          role: user.role
+        });
+        return;
+      }
+      // إذا كان يحاول تعديل حساب آخر (موظف أو مدير)، امنعه
+      if (user.role === 'admin' || user.role === 'employee') {
+        addNotification({
+          type: 'error',
+          title: 'غير مسموح',
+          message: 'لا يمكن للموظفين تعديل حسابات المديرين أو الموظفين الآخرين'
+        });
+        return;
+      }
     }
     
     setEditingUser(user);
@@ -226,6 +256,60 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const handleUpdateUser = async () => {
     if (editingUser) {
       try {
+        // صلاحيات الموظف: إذا كان الموظف يعدل حسابه الخاص، يمكنه تغيير كلمة المرور فقط
+        if (currentUser?.role === 'employee' && editingUser.id === currentUser.id) {
+          const updates: Partial<User> = {};
+          
+          // فقط كلمة المرور يمكن تغييرها
+          if (newUser.password) {
+            updates.password_hash = newUser.password;
+          } else {
+            addNotification({
+              type: 'warning',
+              title: 'تحذير',
+              message: 'يرجى إدخال كلمة مرور جديدة'
+            });
+            return;
+          }
+          
+          const success = await dbOperations.updateUser(editingUser.id, updates);
+          if (success) {
+            setUsers(prevUsers => 
+              prevUsers.map(user => 
+                user.id === editingUser.id ? { ...user, ...updates } : user
+              )
+            );
+            setEditingUser(null);
+            setNewUser({ username: '', password: '', full_name: '', role: 'field_agent' });
+            setShowPassword(false);
+            
+            const currentUser = dbOperations.getCurrentUser();
+            if (currentUser) {
+              await dbOperations.createActivityLog({
+                user_id: currentUser.id,
+                action: 'update_user',
+                target_type: 'user',
+                target_id: editingUser.id,
+                target_name: editingUser.full_name,
+                details: { changes: 'password updated' }
+              });
+            }
+            
+            addNotification({
+              type: 'success',
+              title: 'تم التحديث',
+              message: 'تم تحديث كلمة المرور بنجاح'
+            });
+          } else {
+            addNotification({
+              type: 'error',
+              title: 'فشل في التحديث',
+              message: 'حدث خطأ أثناء تحديث كلمة المرور'
+            });
+          }
+          return;
+        }
+        
         // صلاحيات الموظف: لا يمكن تغيير الدور إلى مدير أو موظف
         if (currentUser?.role === 'employee' && (newUser.role === 'admin' || newUser.role === 'employee')) {
           addNotification({
@@ -621,15 +705,17 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                         onClick={() => handleEditUser(user)}
                         disabled={
                           user.id === '1' || // Prevent editing default admin
-                          (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) // Prevent employees from editing admin or employee accounts
+                          (currentUser?.role === 'employee' && user.id !== currentUser.id && (user.role === 'admin' || user.role === 'employee')) // Prevent employees from editing other admin or employee accounts (but allow editing own account)
                         }
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={
                           user.id === '1' 
                             ? 'لا يمكن تعديل حساب الأدمن الافتراضي'
-                            : (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
+                            : (currentUser?.role === 'employee' && user.id !== currentUser.id && (user.role === 'admin' || user.role === 'employee'))
                               ? 'لا يمكن للموظفين تعديل حسابات المديرين أو الموظفين الآخرين'
-                              : 'تعديل'
+                              : (currentUser?.role === 'employee' && user.id === currentUser.id)
+                                ? 'تعديل كلمة المرور'
+                                : 'تعديل'
                         }
                       >
                         <Edit className="w-4 h-4" />
@@ -949,6 +1035,13 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
               </div>
 
               <div className="space-y-4">
+                {currentUser?.role === 'employee' && editingUser.id === currentUser.id && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                      يمكنك تغيير كلمة المرور فقط
+                    </p>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     اسم المستخدم
@@ -957,14 +1050,17 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     type="text"
                     value={newUser.username}
                     onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    disabled={currentUser?.role === 'employee' && editingUser.id === currentUser.id}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="أدخل اسم المستخدم"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    كلمة المرور (اتركها فارغة لعدم التغيير)
+                    {currentUser?.role === 'employee' && editingUser.id === currentUser.id 
+                      ? 'كلمة المرور الجديدة' 
+                      : 'كلمة المرور (اتركها فارغة لعدم التغيير)'}
                   </label>
                   <input
                     type="password"
@@ -983,7 +1079,8 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     type="text"
                     value={newUser.full_name}
                     onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    disabled={currentUser?.role === 'employee' && editingUser.id === currentUser.id}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="أدخل الاسم الكامل"
                   />
                 </div>
@@ -997,6 +1094,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
                     disabled={
                       editingUser.id === '1' || // Prevent changing admin role for default admin
+                      (currentUser?.role === 'employee' && editingUser.id === currentUser.id) || // Prevent employees from changing their own role
                       (currentUser?.role === 'employee' && (editingUser.role === 'admin' || editingUser.role === 'employee')) || // Prevent employees from changing admin or employee roles
                       (currentUser?.role === 'employee' && editingUser.role === 'field_agent') // Prevent employees from changing field agent role
                     }
@@ -1015,6 +1113,11 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                   {currentUser?.role === 'employee' && editingUser.role === 'field_agent' && (
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       لا يمكن للموظفين تغيير دور المحصل الميداني
+                    </p>
+                  )}
+                  {currentUser?.role === 'employee' && editingUser.id === currentUser.id && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      لا يمكنك تغيير دورك
                     </p>
                   )}
                 </div>
