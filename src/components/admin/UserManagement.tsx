@@ -488,6 +488,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const toggleUserStatus = async (id: string) => {
     const user = users.find(u => u.id === id);
     if (user) {
+      // صلاحيات الموظف: يمكن تعطيل/تفعيل المحصل الميداني فقط
+      if (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) {
+        addNotification({
+          type: 'error',
+          title: 'غير مسموح',
+          message: 'يمكن للموظفين تعطيل/تفعيل حسابات المحصلين الميدانيين فقط'
+        });
+        return;
+      }
+      
       try {
         const success = await dbOperations.updateUser(id, { is_active: !user.is_active });
         if (success) {
@@ -674,11 +684,19 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     ) : (
                       <button
                         onClick={() => toggleUserStatus(user.id)}
+                        disabled={
+                          (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
+                        }
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
                           user.is_active
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800'
-                        }`}
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        title={
+                          (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
+                            ? 'يمكن للموظفين تعطيل/تفعيل حسابات المحصلين الميدانيين فقط'
+                            : user.is_active ? 'تعطيل' : 'تفعيل'
+                        }
                       >
                         {user.is_active ? (
                           <Eye className="w-3 h-3 ml-1" />
@@ -720,26 +738,25 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        disabled={
-                          user.id === '1' || 
-                          (users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin') ||
-                          (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
-                        }
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={
-                          user.id === '1' 
-                            ? 'لا يمكن إلغاء تفعيل حساب الأدمن الافتراضي' 
-                            : users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin' 
-                              ? 'لا يمكن إلغاء تفعيل آخر مدير' 
-                              : (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
-                                ? 'لا يمكن للموظفين حذف أو تعطيل حسابات المديرين أو الموظفين الآخرين'
+                      {currentUser?.role !== 'employee' && (
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          disabled={
+                            user.id === '1' || 
+                            (users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin')
+                          }
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            user.id === '1' 
+                              ? 'لا يمكن إلغاء تفعيل حساب الأدمن الافتراضي' 
+                              : users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin' 
+                                ? 'لا يمكن إلغاء تفعيل آخر مدير' 
                                 : 'إلغاء تفعيل'
-                        }
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                          }
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
