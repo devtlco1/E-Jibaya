@@ -123,6 +123,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     try {
       validateUserData(newUser);
       
+      // صلاحيات الموظف: يمكن إنشاء محصل ميداني فقط
+      if (currentUser?.role === 'employee' && newUser.role !== 'field_agent') {
+        addNotification({
+          type: 'error',
+          title: 'غير مسموح',
+          message: 'يمكن للموظفين إنشاء حسابات محصل ميداني فقط'
+        });
+        return;
+      }
+      
       const userData = {
         username: newUser.username,
         password_hash: newUser.password,
@@ -222,6 +232,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
             type: 'error',
             title: 'غير مسموح',
             message: 'لا يمكن للموظفين تعيين دور مدير أو موظف للمستخدمين'
+          });
+          return;
+        }
+        
+        // صلاحيات الموظف: لا يمكن تغيير دور المحصل الميداني إلى أي دور آخر
+        if (currentUser?.role === 'employee' && editingUser.role === 'field_agent' && newUser.role !== 'field_agent') {
+          addNotification({
+            type: 'error',
+            title: 'غير مسموح',
+            message: 'لا يمكن للموظفين تغيير دور المحصل الميداني'
           });
           return;
         }
@@ -458,7 +478,10 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
           إدارة المستخدمين
         </h2>
         <button
-          onClick={() => setShowCreateForm(true)}
+          onClick={() => {
+            setNewUser({ username: '', password: '', full_name: '', role: currentUser?.role === 'employee' ? 'field_agent' : 'field_agent' });
+            setShowCreateForm(true);
+          }}
           className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
         >
           <UserPlus className="w-4 h-4 ml-2" />
@@ -728,11 +751,23 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     value={newUser.role}
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    disabled={currentUser?.role === 'employee'}
                   >
-                    <option value="field_agent">محصل ميداني</option>
-                    <option value="employee">موظف</option>
-                    <option value="admin">مدير</option>
+                    {currentUser?.role === 'employee' ? (
+                      <option value="field_agent">محصل ميداني</option>
+                    ) : (
+                      <>
+                        <option value="field_agent">محصل ميداني</option>
+                        <option value="employee">موظف</option>
+                        <option value="admin">مدير</option>
+                      </>
+                    )}
                   </select>
+                  {currentUser?.role === 'employee' && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      يمكن للموظفين إنشاء حسابات محصل ميداني فقط
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-end space-x-2 space-x-reverse pt-4">
@@ -962,14 +997,26 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
                     disabled={
                       editingUser.id === '1' || // Prevent changing admin role for default admin
-                      (currentUser?.role === 'employee' && (editingUser.role === 'admin' || editingUser.role === 'employee')) // Prevent employees from changing admin or employee roles
+                      (currentUser?.role === 'employee' && (editingUser.role === 'admin' || editingUser.role === 'employee')) || // Prevent employees from changing admin or employee roles
+                      (currentUser?.role === 'employee' && editingUser.role === 'field_agent') // Prevent employees from changing field agent role
                     }
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <option value="field_agent">محصل ميداني</option>
-                    <option value="employee">موظف</option>
-                    {currentUser?.role === 'admin' && <option value="admin">مدير</option>}
+                    {currentUser?.role === 'employee' && editingUser.role === 'field_agent' ? (
+                      <option value="field_agent">محصل ميداني</option>
+                    ) : (
+                      <>
+                        <option value="field_agent">محصل ميداني</option>
+                        <option value="employee">موظف</option>
+                        {currentUser?.role === 'admin' && <option value="admin">مدير</option>}
+                      </>
+                    )}
                   </select>
+                  {currentUser?.role === 'employee' && editingUser.role === 'field_agent' && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      لا يمكن للموظفين تغيير دور المحصل الميداني
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex justify-end space-x-2 space-x-reverse pt-4">
