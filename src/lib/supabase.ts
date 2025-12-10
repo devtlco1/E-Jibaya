@@ -276,6 +276,48 @@ export const dbOperations = {
     }
   },
 
+  // إنشاء سجل فارغ يحتوي فقط على رقم الحساب ورقم المقياس
+  async createEmptyRecord(accountNumber: string, meterNumber: string): Promise<CollectionRecord | null> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      const recordData: any = {
+        account_number: accountNumber,
+        meter_number: meterNumber,
+        status: 'pending',
+        is_refused: false,
+        meter_photo_verified: false,
+        invoice_photo_verified: false,
+        verification_status: 'غير مدقق'
+      };
+
+      const { data, error } = await client
+        .from('collection_records')
+        .insert(recordData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Create empty record error:', error);
+        throw new Error(`فشل في إنشاء السجل: ${error.message}`);
+      }
+      
+      // مسح التخزين المؤقت نهائياً
+      cacheService.clearRecordsCache();
+      cacheService.clearUsersCache();
+      localStorage.removeItem('ejibaya_cache');
+      console.log('Empty record created successfully - cache cleared');
+      
+      return data;
+    } catch (error) {
+      console.error('Create empty record error:', error);
+      throw error;
+    }
+  },
+
   async getRecords(): Promise<CollectionRecord[]> {
     try {
       const client = checkSupabaseConnection();
