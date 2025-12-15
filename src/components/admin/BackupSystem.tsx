@@ -413,25 +413,73 @@ export function BackupSystem() {
 
   const getSystemStats = async () => {
     try {
-      const users = await dbOperations.getAllUsers();
-      const records = await dbOperations.getAllRecords();
-      const photos = await dbOperations.getAllRecordPhotos();
-      const activityLogs = await dbOperations.getAllActivityLogs();
+      // استخدام دالة SQL للحصول على الإحصائيات بدقة
+      const client = dbOperations.supabase;
+      if (!client) {
+        return { users: 0, records: 0, photos: 0, activityLogs: 0 };
+      }
+
+      // محاولة استخدام دالة SQL أولاً
+      try {
+        const { data: systemStats, error: rpcError } = await client.rpc('get_system_stats');
+        
+        if (!rpcError && systemStats && systemStats.length > 0) {
+          const stats = systemStats[0];
+          // جلب عدد الصور وسجل الأنشطة بشكل منفصل
+          const [photosCount, activityLogsCount] = await Promise.all([
+            client.from('record_photos').select('id', { count: 'exact', head: true }),
+            client.from('activity_logs').select('id', { count: 'exact', head: true })
+          ]);
+          
+          return {
+            users: Number(stats.total_users) || 0,
+            records: Number(stats.total_records) || 0,
+            photos: photosCount.count || 0,
+            activityLogs: activityLogsCount.count || 0
+          };
+        }
+      } catch (rpcError) {
+        console.warn('RPC function not available, using count method:', rpcError);
+      }
+
+      // استخدام count للحصول على الإحصائيات بدقة (أسرع وأدق)
+      const [usersCount, recordsCount, photosCount, activityLogsCount] = await Promise.all([
+        client.from('users').select('id', { count: 'exact', head: true }),
+        client.from('collection_records').select('id', { count: 'exact', head: true }),
+        client.from('record_photos').select('id', { count: 'exact', head: true }),
+        client.from('activity_logs').select('id', { count: 'exact', head: true })
+      ]);
 
       return {
-        users: users.length,
-        records: records.length,
-        photos: photos.length,
-        activityLogs: activityLogs.length
+        users: usersCount.count || 0,
+        records: recordsCount.count || 0,
+        photos: photosCount.count || 0,
+        activityLogs: activityLogsCount.count || 0
       };
     } catch (error) {
       console.error('Error getting system stats:', error);
-      return {
-        users: 0,
-        records: 0,
-        photos: 0,
-        activityLogs: 0
-      };
+      // Fallback: استخدام الدوال القديمة
+      try {
+        const users = await dbOperations.getAllUsers();
+        const records = await dbOperations.getAllRecords();
+        const photos = await dbOperations.getAllRecordPhotos();
+        const activityLogs = await dbOperations.getAllActivityLogs();
+
+        return {
+          users: users.length,
+          records: records.length,
+          photos: photos.length,
+          activityLogs: activityLogs.length
+        };
+      } catch (fallbackError) {
+        console.error('Error in fallback stats:', fallbackError);
+        return {
+          users: 0,
+          records: 0,
+          photos: 0,
+          activityLogs: 0
+        };
+      }
     }
   };
 
