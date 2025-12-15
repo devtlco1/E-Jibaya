@@ -4,20 +4,22 @@ import { fileURLToPath } from 'url';
 import pdf from 'pdf-parse';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // تحميل متغيرات البيئة
 const envPath = path.join(__dirname, '../.env');
-dotenv.config({ path: envPath });
+const envProdPath = path.join(__dirname, '../env.production');
 
-// أيضاً محاولة تحميل من .env.production إذا كان موجوداً
-const envProdPath = path.join(__dirname, '../.env.production');
+// محاولة تحميل من .env أولاً
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
+
+// ثم محاولة تحميل من env.production إذا كان موجوداً
 if (fs.existsSync(envProdPath)) {
-  dotenv.config({ path: envProdPath, override: false });
+  dotenv.config({ path: envProdPath, override: true });
 }
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -35,91 +37,89 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
  */
 function extractAccountAndMeterNumbers(text) {
   const records = [];
+  const seen = new Set();
   
-  // نمط للبحث عن أرقام الحسابات (12 رقم) وأرقام المقاييس
-  // بناءً على البيانات في الملف: رقم الحساب (12 رقم) ورقم المقياس
-  const lines = text.split('\n');
+  // البحث عن جميع أرقام الحسابات (12 رقم) في النص
+  // نمط: 12 رقم متتالي يبدأ بـ 34
+  const accountNumberPattern = /\b(34\d{10})\b/g;
+  const accountNumbers = [];
+  let match;
   
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+  while ((match = accountNumberPattern.exec(text)) !== null) {
+    accountNumbers.push({
+      number: match[1],
+      index: match.index
+    });
+  }
+  
+  console.log(`   🔍 تم العثور على ${accountNumbers.length} رقم حساب محتمل`);
+  
+  // لكل رقم حساب، البحث عن رقم المقياس القريب
+  for (const account of accountNumbers) {
+    const accountNumber = account.number;
     
-    // البحث عن أرقام الحسابات (12 رقم متتالي) - يبدأ بـ 341 أو 345
-    const accountNumberMatch = line.match(/\b(34[0-9]{10})\b/);
+    // البحث في نطاق 200 حرف بعد رقم الحساب
+    const searchStart = account.index;
+    const searchEnd = Math.min(searchStart + 200, text.length);
+    const searchText = text.substring(searchStart, searchEnd);
     
-    if (accountNumberMatch) {
-      const accountNumber = accountNumberMatch[1];
-      
-      // البحث عن رقم المقياس في نفس السطر
-      // رقم المقياس عادة يكون 5-6 أرقام أو أكثر
-      let meterNumber = null;
-      
-      // تقسيم السطر إلى أجزاء للبحث بشكل أفضل
-      const parts = line.split(/\s+/);
-      
-      // البحث عن رقم المقياس في الأجزاء
-      for (const part of parts) {
-        // رقم المقياس عادة يكون بين 5-8 أرقام
-        const meterMatch = part.match(/\b(\d{5,8})\b/);
-        if (meterMatch) {
-          const potentialMeter = meterMatch[1];
-          // التأكد أنه ليس رقم الحساب
-          if (potentialMeter !== accountNumber && 
-              potentialMeter.length >= 5 && 
-              potentialMeter.length <= 8) {
-            meterNumber = potentialMeter;
-            break;
-          }
-        }
+    // البحث عن أرقام المقاييس (5-8 أرقام) في النطاق
+    // رقم المقياس عادة يكون بعد رقم الحساب بعدة أرقام
+    const meterPattern = /\b(\d{5,8})\b/g;
+    const meters = [];
+    let meterMatch;
+    
+    while ((meterMatch = meterPattern.exec(searchText)) !== null) {
+      const meterNum = meterMatch[1];
+      // التأكد أنه ليس رقم الحساب أو جزء منه
+      if (meterNum !== accountNumber && 
+          !accountNumber.includes(meterNum) &&
+          meterNum.length >= 5) {
+        meters.push(meterNum);
       }
-      
-      // إذا لم نجد في نفس السطر، نبحث في السطر التالي
-      if (!meterNumber && i + 1 < lines.length) {
-        const nextLine = lines[i + 1].trim();
-        const nextLineParts = nextLine.split(/\s+/);
-        
-        for (const part of nextLineParts) {
-          const meterMatch = part.match(/\b(\d{5,8})\b/);
-          if (meterMatch) {
-            const potentialMeter = meterMatch[1];
-            if (potentialMeter !== accountNumber && 
-                potentialMeter.length >= 5 && 
-                potentialMeter.length <= 8) {
-              meterNumber = potentialMeter;
-              break;
-            }
-          }
-        }
-      }
-      
-      // محاولة أخرى: البحث عن نمط جدول (رقم حساب متبوع برقم مقياس)
-      if (!meterNumber) {
-        // نمط: رقم حساب ثم رقم مقياس في نفس السطر
-        const tablePattern = new RegExp(`\\b${accountNumber}\\b\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\d+\\s+\\b(\\d{5,8})\\b`, 'g');
-        const tableMatch = line.match(tablePattern);
-        if (tableMatch) {
-          const extracted = tableMatch[0].match(/\b(\d{5,8})\b/);
-          if (extracted && extracted.length > 1) {
-            meterNumber = extracted[1];
-          }
-        }
-      }
-      
-      if (accountNumber && meterNumber) {
-        // التحقق من صحة البيانات
-        // رقم الحساب يجب أن يكون 12 رقم
-        if (accountNumber.length === 12) {
-          // تجنب التكرار
-          const exists = records.find(r => r.accountNumber === accountNumber && r.meterNumber === meterNumber);
-          if (!exists) {
-            records.push({
-              accountNumber,
-              meterNumber
-            });
-          }
+    }
+    
+    // أخذ أول رقم مقياس صالح (عادة يكون الثاني أو الثالث)
+    if (meters.length > 0) {
+      // تجربة الأرقام المختلفة
+      for (const meterNumber of meters.slice(0, 3)) {
+        const key = `${accountNumber}_${meterNumber}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          records.push({
+            accountNumber,
+            meterNumber
+          });
+          break; // نأخذ أول رقم مقياس صالح
         }
       }
     }
   }
+  
+  // محاولة أخرى: البحث عن نمط جدول مباشر
+  // نمط: رقم حساب (12 رقم) متبوع بأرقام ثم رقم مقياس (5-8 أرقام)
+  const tablePattern = /\b(34\d{10})\b[\s\d]{0,50}?\b(\d{5,8})\b/g;
+  let tableMatch;
+  
+  while ((tableMatch = tablePattern.exec(text)) !== null) {
+    const accountNumber = tableMatch[1];
+    const meterNumber = tableMatch[2];
+    
+    // التأكد أنه ليس رقم الحساب
+    if (meterNumber !== accountNumber && 
+        !accountNumber.includes(meterNumber)) {
+      const key = `${accountNumber}_${meterNumber}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        records.push({
+          accountNumber,
+          meterNumber
+        });
+      }
+    }
+  }
+  
+  console.log(`   ✅ تم استخراج ${records.length} سجل فريد`);
   
   return records;
 }
@@ -141,33 +141,84 @@ async function readPDF(filePath) {
 }
 
 /**
- * إضافة سجلات إلى قاعدة البيانات
+ * جلب جميع السجلات الموجودة (رقم الحساب + رقم المقياس) من قاعدة البيانات
+ * حتى نضيف فقط السجلات الناقصة
  */
-async function addRecordsToDatabase(records) {
-  console.log(`\n📊 بدء إضافة ${records.length} سجل إلى قاعدة البيانات...\n`);
+async function getExistingRecordKeys() {
+  console.log('🔎 جلب السجلات الموجودة من قاعدة البيانات للتحقق من التكرار...');
+  const existingKeys = new Set();
+
+  try {
+    let from = 0;
+    const limit = 1000;
+
+    // قراءة على دفعات لتفادي حجم البيانات الكبير
+    while (true) {
+      const to = from + limit - 1;
+      const { data, error } = await supabase
+        .from('collection_records')
+        .select('account_number, meter_number')
+        .range(from, to);
+
+      if (error) {
+        console.error('❌ خطأ في جلب السجلات الموجودة:', error.message);
+        break;
+      }
+
+      if (!data || data.length === 0) {
+        break;
+      }
+
+      for (const row of data) {
+        if (row.account_number && row.meter_number) {
+          const key = `${row.account_number}_${row.meter_number}`;
+          existingKeys.add(key);
+        }
+      }
+
+      from += limit;
+      if (data.length < limit) {
+        break;
+      }
+    }
+
+    console.log(`✅ تم جلب ${existingKeys.size} سجل موجود من قاعدة البيانات`);
+  } catch (error) {
+    console.error('❌ خطأ غير متوقع أثناء جلب السجلات الموجودة:', error.message);
+  }
+
+  return existingKeys;
+}
+
+/**
+ * إضافة سجلات إلى قاعدة البيانات (فقط السجلات غير الموجودة)
+ */
+async function addRecordsToDatabase(records, existingKeys) {
+  // تصفية السجلات الموجودة مسبقاً
+  const newRecords = records.filter(record => {
+    const key = `${record.accountNumber}_${record.meterNumber}`;
+    return !existingKeys.has(key);
+  });
+  
+  const duplicateCount = records.length - newRecords.length;
+  
+  console.log(`\n📊 بدء إضافة السجلات إلى قاعدة البيانات...`);
+  console.log(`   📋 إجمالي السجلات: ${records.length}`);
+  console.log(`   ⏭️  موجود مسبقاً: ${duplicateCount}`);
+  console.log(`   ➕ جديد: ${newRecords.length}\n`);
+  
+  if (newRecords.length === 0) {
+    console.log('✅ جميع السجلات موجودة مسبقاً، لا حاجة للإضافة!');
+    return;
+  }
   
   let successCount = 0;
   let errorCount = 0;
-  let duplicateCount = 0;
   
-  for (let i = 0; i < records.length; i++) {
-    const record = records[i];
+  for (let i = 0; i < newRecords.length; i++) {
+    const record = newRecords[i];
     
     try {
-      // التحقق من وجود السجل مسبقاً
-      const { data: existing } = await supabase
-        .from('collection_records')
-        .select('id')
-        .eq('account_number', record.accountNumber)
-        .eq('meter_number', record.meterNumber)
-        .limit(1);
-      
-      if (existing && existing.length > 0) {
-        duplicateCount++;
-        console.log(`⏭️  ${i + 1}/${records.length}: السجل موجود مسبقاً - ${record.accountNumber} / ${record.meterNumber}`);
-        continue;
-      }
-      
       // إنشاء السجل الجديد
       const recordData = {
         account_number: record.accountNumber,
@@ -187,11 +238,14 @@ async function addRecordsToDatabase(records) {
       
       if (error) {
         errorCount++;
-        console.error(`❌ ${i + 1}/${records.length}: خطأ في إضافة السجل ${record.accountNumber}:`, error.message);
+        // عرض الأخطاء فقط كل 100 سجل لتقليل الإخراج
+        if (errorCount % 100 === 0 || i === newRecords.length - 1) {
+          console.error(`❌ ${i + 1}/${newRecords.length}: خطأ في إضافة السجل ${record.accountNumber}:`, error.message);
+        }
       } else {
         successCount++;
-        if ((i + 1) % 10 === 0 || i === records.length - 1) {
-          console.log(`✅ ${i + 1}/${records.length}: تم إضافة السجل بنجاح - ${record.accountNumber} / ${record.meterNumber}`);
+        if ((i + 1) % 100 === 0 || i === newRecords.length - 1) {
+          console.log(`✅ ${i + 1}/${newRecords.length}: تم إضافة ${successCount} سجل بنجاح`);
         }
       }
       
@@ -202,7 +256,9 @@ async function addRecordsToDatabase(records) {
       
     } catch (error) {
       errorCount++;
-      console.error(`❌ ${i + 1}/${records.length}: خطأ غير متوقع:`, error.message);
+      if (errorCount % 100 === 0) {
+        console.error(`❌ ${i + 1}/${newRecords.length}: خطأ غير متوقع:`, error.message);
+      }
     }
   }
   
@@ -262,9 +318,25 @@ async function main() {
     console.log('⚠️  لم يتم العثور على أي سجلات للاستيراد');
     return;
   }
+
+  // جلب السجلات الموجودة في قاعدة البيانات
+  const existingKeys = await getExistingRecordKeys();
+
+  // تصفية السجلات لاختيار السجلات التي لا توجد في قاعدة البيانات
+  const recordsToInsert = uniqueRecords.filter(record => {
+    const key = `${record.accountNumber}_${record.meterNumber}`;
+    return !existingKeys.has(key);
+  });
+
+  console.log(`📊 السجلات الجديدة فقط (غير الموجودة في قاعدة البيانات): ${recordsToInsert.length}\n`);
+
+  if (recordsToInsert.length === 0) {
+    console.log('✅ لا توجد سجلات جديدة لإضافتها. جميع السجلات موجودة بالفعل.');
+    return;
+  }
   
-  // إضافة السجلات إلى قاعدة البيانات
-  await addRecordsToDatabase(uniqueRecords);
+  // إضافة السجلات الجديدة فقط إلى قاعدة البيانات
+  await addRecordsToDatabase(uniqueRecords, existingKeys);
   
   console.log('✅ اكتملت العملية بنجاح!');
 }

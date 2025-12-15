@@ -163,8 +163,10 @@ export function AdminDashboard() {
           dbOperations.getRecordsStats(),
           dbOperations.getRecords()
         ]).then(([statsResult, allRecordsResult]) => {
-          // حساب السجلات المقفلة
-          const lockedCount = allRecordsResult.filter(record => record.locked_by).length;
+          // استخدام locked من statsResult إذا كان موجوداً، وإلا نحسبه من allRecordsResult
+          const lockedCount = statsResult.locked !== undefined 
+            ? statsResult.locked 
+            : allRecordsResult.filter(record => record.locked_by).length;
           setAllRecordsStats({
             ...statsResult,
             locked: lockedCount
@@ -186,8 +188,10 @@ export function AdminDashboard() {
         setTotalPages(recordsResult.totalPages);
         setAllRecords(allRecordsResult);
         
-        // حساب السجلات المقفلة
-        const lockedCount = allRecordsResult.filter(record => record.locked_by).length;
+        // استخدام locked من statsResult إذا كان موجوداً، وإلا نحسبه من allRecordsResult
+        const lockedCount = statsResult.locked !== undefined 
+          ? statsResult.locked 
+          : allRecordsResult.filter(record => record.locked_by).length;
         setAllRecordsStats({
           ...statsResult,
           locked: lockedCount
@@ -568,8 +572,10 @@ export function AdminDashboard() {
         
         // Update stats
         const newStats = await dbOperations.getRecordsStats();
-        // حساب السجلات المقفلة
-        const lockedCount = allRecords.filter(record => record.locked_by).length;
+        // استخدام locked من newStats إذا كان موجوداً، وإلا نحسبه من allRecords
+        const lockedCount = newStats.locked !== undefined 
+          ? newStats.locked 
+          : allRecords.filter(record => record.locked_by).length;
         setAllRecordsStats({
           ...newStats,
           locked: lockedCount
@@ -621,8 +627,10 @@ export function AdminDashboard() {
         
         // Update stats
         const newStats = await dbOperations.getRecordsStats();
-        // حساب السجلات المقفلة
-        const lockedCount = allRecords.filter(record => record.locked_by).length;
+        // استخدام locked من newStats إذا كان موجوداً، وإلا نحسبه من allRecords
+        const lockedCount = newStats.locked !== undefined 
+          ? newStats.locked 
+          : allRecords.filter(record => record.locked_by).length;
         setAllRecordsStats({
           ...newStats,
           locked: lockedCount

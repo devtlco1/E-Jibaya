@@ -622,6 +622,7 @@ export const dbOperations = {
     completed: number;
     verified: number;
     refused: number;
+    locked?: number;
   }> {
     try {
       const client = checkSupabaseConnection();
@@ -629,28 +630,72 @@ export const dbOperations = {
         return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
       }
       
+      // استخدام دالة SQL للحصول على الإحصائيات بدقة
       const { data, error } = await client
-        .from('collection_records')
-        .select('status, is_refused, verification_status');
+        .rpc('get_system_stats');
 
       if (error) {
         console.error('Get records stats error:', error);
-        return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
+        // Fallback: استخدام الاستعلام المباشر
+        return await this.getRecordsStatsFallback();
       }
 
-      const stats = {
-        total: data.length,
-        // نعتمد منطق الواجهة: الحالات تستثني الممتنع
-        pending: data.filter((r: any) => !r.is_refused && r.status === 'pending').length,
-        completed: data.filter((r: any) => !r.is_refused && r.status === 'completed').length,
-        verified: data.filter((r: any) => r.verification_status === 'مدقق').length,
-        refused: data.filter((r: any) => r.is_refused).length
-      };
+      if (data && data.length > 0) {
+        const stats = data[0];
+        return {
+          total: Number(stats.total_records) || 0,
+          pending: Number(stats.pending_records) || 0,
+          completed: Number(stats.completed_records) || 0,
+          verified: Number(stats.verified_records) || 0,
+          refused: Number(stats.refused_records) || 0,
+          locked: Number(stats.locked_records) || 0
+        };
+      }
 
-      return stats;
+      return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0, locked: 0 };
     } catch (error) {
       console.error('Get records stats error:', error);
-      return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
+      // Fallback: استخدام الاستعلام المباشر
+      return await this.getRecordsStatsFallback();
+    }
+  },
+
+  // Fallback method للحصول على الإحصائيات
+  async getRecordsStatsFallback(): Promise<{
+    total: number;
+    pending: number;
+    completed: number;
+    verified: number;
+    refused: number;
+    locked?: number;
+  }> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
+      }
+      
+      // استخدام count للحصول على الإحصائيات بدقة
+      const [totalResult, pendingResult, completedResult, verifiedResult, refusedResult, lockedResult] = await Promise.all([
+        client.from('collection_records').select('id', { count: 'exact', head: true }),
+        client.from('collection_records').select('id', { count: 'exact', head: true }).eq('status', 'pending').eq('is_refused', false),
+        client.from('collection_records').select('id', { count: 'exact', head: true }).eq('status', 'completed').eq('is_refused', false),
+        client.from('collection_records').select('id', { count: 'exact', head: true }).eq('verification_status', 'مدقق'),
+        client.from('collection_records').select('id', { count: 'exact', head: true }).eq('is_refused', true),
+        client.from('collection_records').select('id', { count: 'exact', head: true }).not('locked_by', 'is', null)
+      ]);
+
+      return {
+        total: totalResult.count || 0,
+        pending: pendingResult.count || 0,
+        completed: completedResult.count || 0,
+        verified: verifiedResult.count || 0,
+        refused: refusedResult.count || 0,
+        locked: lockedResult.count || 0
+      };
+    } catch (error) {
+      console.error('Get records stats fallback error:', error);
+      return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0, locked: 0 };
     }
   },
 
