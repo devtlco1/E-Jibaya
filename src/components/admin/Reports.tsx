@@ -112,6 +112,14 @@ export function Reports({}: ReportsProps) {
     const loadUsers = async () => {
       try {
         const userData = await dbOperations.getUsers();
+        // جلب مديري الفروع للفلتر (يجب أن يكونوا نشطين)
+        const activeBranchManagers = userData.filter(u => 
+          u.role === 'branch_manager' && 
+          u.is_active && 
+          !u.username.includes('(محذوف)')
+        );
+        setBranchManagers(activeBranchManagers);
+        
         // لمدير الفرع: عرض فقط المحصلين الميدانيين المحددين له
         if (currentUser?.role === 'branch_manager') {
           const allowedFieldAgentIds = await dbOperations.getBranchManagerFieldAgents(currentUser.id);
