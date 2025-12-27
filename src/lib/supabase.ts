@@ -331,22 +331,45 @@ export const dbOperations = {
       cacheService.clearUsersCache();
       localStorage.removeItem('ejibaya_cache');
       
-      console.log('Fetching fresh data from database (cache completely disabled)');
+      console.log('Fetching all records from database (cache completely disabled)');
       
-      const { data, error } = await client
-        .from('collection_records')
-        .select('*')
-        .order('submitted_at', { ascending: false });
+      // جلب جميع السجلات على دفعات لتجاوز حد 1000 سجل في Supabase
+      let allRecords: CollectionRecord[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
 
-      if (error) {
-        console.error('Get records error:', error);
-        return [];
+      while (hasMore) {
+        const to = from + limit - 1;
+        const { data, error } = await client
+          .from('collection_records')
+          .select('*')
+          .order('submitted_at', { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error('Get records error:', error);
+          break;
+        }
+
+        if (!data || data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        allRecords.push(...data);
+        from += limit;
+
+        if (data.length < limit) {
+          hasMore = false;
+        }
+
+        console.log(`Fetched ${allRecords.length} records so far...`);
       }
       
-      const records = data || [];
-      console.log(`Fetched ${records.length} records from database`);
+      console.log(`Total fetched ${allRecords.length} records from database`);
       
-      return records;
+      return allRecords;
     } catch (error) {
       console.error('Get records error:', error);
       return [];
