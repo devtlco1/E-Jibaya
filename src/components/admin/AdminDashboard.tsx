@@ -537,10 +537,8 @@ export function AdminDashboard() {
         
         // Update stats
         const newStats = await dbOperations.getRecordsStats();
-        // استخدام locked من newStats إذا كان موجوداً، وإلا نحسبه من allRecords
-        const lockedCount = newStats.locked !== undefined 
-          ? newStats.locked 
-          : allRecords.filter(record => record.locked_by).length;
+        // استخدام locked من newStats
+        const lockedCount = newStats.locked || 0;
         setAllRecordsStats({
           ...newStats,
           locked: lockedCount
@@ -588,14 +586,11 @@ export function AdminDashboard() {
         
         // Remove record locally instead of reloading all data
         setRecords(prevRecords => prevRecords.filter(record => record.id !== id));
-        setAllRecords(prevRecords => prevRecords.filter(record => record.id !== id));
         
         // Update stats
         const newStats = await dbOperations.getRecordsStats();
-        // استخدام locked من newStats إذا كان موجوداً، وإلا نحسبه من allRecords
-        const lockedCount = newStats.locked !== undefined 
-          ? newStats.locked 
-          : allRecords.filter(record => record.locked_by).length;
+        // استخدام locked من newStats
+        const lockedCount = newStats.locked || 0;
         setAllRecordsStats({
           ...newStats,
           locked: lockedCount
