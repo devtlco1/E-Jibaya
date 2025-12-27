@@ -1505,36 +1505,35 @@ export function DataTable({
 
             {/* Content */}
             <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
-
-              <div className="space-y-6">
-                {/* Record Metadata */}
-                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+              <div className="space-y-4">
+                {/* معلومات السجل */}
+                <div className="bg-gradient-to-l from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-5 border border-blue-200 dark:border-blue-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                    <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-2" />
                     معلومات السجل
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">تاريخ الإنشاء:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">تاريخ الإنشاء</span>
+                      <p className="text-gray-900 dark:text-white font-semibold text-sm">
                         {formatDateTime(viewingRecord.submitted_at)}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">آخر تحديث:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">آخر تحديث</span>
+                      <p className="text-gray-900 dark:text-white font-semibold text-sm">
                         {formatDateTime(viewingRecord.updated_at)}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">تم الإنشاء بواسطة:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">تم الإنشاء بواسطة</span>
+                      <p className="text-gray-900 dark:text-white font-semibold text-sm">
                         {getUserName(viewingRecord.field_agent_id)}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">تم التعديل بواسطة:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">تم التعديل بواسطة</span>
+                      <p className="text-gray-900 dark:text-white font-semibold text-sm">
                         {viewingRecord.completed_by ? getUserName(viewingRecord.completed_by) : 
                          (viewingRecord.updated_at !== viewingRecord.submitted_at ? 
                           (currentUser ? `${currentUser.full_name}` : 'مستخدم غير محدد') : 
@@ -1544,129 +1543,142 @@ export function DataTable({
                   </div>
                 </div>
 
-                {/* Customer Information */}
-                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <User className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                {/* بيانات العميل */}
+                <div className="bg-gradient-to-l from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-5 border border-green-200 dark:border-green-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                    <User className="w-5 h-5 text-green-600 dark:text-green-400 ml-2" />
                     بيانات العميل
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">اسم المشترك:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">اسم المشترك</span>
+                      <p className="text-gray-900 dark:text-white font-semibold">
                         {viewingRecord.subscriber_name || 'غير محدد'}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">رقم الحساب:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">رقم الحساب</span>
+                      <p className="text-gray-900 dark:text-white font-semibold">
                         {viewingRecord.account_number || 'غير محدد'}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">رقم المقياس:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المنطقة</span>
+                      <p className="text-gray-900 dark:text-white font-semibold">
+                        {viewingRecord.region || 'غير محدد'}
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">رقم المقياس</span>
+                      <p className="text-gray-900 dark:text-white font-semibold">
                         {viewingRecord.meter_number || 'غير محدد'}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">آخر قراءة:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">آخر قراءة</span>
+                      <p className="text-gray-900 dark:text-white font-semibold">
                         {viewingRecord.last_reading || 'غير محدد'}
                       </p>
                     </div>
                     {(viewingRecord.total_amount !== null && viewingRecord.total_amount !== undefined) && (
-                      <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                        <span className="text-gray-600 dark:text-gray-400 block text-xs">المبلغ الكلي:</span>
-                        <p className="text-gray-900 dark:text-white font-medium">
-                          {viewingRecord.total_amount.toFixed(2)}
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المبلغ الكلي</span>
+                        <p className="text-gray-900 dark:text-white font-semibold">
+                          {viewingRecord.total_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع
                         </p>
                       </div>
                     )}
                     {(viewingRecord.current_amount !== null && viewingRecord.current_amount !== undefined) && (
-                      <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                        <span className="text-gray-600 dark:text-gray-400 block text-xs">المبلغ الحالي:</span>
-                        <p className="text-gray-900 dark:text-white font-medium">
-                          {viewingRecord.current_amount.toFixed(2)}
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المبلغ الحالي</span>
+                        <p className="text-gray-900 dark:text-white font-semibold text-green-600 dark:text-green-400">
+                          {viewingRecord.current_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع
+                        </p>
+                      </div>
+                    )}
+                    {((viewingRecord.total_amount !== null && viewingRecord.total_amount !== undefined) && 
+                      (viewingRecord.current_amount !== null && viewingRecord.current_amount !== undefined)) && (
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-red-200 dark:border-red-700">
+                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المبلغ المتبقي</span>
+                        <p className="text-gray-900 dark:text-white font-semibold text-red-600 dark:text-red-400">
+                          {(viewingRecord.total_amount - viewingRecord.current_amount).toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع
                         </p>
                       </div>
                     )}
                   </div>
-                  {viewingRecord.region && (
-                    <div className="mt-4 border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">المنطقة:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
-                        {viewingRecord.region}
-                      </p>
-                    </div>
-                  )}
                 </div>
 
-                {/* الترميز الجديد */}
-                {(viewingRecord.new_zone || viewingRecord.new_block || viewingRecord.new_home) && (
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                      <MapPin className="w-4 h-4 text-indigo-600 dark:text-indigo-400 ml-2" />
-                      الترميز الجديد
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      {viewingRecord.new_zone && (
-                        <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                          <span className="text-gray-600 dark:text-gray-400 block text-xs">الزون:</span>
-                          <p className="text-gray-900 dark:text-white font-medium">
-                            {viewingRecord.new_zone}
-                          </p>
-                        </div>
-                      )}
-                      {viewingRecord.new_block && (
-                        <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                          <span className="text-gray-600 dark:text-gray-400 block text-xs">البلوك:</span>
-                          <p className="text-gray-900 dark:text-white font-medium">
-                            {viewingRecord.new_block}
-                          </p>
-                        </div>
-                      )}
-                      {viewingRecord.new_home && (
-                        <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                          <span className="text-gray-600 dark:text-gray-400 block text-xs">الهوم:</span>
-                          <p className="text-gray-900 dark:text-white font-medium">
-                            {viewingRecord.new_home}
-                          </p>
-                        </div>
-                      )}
+                {/* الترميز والتصنيف */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* الترميز الجديد */}
+                  {(viewingRecord.new_zone || viewingRecord.new_block || viewingRecord.new_home) && (
+                    <div className="bg-gradient-to-l from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 rounded-xl p-5 border border-indigo-200 dark:border-indigo-700">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                        <MapPin className="w-5 h-5 text-indigo-600 dark:text-indigo-400 ml-2" />
+                        الترميز الجديد
+                      </h4>
+                      <div className="grid grid-cols-3 gap-3">
+                        {viewingRecord.new_zone && (
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-indigo-200 dark:border-indigo-700 text-center">
+                            <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">الزون</span>
+                            <p className="text-gray-900 dark:text-white font-semibold">
+                              {viewingRecord.new_zone}
+                            </p>
+                          </div>
+                        )}
+                        {viewingRecord.new_block && (
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-indigo-200 dark:border-indigo-700 text-center">
+                            <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">البلوك</span>
+                            <p className="text-gray-900 dark:text-white font-semibold">
+                              {viewingRecord.new_block}
+                            </p>
+                          </div>
+                        )}
+                        {viewingRecord.new_home && (
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-indigo-200 dark:border-indigo-700 text-center">
+                            <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">الهوم</span>
+                            <p className="text-gray-900 dark:text-white font-semibold">
+                              {viewingRecord.new_home}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* الصنف */}
-                {viewingRecord.category && (
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                      <FileText className="w-4 h-4 text-orange-600 dark:text-orange-400 ml-2" />
-                      الصنف
+                  {/* الصنف ونوع المقياس */}
+                  <div className="bg-gradient-to-l from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-5 border border-purple-200 dark:border-purple-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                      <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400 ml-2" />
+                      التصنيف
                     </h4>
-                    <div className="flex items-center">
-                      <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-lg text-sm font-medium">
-                        {viewingRecord.category}
-                      </span>
+                    <div className="space-y-3">
+                      {viewingRecord.category && (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+                          <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">الصنف</span>
+                          <span className="inline-block px-3 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-lg text-sm font-semibold">
+                            {viewingRecord.category}
+                          </span>
+                        </div>
+                      )}
+                      {viewingRecord.phase && (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-purple-200 dark:border-purple-700">
+                          <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">نوع المقياس</span>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-semibold">
+                              {viewingRecord.phase}
+                            </span>
+                            {viewingRecord.phase === 'سي تي' && viewingRecord.multiplier && (
+                              <span className="inline-block px-3 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-lg text-sm font-semibold">
+                                معامل الضرب: {viewingRecord.multiplier}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-
-                {/* نوع المقياس */}
-                {viewingRecord.phase && (
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                      <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
-                      نوع المقياس
-                    </h4>
-                    <div className="flex items-center">
-                      <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-medium">
-                        {viewingRecord.phase}
-                      </span>
-                    </div>
-                  </div>
-                )}
+                </div>
 
                 {/* GPS Location */}
                 {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
