@@ -853,7 +853,7 @@ export const dbOperations = {
   },
 
   // Get records statistics only
-  async getRecordsStats(): Promise<{
+  async getRecordsStats(currentUser?: User | null): Promise<{
     total: number;
     pending: number;
     completed: number;
@@ -867,38 +867,49 @@ export const dbOperations = {
         return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
       }
       
+      // فلترة السجلات حسب صلاحيات مدير الفرع
+      let allowedFieldAgentIds: string[] | null = null;
+      if (currentUser?.role === 'branch_manager') {
+        allowedFieldAgentIds = await this.getBranchManagerFieldAgents(currentUser.id);
+        if (allowedFieldAgentIds.length === 0) {
+          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي إحصائيات
+          return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0, locked: 0 };
+        }
+      }
+      
       // استخدام دالة SQL للحصول على الإحصائيات بدقة
-      const { data, error } = await client
-        .rpc('get_system_stats');
+      // لكن نحتاج fallback لأن RPC قد لا يدعم الفلترة
+      if (!allowedFieldAgentIds && !currentUser) {
+        const { data, error } = await client
+          .rpc('get_system_stats');
 
-      if (error) {
-        console.error('Get records stats error:', error);
-        // Fallback: استخدام الاستعلام المباشر
-        return await this.getRecordsStatsFallback();
+        if (!error && data && data.length > 0) {
+          const stats = data[0];
+          return {
+            total: Number(stats.total_records) || 0,
+            pending: Number(stats.pending_records) || 0,
+            completed: Number(stats.completed_records) || 0,
+            verified: Number(stats.verified_records) || 0,
+            refused: Number(stats.refused_records) || 0,
+            locked: Number(stats.locked_records) || 0
+          };
+        }
       }
 
-      if (data && data.length > 0) {
-        const stats = data[0];
-        return {
-          total: Number(stats.total_records) || 0,
-          pending: Number(stats.pending_records) || 0,
-          completed: Number(stats.completed_records) || 0,
-          verified: Number(stats.verified_records) || 0,
-          refused: Number(stats.refused_records) || 0,
-          locked: Number(stats.locked_records) || 0
-        };
-      }
-
-      return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0, locked: 0 };
+      // Fallback: استخدام الاستعلام المباشر مع الفلترة
+      return await this.getRecordsStatsFallback(allowedFieldAgentIds);
     } catch (error) {
       console.error('Get records stats error:', error);
       // Fallback: استخدام الاستعلام المباشر
-      return await this.getRecordsStatsFallback();
+      const allowedFieldAgentIds = currentUser?.role === 'branch_manager' 
+        ? await this.getBranchManagerFieldAgents(currentUser.id)
+        : null;
+      return await this.getRecordsStatsFallback(allowedFieldAgentIds);
     }
   },
 
   // Fallback method للحصول على الإحصائيات
-  async getRecordsStatsFallback(): Promise<{
+  async getRecordsStatsFallback(allowedFieldAgentIds?: string[] | null): Promise<{
     total: number;
     pending: number;
     completed: number;
@@ -912,14 +923,22 @@ export const dbOperations = {
         return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
       }
       
+      // بناء الاستعلامات مع فلترة المحصلين الميدانيين إذا لزم الأمر
+      const buildQuery = (baseQuery: any) => {
+        if (allowedFieldAgentIds && allowedFieldAgentIds.length > 0) {
+          return baseQuery.in('field_agent_id', allowedFieldAgentIds);
+        }
+        return baseQuery;
+      };
+      
       // استخدام count للحصول على الإحصائيات بدقة
       const [totalResult, pendingResult, completedResult, verifiedResult, refusedResult, lockedResult] = await Promise.all([
-        client.from('collection_records').select('id', { count: 'exact', head: true }),
-        client.from('collection_records').select('id', { count: 'exact', head: true }).eq('status', 'pending').eq('is_refused', false),
-        client.from('collection_records').select('id', { count: 'exact', head: true }).eq('status', 'completed').eq('is_refused', false),
-        client.from('collection_records').select('id', { count: 'exact', head: true }).eq('verification_status', 'مدقق'),
-        client.from('collection_records').select('id', { count: 'exact', head: true }).eq('is_refused', true),
-        client.from('collection_records').select('id', { count: 'exact', head: true }).not('locked_by', 'is', null)
+        buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true })),
+        buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).eq('status', 'pending').eq('is_refused', false)),
+        buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).eq('status', 'completed').eq('is_refused', false)),
+        buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).eq('verification_status', 'مدقق')),
+        buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).eq('is_refused', true)),
+        buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).not('locked_by', 'is', null))
       ]);
 
       return {

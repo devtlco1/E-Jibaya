@@ -81,14 +81,14 @@ export function Reports({}: ReportsProps) {
   React.useEffect(() => {
     const loadStats = async () => {
       try {
-        const statsData = await dbOperations.getRecordsStats();
+        const statsData = await dbOperations.getRecordsStats(currentUser);
         setStats(statsData);
       } catch (error) {
         console.error('Error loading stats:', error);
       }
     };
     loadStats();
-  }, []);
+  }, [currentUser]);
 
   // Load users for filter dropdown
   React.useEffect(() => {

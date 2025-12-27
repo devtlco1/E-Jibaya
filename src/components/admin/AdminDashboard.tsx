@@ -157,7 +157,7 @@ export function AdminDashboard() {
       // تمرير user لفلترة السجلات حسب صلاحيات مدير الفرع
       const [recordsResult, statsResult] = await Promise.all([
         dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters, user),
-        dbOperations.getRecordsStats()
+        dbOperations.getRecordsStats(user)
       ]);
       
       setRecords(recordsResult.data);
@@ -753,7 +753,7 @@ export function AdminDashboard() {
                 <span className="sm:hidden">السجلات</span>
               </div>
             </button>
-            {(user?.role === 'admin' || user?.role === 'employee' || user?.role === 'branch_manager') && (
+            {(user?.role === 'admin' || user?.role === 'employee') && (
               <button
                 onClick={() => setActiveTab('users')}
                 className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
