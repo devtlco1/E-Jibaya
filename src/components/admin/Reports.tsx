@@ -755,28 +755,6 @@ export function Reports({}: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الثاني: المحصل الميداني */}
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                المحصل الميداني
-              </label>
-              <select
-                value={filters.fieldAgent}
-                onChange={(e) => setFilters({ ...filters, fieldAgent: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                disabled={filters.branchManager && users.length === 0}
-              >
-                <option value="">جميع المحصلين</option>
-                {users.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
           {/* الصف الثالث: المنطقة والزون والبلوك */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -884,8 +862,8 @@ export function Reports({}: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الخامس: الصنف، نوع المقياس */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* الصف الخامس: الصنف، نوع المقياس، المحصل الميداني */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الصنف
@@ -918,6 +896,25 @@ export function Reports({}: ReportsProps) {
                 <option value="ثلاثي">ثلاثي</option>
                 <option value="سي تي">سي تي</option>
                 <option value="المحولة الخاصة">المحولة الخاصة</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                المحصل الميداني
+              </label>
+              <select
+                value={filters.fieldAgent}
+                onChange={(e) => setFilters({ ...filters, fieldAgent: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                disabled={filters.branchManager && users.length === 0}
+              >
+                <option value="">جميع المحصلين</option>
+                {users.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.full_name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
