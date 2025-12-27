@@ -396,6 +396,16 @@ export function Reports({ records }: ReportsProps) {
     `;
   };
 
+  // دالة لتنسيق الأرقام بالعملة العراقية
+  const formatIraqiCurrency = (amount: number | null | undefined): string => {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      return '-';
+    }
+    // تحويل الرقم إلى سلسلة مع فواصل
+    const formatted = Math.abs(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '،');
+    return `${formatted} د.ع`;
+  };
+
   const generateDeliveryReportHTML = () => {
     const currentDate = formatDate(new Date());
     
@@ -406,6 +416,28 @@ export function Reports({ records }: ReportsProps) {
 
     // حساب إجمالي المبلغ المستلم
     const totalAmount = recordsWithAmount.reduce((sum, r) => sum + (r.current_amount || 0), 0);
+    const totalAmountTotal = recordsWithAmount.reduce((sum, r) => sum + (r.total_amount || 0), 0);
+
+    // حساب إحصائيات الأصناف
+    const categoryStats: Record<string, {
+      count: number;
+      totalAmount: number;
+      currentAmount: number;
+    }> = {};
+
+    recordsWithAmount.forEach(record => {
+      const category = record.category || 'غير محدد';
+      if (!categoryStats[category]) {
+        categoryStats[category] = {
+          count: 0,
+          totalAmount: 0,
+          currentAmount: 0
+        };
+      }
+      categoryStats[category].count++;
+      categoryStats[category].totalAmount += record.total_amount || 0;
+      categoryStats[category].currentAmount += record.current_amount || 0;
+    });
 
     return `
 <!DOCTYPE html>
@@ -432,7 +464,14 @@ export function Reports({ records }: ReportsProps) {
         .table tr:nth-child(even) { background: #f9fafb; }
         .table tr:hover { background: #f3f4f6; }
         .amount { font-weight: bold; color: #059669; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #d1d5db; text-align: center; color: #6b7280; font-size: 14px; }
+        .category-table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+        .category-table th, .category-table td { border: 1px solid #d1d5db; padding: 10px 12px; text-align: right; font-size: 13px; }
+        .category-table th { background: #1e40af; color: white; font-weight: bold; }
+        .category-table tr:nth-child(even) { background: #f9fafb; }
+        .signatures { margin-top: 60px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .signature-box { width: 200px; text-align: center; border-top: 2px solid #374151; padding-top: 10px; }
+        .signature-box h4 { margin: 0 0 40px 0; font-size: 14px; font-weight: bold; color: #374151; }
+        .signature-box p { margin: 0; font-size: 12px; color: #6b7280; }
         @media print { 
           body { background: white; } 
           .container { box-shadow: none; }
@@ -445,21 +484,6 @@ export function Reports({ records }: ReportsProps) {
         <div class="header">
             <h1>تقرير الإرسال</h1>
             <p>تاريخ إنشاء التقرير: ${currentDate}</p>
-        </div>
-
-        <div class="summary">
-            <h3>${recordsWithAmount.length}</h3>
-            <p>عدد السجلات</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
-                <div>
-                    <h3>${recordsWithAmount.reduce((sum, r) => sum + (r.total_amount || 0), 0).toFixed(2)}</h3>
-                    <p>إجمالي المبلغ الكلي</p>
-                </div>
-                <div>
-                    <h3>${totalAmount.toFixed(2)}</h3>
-                    <p>إجمالي المبلغ المستلم</p>
-                </div>
-            </div>
         </div>
 
         ${filters.startDate || filters.endDate || filters.category ? `
@@ -487,8 +511,8 @@ export function Reports({ records }: ReportsProps) {
                 <tr>
                     <td>${index + 1}</td>
                     <td>${record.account_number || '-'}</td>
-                    <td>${record.total_amount ? record.total_amount.toFixed(2) : '-'}</td>
-                    <td class="amount">${record.current_amount?.toFixed(2) || '0.00'}</td>
+                    <td>${formatIraqiCurrency(record.total_amount)}</td>
+                    <td class="amount">${formatIraqiCurrency(record.current_amount)}</td>
                     <td>${formatDate(record.submitted_at)}</td>
                     <td>${record.category || '-'}</td>
                 </tr>
@@ -497,17 +521,66 @@ export function Reports({ records }: ReportsProps) {
             <tfoot>
                 <tr style="background: #f3f4f6; font-weight: bold;">
                     <td colspan="2" style="text-align: left;">الإجمالي:</td>
-                    <td>${recordsWithAmount.reduce((sum, r) => sum + (r.total_amount || 0), 0).toFixed(2)}</td>
-                    <td class="amount">${totalAmount.toFixed(2)}</td>
+                    <td>${formatIraqiCurrency(totalAmountTotal)}</td>
+                    <td class="amount">${formatIraqiCurrency(totalAmount)}</td>
                     <td colspan="2"></td>
                 </tr>
             </tfoot>
         </table>
 
-        <div class="footer">
-            <p>تم إنشاء هذا التقرير بواسطة نظام سجلات المشتركين</p>
-            <p>عدد السجلات في التقرير: ${recordsWithAmount.length} سجل</p>
-            <p>إجمالي المبلغ الكلي: ${recordsWithAmount.reduce((sum, r) => sum + (r.total_amount || 0), 0).toFixed(2)} | إجمالي المبلغ المستلم: ${totalAmount.toFixed(2)}</p>
+        <div style="margin-top: 40px;">
+            <h2 style="text-align: center; color: #1e40af; font-size: 20px; margin-bottom: 20px;">مخرجات التقرير النهائية</h2>
+            
+            <table class="category-table">
+                <thead>
+                    <tr>
+                        <th>الصنف</th>
+                        <th>عدد السجلات</th>
+                        <th>المبلغ الكلي</th>
+                        <th>المبلغ المستلم</th>
+                        <th>المبلغ المتبقي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${Object.entries(categoryStats).map(([category, stats]) => {
+                        const remaining = stats.totalAmount - stats.currentAmount;
+                        return `
+                        <tr>
+                            <td>${category}</td>
+                            <td>${stats.count}</td>
+                            <td>${formatIraqiCurrency(stats.totalAmount)}</td>
+                            <td class="amount">${formatIraqiCurrency(stats.currentAmount)}</td>
+                            <td>${formatIraqiCurrency(remaining)}</td>
+                        </tr>
+                        `;
+                    }).join('')}
+                    <tr style="background: #f3f4f6; font-weight: bold;">
+                        <td>الإجمالي</td>
+                        <td>${recordsWithAmount.length}</td>
+                        <td>${formatIraqiCurrency(totalAmountTotal)}</td>
+                        <td class="amount">${formatIraqiCurrency(totalAmount)}</td>
+                        <td>${formatIraqiCurrency(totalAmountTotal - totalAmount)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="signatures">
+            <div class="signature-box" style="text-align: right;">
+                <h4>قارئ المقياس</h4>
+                <p>التوقيع:</p>
+                <p style="margin-top: 30px;">الختم:</p>
+            </div>
+            <div class="signature-box" style="text-align: center;">
+                <h4>أمين الصندوق</h4>
+                <p>التوقيع:</p>
+                <p style="margin-top: 30px;">الختم:</p>
+            </div>
+            <div class="signature-box" style="text-align: left;">
+                <h4>مسؤول شعبة المبيعات</h4>
+                <p>التوقيع:</p>
+                <p style="margin-top: 30px;">الختم:</p>
+            </div>
         </div>
     </div>
 </body>
