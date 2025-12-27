@@ -528,13 +528,6 @@ export function AdminDashboard() {
           )
         );
         
-        // Update all records for stats
-        setAllRecords(prevRecords => 
-          prevRecords.map(record => 
-            record.id === id ? { ...record, ...updates } : record
-          )
-        );
-        
         // Update stats
         const newStats = await dbOperations.getRecordsStats();
         // استخدام locked من newStats
