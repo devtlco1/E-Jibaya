@@ -468,6 +468,7 @@ export function Reports({ records }: ReportsProps) {
         .table tr:nth-child(even) { background: #f9fafb; }
         .table tr:hover { background: #f3f4f6; }
         .amount { font-weight: bold; color: #059669; }
+        .remaining { font-weight: bold; color: #dc2626; }
         .category-table { width: 100%; border-collapse: collapse; margin-top: 30px; }
         .category-table th, .category-table td { border: 1px solid #d1d5db; padding: 10px 12px; text-align: right; font-size: 13px; }
         .category-table th { background: #1e40af; color: white; font-weight: bold; }
@@ -554,7 +555,7 @@ export function Reports({ records }: ReportsProps) {
                             <td>${stats.count}</td>
                             <td>${formatIraqiCurrency(stats.totalAmount)}</td>
                             <td class="amount">${formatIraqiCurrency(stats.currentAmount)}</td>
-                            <td>${formatIraqiCurrency(remaining)}</td>
+                            <td class="remaining">${formatIraqiCurrency(remaining)}</td>
                         </tr>
                         `;
                     }).join('')}
@@ -563,7 +564,7 @@ export function Reports({ records }: ReportsProps) {
                         <td>${recordsWithAmount.length}</td>
                         <td>${formatIraqiCurrency(totalAmountTotal)}</td>
                         <td class="amount">${formatIraqiCurrency(totalAmount)}</td>
-                        <td>${formatIraqiCurrency(totalAmountTotal - totalAmount)}</td>
+                        <td class="remaining">${formatIraqiCurrency(totalAmountTotal - totalAmount)}</td>
                     </tr>
                 </tbody>
             </table>
