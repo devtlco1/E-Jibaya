@@ -450,8 +450,16 @@ export function Reports({ records }: ReportsProps) {
         <div class="summary">
             <h3>${recordsWithAmount.length}</h3>
             <p>عدد السجلات</p>
-            <h3 style="margin-top: 15px;">${totalAmount.toFixed(2)}</h3>
-            <p>إجمالي المبلغ المستلم</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div>
+                    <h3>${recordsWithAmount.reduce((sum, r) => sum + (r.total_amount || 0), 0).toFixed(2)}</h3>
+                    <p>إجمالي المبلغ الكلي</p>
+                </div>
+                <div>
+                    <h3>${totalAmount.toFixed(2)}</h3>
+                    <p>إجمالي المبلغ المستلم</p>
+                </div>
+            </div>
         </div>
 
         ${filters.startDate || filters.endDate || filters.category ? `
@@ -468,6 +476,7 @@ export function Reports({ records }: ReportsProps) {
                 <tr>
                     <th>تسلسل</th>
                     <th>رقم الحساب</th>
+                    <th>المبلغ الكلي</th>
                     <th>المبلغ المستلم</th>
                     <th>تاريخ الاستلام</th>
                     <th>الصنف</th>
@@ -478,6 +487,7 @@ export function Reports({ records }: ReportsProps) {
                 <tr>
                     <td>${index + 1}</td>
                     <td>${record.account_number || '-'}</td>
+                    <td>${record.total_amount ? record.total_amount.toFixed(2) : '-'}</td>
                     <td class="amount">${record.current_amount?.toFixed(2) || '0.00'}</td>
                     <td>${formatDate(record.submitted_at)}</td>
                     <td>${record.category || '-'}</td>
@@ -487,6 +497,7 @@ export function Reports({ records }: ReportsProps) {
             <tfoot>
                 <tr style="background: #f3f4f6; font-weight: bold;">
                     <td colspan="2" style="text-align: left;">الإجمالي:</td>
+                    <td>${recordsWithAmount.reduce((sum, r) => sum + (r.total_amount || 0), 0).toFixed(2)}</td>
                     <td class="amount">${totalAmount.toFixed(2)}</td>
                     <td colspan="2"></td>
                 </tr>
@@ -496,7 +507,7 @@ export function Reports({ records }: ReportsProps) {
         <div class="footer">
             <p>تم إنشاء هذا التقرير بواسطة نظام سجلات المشتركين</p>
             <p>عدد السجلات في التقرير: ${recordsWithAmount.length} سجل</p>
-            <p>إجمالي المبلغ المستلم: ${totalAmount.toFixed(2)}</p>
+            <p>إجمالي المبلغ الكلي: ${recordsWithAmount.reduce((sum, r) => sum + (r.total_amount || 0), 0).toFixed(2)} | إجمالي المبلغ المستلم: ${totalAmount.toFixed(2)}</p>
         </div>
     </div>
 </body>
@@ -768,61 +779,70 @@ export function Reports({ records }: ReportsProps) {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-3">
-              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+      {(() => {
+        // حساب السجلات المؤهلة لتقرير الإرسال
+        const deliveryRecords = reportType === 'delivery' 
+          ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0)
+          : filteredRecords;
+        
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-3">
+                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">إجمالي السجلات</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{deliveryRecords.length}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">إجمالي السجلات</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{filteredRecords.length}</p>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg ml-3">
-              <MapPin className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg ml-3">
+                  <MapPin className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على موقع</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {deliveryRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على موقع</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {filteredRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg ml-3">
-              <Camera className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg ml-3">
+                  <Camera className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على صور</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {deliveryRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على صور</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {filteredRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-3">
-              <Users className="w-6 h-6 text-red-600 dark:text-red-400" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {filteredRecords.filter(r => r.is_refused).length}
-              </p>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-3">
+                  <Users className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {deliveryRecords.filter(r => r.is_refused).length}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Report Type Selection */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
@@ -857,7 +877,7 @@ export function Reports({ records }: ReportsProps) {
         {reportType === 'delivery' && (
           <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>تقرير الإرسال:</strong> يعرض السجلات التي لديها مبلغ مستلم مع تفاصيل: التسلسل، رقم الحساب، المبلغ المستلم، تاريخ الاستلام، والصنف.
+              <strong>تقرير الإرسال:</strong> يعرض السجلات التي لديها مبلغ مستلم مع تفاصيل: التسلسل، رقم الحساب، المبلغ الكلي، المبلغ المستلم، تاريخ الاستلام، والصنف.
             </p>
           </div>
         )}
@@ -961,6 +981,7 @@ export function Reports({ records }: ReportsProps) {
                           <>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">تسلسل</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">رقم الحساب</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المبلغ الكلي</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المبلغ المستلم</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">تاريخ الاستلام</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الصنف</th>
@@ -992,6 +1013,9 @@ export function Reports({ records }: ReportsProps) {
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{index + 1}</td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
                                 {record.account_number || 'غير محدد'}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                {record.total_amount ? record.total_amount.toFixed(2) : '-'}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white font-medium text-green-600 dark:text-green-400">
                                 {record.current_amount?.toFixed(2) || '0.00'}
