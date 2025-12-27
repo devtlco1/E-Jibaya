@@ -14,7 +14,7 @@ interface UserManagementProps {
 
 export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
@@ -165,7 +165,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   };
 
   const loadUsers = async () => {
-    setLoading(true);
+    // تحميل في الخلفية بدون عرض حالة التحميل
     try {
       const data = await dbOperations.getUsers();
       setUsers(data);
@@ -176,8 +176,6 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         title: 'خطأ في تحميل البيانات',
         message: 'حدث خطأ أثناء تحميل قائمة المستخدمين'
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -630,17 +628,6 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       }
     }
   };
-
-  if (loading) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">جاري تحميل المستخدمين...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
