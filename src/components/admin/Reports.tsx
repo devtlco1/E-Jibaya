@@ -228,7 +228,7 @@ export function Reports({ records }: ReportsProps) {
       const link = document.createElement('a');
       link.href = url;
       link.download = reportType === 'delivery'
-        ? `تقرير_الإرسال_${formatDateTimeForFilename(new Date())}.html`
+        ? `تقرير_الارسالية_${formatDateTimeForFilename(new Date())}.html`
         : `تقرير_سجلات_المشتركين_${formatDateTimeForFilename(new Date())}.html`;
       document.body.appendChild(link);
       link.click();
@@ -445,7 +445,7 @@ export function Reports({ records }: ReportsProps) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تقرير الإرسال</title>
+    <title>تقرير الارسالية</title>
     <style>
         * { font-family: 'Arial', sans-serif; }
         body { margin: 20px; background: #f5f5f5; }
@@ -482,7 +482,7 @@ export function Reports({ records }: ReportsProps) {
 <body>
     <div class="container">
         <div class="header">
-            <h1>تقرير الإرسال</h1>
+            <h1>تقرير الارسالية</h1>
             <p>تاريخ إنشاء التقرير: ${currentDate}</p>
         </div>
 
@@ -933,14 +933,14 @@ export function Reports({ records }: ReportsProps) {
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
             }`}
           >
-            تقرير الإرسال
+            تقرير الارسالية
           </button>
         </div>
 
         {reportType === 'delivery' && (
           <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>تقرير الإرسال:</strong> يعرض السجلات التي لديها مبلغ مستلم مع تفاصيل: التسلسل، رقم الحساب، المبلغ الكلي، المبلغ المستلم، تاريخ الاستلام، والصنف.
+              <strong>تقرير الارسالية:</strong> يعرض السجلات التي لديها مبلغ مستلم مع تفاصيل: التسلسل، رقم الحساب، المبلغ الكلي، المبلغ المستلم، تاريخ الاستلام، والصنف.
             </p>
           </div>
         )}
@@ -985,7 +985,7 @@ export function Reports({ records }: ReportsProps) {
         {reportType === 'delivery' && (
           <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              <strong>ملاحظة:</strong> تقرير الإرسال يعرض فقط السجلات التي لديها مبلغ مستلم (المبلغ الحالي أكبر من صفر).
+              <strong>ملاحظة:</strong> تقرير الارسالية يعرض فقط السجلات التي لديها مبلغ مستلم (المبلغ الحالي أكبر من صفر).
               عدد السجلات المؤهلة: {filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).length}
             </p>
           </div>
@@ -1014,7 +1014,7 @@ export function Reports({ records }: ReportsProps) {
               <div className="space-y-4">
                 <div className="text-center">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {reportType === 'delivery' ? 'تقرير الإرسال' : 'تقرير سجلات المشتركين'}
+                    {reportType === 'delivery' ? 'تقرير الارسالية' : 'تقرير سجلات المشتركين'}
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400">
                     {reportType === 'delivery' 
