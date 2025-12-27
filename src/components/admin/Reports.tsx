@@ -66,6 +66,13 @@ export function Reports({ records }: ReportsProps) {
 
   const { addNotification } = useNotifications();
 
+  // حساب السجلات المؤهلة لتقرير الإرسال - يتحدث تلقائياً عند تغيير reportType أو filteredRecords
+  const statsRecords = useMemo(() => {
+    return reportType === 'delivery' 
+      ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0)
+      : filteredRecords;
+  }, [reportType, filteredRecords]);
+
   // Load users for filter dropdown
   React.useEffect(() => {
     const loadUsers = async () => {
@@ -779,72 +786,63 @@ export function Reports({ records }: ReportsProps) {
       </div>
 
       {/* Statistics */}
-      {useMemo(() => {
-        // حساب السجلات المؤهلة لتقرير الإرسال
-        const statsRecords = reportType === 'delivery' 
-          ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0)
-          : filteredRecords;
-        
-        return (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-              <div className="flex items-center">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-3">
-                  <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {reportType === 'delivery' ? 'سجلات الإرسال' : 'إجمالي السجلات'}
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{statsRecords.length}</p>
-                </div>
-              </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-3">
+              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
-
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-              <div className="flex items-center">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg ml-3">
-                  <MapPin className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على موقع</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {statsRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-              <div className="flex items-center">
-                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg ml-3">
-                  <Camera className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على صور</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {statsRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-              <div className="flex items-center">
-                <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-3">
-                  <Users className="w-6 h-6 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {statsRecords.filter(r => r.is_refused).length}
-                  </p>
-                </div>
-              </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {reportType === 'delivery' ? 'سجلات الإرسال' : 'إجمالي السجلات'}
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{statsRecords.length}</p>
             </div>
           </div>
-        );
-      }, [reportType, filteredRecords])}
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg ml-3">
+              <MapPin className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على موقع</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {statsRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg ml-3">
+              <Camera className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على صور</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {statsRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex items-center">
+            <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-3">
+              <Users className="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {statsRecords.filter(r => r.is_refused).length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Report Type Selection */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
