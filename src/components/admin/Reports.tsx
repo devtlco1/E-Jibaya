@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { CollectionRecord } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { dbOperations } from '../../lib/supabase';
@@ -65,18 +65,6 @@ export function Reports({ records }: ReportsProps) {
   const [reportType, setReportType] = useState<'standard' | 'delivery'>('standard');
 
   const { addNotification } = useNotifications();
-
-  // حساب السجلات المؤهلة لتقرير الإرسال - يتحدث تلقائياً عند تغيير reportType أو filteredRecords
-  const statsRecords = useMemo(() => {
-    if (reportType === 'delivery') {
-      return filteredRecords.filter(r => 
-        r.current_amount !== null && 
-        r.current_amount !== undefined && 
-        Number(r.current_amount) > 0
-      );
-    }
-    return filteredRecords;
-  }, [reportType, filteredRecords]);
 
   // Load users for filter dropdown
   React.useEffect(() => {
@@ -791,17 +779,15 @@ export function Reports({ records }: ReportsProps) {
       </div>
 
       {/* Statistics */}
-      <div key={`stats-${reportType}-${filteredRecords.length}`} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-3">
               <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {reportType === 'delivery' ? 'سجلات الإرسال' : 'إجمالي السجلات'}
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{statsRecords.length}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">إجمالي السجلات</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{filteredRecords.length}</p>
             </div>
           </div>
         </div>
@@ -814,7 +800,7 @@ export function Reports({ records }: ReportsProps) {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على موقع</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {statsRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
+                {filteredRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
               </p>
             </div>
           </div>
@@ -828,7 +814,7 @@ export function Reports({ records }: ReportsProps) {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على صور</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {statsRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
+                {filteredRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
               </p>
             </div>
           </div>
@@ -842,7 +828,7 @@ export function Reports({ records }: ReportsProps) {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {statsRecords.filter(r => r.is_refused).length}
+                {filteredRecords.filter(r => r.is_refused).length}
               </p>
             </div>
           </div>

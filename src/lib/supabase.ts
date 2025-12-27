@@ -333,36 +333,20 @@ export const dbOperations = {
       
       console.log('Fetching fresh data from database (cache completely disabled)');
       
-      // جلب جميع السجلات بدون حد أقصى (pagination)
-      let allData: CollectionRecord[] = [];
-      let page = 0;
-      const pageSize = 1000;
-      let hasMore = true;
+      const { data, error } = await client
+        .from('collection_records')
+        .select('*')
+        .order('submitted_at', { ascending: false });
 
-      while (hasMore) {
-        const { data, error } = await client
-          .from('collection_records')
-          .select('*')
-          .order('submitted_at', { ascending: false })
-          .range(page * pageSize, (page + 1) * pageSize - 1);
-
-        if (error) {
-          console.error('Get records error:', error);
-          throw error;
-        }
-
-        if (data && data.length > 0) {
-          allData = [...allData, ...data];
-          hasMore = data.length === pageSize;
-          page++;
-        } else {
-          hasMore = false;
-        }
+      if (error) {
+        console.error('Get records error:', error);
+        return [];
       }
       
-      console.log(`Fetched ${allData.length} records from database (${page} pages)`);
+      const records = data || [];
+      console.log(`Fetched ${records.length} records from database`);
       
-      return allData;
+      return records;
     } catch (error) {
       console.error('Get records error:', error);
       return [];
