@@ -68,9 +68,17 @@ export function Reports({ records }: ReportsProps) {
 
   // حساب السجلات المؤهلة لتقرير الإرسال - يتحدث تلقائياً عند تغيير reportType أو filteredRecords
   const statsRecords = useMemo(() => {
-    return reportType === 'delivery' 
-      ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0)
-      : filteredRecords;
+    if (reportType === 'delivery') {
+      const deliveryRecords = filteredRecords.filter(r => 
+        r.current_amount !== null && 
+        r.current_amount !== undefined && 
+        r.current_amount > 0
+      );
+      console.log('Delivery Records Count:', deliveryRecords.length);
+      console.log('Filtered Records Count:', filteredRecords.length);
+      return deliveryRecords;
+    }
+    return filteredRecords;
   }, [reportType, filteredRecords]);
 
   // Load users for filter dropdown
