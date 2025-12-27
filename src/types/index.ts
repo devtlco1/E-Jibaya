@@ -115,6 +115,8 @@ export interface FilterState {
   phase: string;
   // الصور المرفوضة
   rejected_photos?: 'any' | 'none' | '';
+  // المحصل الميداني
+  field_agent_id: string;
 }
 
 export interface ActivityLog {

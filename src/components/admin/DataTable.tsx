@@ -1094,6 +1094,29 @@ export function DataTable({
                 </select>
               </div>
             </div>
+
+            {/* الصف الخامس: المحصل الميداني */}
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  المحصل الميداني
+                </label>
+                <select
+                  value={filters.field_agent_id || ''}
+                  onChange={(e) => onFiltersChange({ ...filters, field_agent_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">جميع المحصلين</option>
+                  {users
+                    .filter(user => user.role === 'field_agent')
+                    .map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.full_name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
           </div>
         )}
       </div>

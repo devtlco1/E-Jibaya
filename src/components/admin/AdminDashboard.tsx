@@ -66,7 +66,9 @@ export function AdminDashboard() {
     verification_status: '',
     // فلاتر إضافية
     category: '',
-    phase: ''
+    phase: '',
+    // المحصل الميداني
+    field_agent_id: ''
   });
   const [allRecordsStats, setAllRecordsStats] = useState({
     total: 0,
@@ -89,7 +91,8 @@ export function AdminDashboard() {
     new_block: '',
     verification_status: '',
     category: '',
-    phase: ''
+    phase: '',
+    field_agent_id: ''
   });
 
   // Sync filtersRef whenever filters state changes
