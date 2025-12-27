@@ -252,6 +252,16 @@ export function Reports({ records }: ReportsProps) {
     }
   };
 
+  // دالة لتنسيق الأرقام بالعملة العراقية
+  const formatIraqiCurrency = (amount: number | null | undefined): string => {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      return '-';
+    }
+    // تحويل الرقم إلى سلسلة مع فواصل
+    const formatted = Math.abs(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '،');
+    return `${formatted} د.ع`;
+  };
+
   const generateReportHTML = () => {
     const currentDate = formatDate(new Date());
 
@@ -398,16 +408,6 @@ export function Reports({ records }: ReportsProps) {
 </body>
 </html>
     `;
-  };
-
-  // دالة لتنسيق الأرقام بالعملة العراقية
-  const formatIraqiCurrency = (amount: number | null | undefined): string => {
-    if (amount === null || amount === undefined || isNaN(amount)) {
-      return '-';
-    }
-    // تحويل الرقم إلى سلسلة مع فواصل
-    const formatted = Math.abs(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '،');
-    return `${formatted} د.ع`;
   };
 
   const generateDeliveryReportHTML = () => {
