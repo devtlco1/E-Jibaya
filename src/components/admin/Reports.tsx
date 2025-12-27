@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { CollectionRecord } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { dbOperations } from '../../lib/supabase';
@@ -779,14 +779,11 @@ export function Reports({ records }: ReportsProps) {
       </div>
 
       {/* Statistics */}
-      {(() => {
+      {useMemo(() => {
         // حساب السجلات المؤهلة لتقرير الإرسال
-        const deliveryRecords = reportType === 'delivery' 
+        const statsRecords = reportType === 'delivery' 
           ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0)
           : filteredRecords;
-        
-        // استخدام deliveryRecords في جميع الإحصائيات
-        const statsRecords = deliveryRecords;
         
         return (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -847,7 +844,7 @@ export function Reports({ records }: ReportsProps) {
             </div>
           </div>
         );
-      })()}
+      }, [reportType, filteredRecords])}
 
       {/* Report Type Selection */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
