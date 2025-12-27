@@ -36,9 +36,9 @@ export interface CollectionRecord {
   locked_at: string | null;
   lock_expires_at: string | null;
   // الصنف
-  category: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | 'انارة' | 'محولة خاصة' | null;
+  category: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | null;
   // نوع المقياس
-  phase: 'احادي' | 'ثلاثي' | 'سي تي' | null;
+  phase: 'احادي' | 'ثلاثي' | 'سي تي' | 'المحولة الخاصة' | null;
   // معامل الضرب (يظهر فقط عند اختيار سي تي)
   multiplier: string | null;
   // تدقيق الصور
@@ -64,6 +64,7 @@ export interface CreateRecordData {
   is_refused: boolean;
   total_amount: number | null;
   current_amount: number | null;
+  category?: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | null;
 }
 
 export interface UpdateRecordData {

@@ -55,9 +55,9 @@ export function DataTable({
     new_block: '',
     new_home: '',
     // الصنف
-    category: null as 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | 'انارة' | 'محولة خاصة' | null,
+    category: null as 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | null,
     // نوع المقياس
-    phase: null as 'احادي' | 'ثلاثي' | 'سي تي' | null,
+    phase: null as 'احادي' | 'ثلاثي' | 'سي تي' | 'المحولة الخاصة' | null,
     // معامل الضرب (يظهر فقط عند اختيار سي تي)
     multiplier: '',
     // المبالغ
@@ -1074,8 +1074,6 @@ export function DataTable({
                   <option value="صناعي">صناعي</option>
                   <option value="زراعي">زراعي</option>
                   <option value="حكومي">حكومي</option>
-                  <option value="انارة">انارة</option>
-                  <option value="محولة خاصة">محولة خاصة</option>
                 </select>
               </div>
 
@@ -1092,6 +1090,7 @@ export function DataTable({
                   <option value="احادي">احادي</option>
                   <option value="ثلاثي">ثلاثي</option>
                   <option value="سي تي">سي تي</option>
+                  <option value="المحولة الخاصة">المحولة الخاصة</option>
                 </select>
               </div>
             </div>
@@ -1936,7 +1935,7 @@ export function DataTable({
                       الصنف
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {['منزلي', 'تجاري', 'صناعي', 'زراعي', 'حكومي', 'انارة', 'محولة خاصة'].map((cat) => (
+                      {['منزلي', 'تجاري', 'صناعي', 'زراعي', 'حكومي'].map((cat) => (
                         <button
                           key={cat}
                           type="button"
@@ -1995,7 +1994,7 @@ export function DataTable({
                       نوع المقياس
                     </h4>
                     <div className="flex gap-2">
-                      {['احادي', 'ثلاثي', 'سي تي'].map((ph) => (
+                      {['احادي', 'ثلاثي', 'سي تي', 'المحولة الخاصة'].map((ph) => (
                         <button
                           key={ph}
                           type="button"

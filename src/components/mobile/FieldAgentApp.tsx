@@ -34,6 +34,7 @@ export function FieldAgentApp() {
   const [isRefused, setIsRefused] = useState(false);
   const [totalAmount, setTotalAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('');
+  const [category, setCategory] = useState<'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي'>('منزلي');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -373,7 +374,8 @@ export function FieldAgentApp() {
         notes: notes || null,
         is_refused: isRefused,
         total_amount: totalAmount ? parseFloat(totalAmount) : null,
-        current_amount: currentAmount ? parseFloat(currentAmount) : null
+        current_amount: currentAmount ? parseFloat(currentAmount) : null,
+        category: category
       };
 
       const result = await dbOperations.createRecord(record);
@@ -437,6 +439,7 @@ export function FieldAgentApp() {
           setIsRefused(false);
           setTotalAmount('');
           setCurrentAmount('');
+          setCategory('منزلي');
         }, 2000);
       } else {
         setSubmitError('فشل في إرسال البيانات. يرجى المحاولة مرة أخرى');
@@ -946,6 +949,26 @@ export function FieldAgentApp() {
             </div>
           </div>
         </div>
+
+        {/* Category Selection - Only show after photos are uploaded */}
+        {(meterPhoto || invoicePhoto) && !selectedRecord && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              نوع الصنف
+            </h3>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي')}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
+            >
+              <option value="منزلي">منزلي</option>
+              <option value="تجاري">تجاري</option>
+              <option value="صناعي">صناعي</option>
+              <option value="زراعي">زراعي</option>
+              <option value="حكومي">حكومي</option>
+            </select>
+          </div>
+        )}
 
         {/* Notes - Only show when creating new record */}
         {!selectedRecord && (

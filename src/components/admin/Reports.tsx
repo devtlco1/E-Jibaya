@@ -812,8 +812,6 @@ export function Reports({ records }: ReportsProps) {
                 <option value="صناعي">صناعي</option>
                 <option value="زراعي">زراعي</option>
                 <option value="حكومي">حكومي</option>
-                <option value="انارة">انارة</option>
-                <option value="محولة خاصة">محولة خاصة</option>
               </select>
             </div>
 
@@ -830,6 +828,7 @@ export function Reports({ records }: ReportsProps) {
                 <option value="احادي">احادي</option>
                 <option value="ثلاثي">ثلاثي</option>
                 <option value="سي تي">سي تي</option>
+                <option value="المحولة الخاصة">المحولة الخاصة</option>
               </select>
             </div>
           </div>
