@@ -5,7 +5,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
-import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar } from 'lucide-react';
+import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatter';
 
 interface UserManagementProps {
@@ -22,7 +22,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     username: '',
     password: '',
     full_name: '',
-    role: 'field_agent' as 'admin' | 'field_agent' | 'employee'
+    role: 'field_agent' as 'admin' | 'field_agent' | 'employee' | 'branch_manager'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; userId: string; userName: string }>({
@@ -39,6 +39,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
+  // Branch Manager Field Agents Management
+  const [branchManagerFieldAgents, setBranchManagerFieldAgents] = useState<string[]>([]);
+  const [loadingFieldAgents, setLoadingFieldAgents] = useState(false);
+  const [showFieldAgentsModal, setShowFieldAgentsModal] = useState(false);
+  const [selectedBranchManager, setSelectedBranchManager] = useState<User | null>(null);
+
   const { addNotification } = useNotifications();
   const { user: currentUser } = useAuth();
 
@@ -46,6 +52,78 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   React.useEffect(() => {
     loadUsers();
   }, []);
+
+  // Load field agents for branch manager
+  const loadBranchManagerFieldAgents = async (branchManagerId: string) => {
+    setLoadingFieldAgents(true);
+    try {
+      const fieldAgentIds = await dbOperations.getBranchManagerFieldAgents(branchManagerId);
+      setBranchManagerFieldAgents(fieldAgentIds);
+    } catch (error) {
+      console.error('Error loading branch manager field agents:', error);
+      addNotification({
+        type: 'error',
+        title: 'خطأ في تحميل البيانات',
+        message: 'حدث خطأ أثناء تحميل قائمة المحصلين الميدانيين'
+      });
+    } finally {
+      setLoadingFieldAgents(false);
+    }
+  };
+
+  const handleManageFieldAgents = async (user: User) => {
+    if (user.role !== 'branch_manager') return;
+    setSelectedBranchManager(user);
+    setShowFieldAgentsModal(true);
+    await loadBranchManagerFieldAgents(user.id);
+  };
+
+  const handleAddFieldAgent = async (fieldAgentId: string) => {
+    if (!selectedBranchManager) return;
+    try {
+      await dbOperations.addFieldAgentToBranchManager(
+        selectedBranchManager.id,
+        fieldAgentId,
+        currentUser?.id
+      );
+      await loadBranchManagerFieldAgents(selectedBranchManager.id);
+      addNotification({
+        type: 'success',
+        title: 'تمت الإضافة',
+        message: 'تم إضافة المحصل الميداني بنجاح'
+      });
+    } catch (error) {
+      console.error('Error adding field agent:', error);
+      addNotification({
+        type: 'error',
+        title: 'خطأ في الإضافة',
+        message: error instanceof Error ? error.message : 'حدث خطأ أثناء إضافة المحصل الميداني'
+      });
+    }
+  };
+
+  const handleRemoveFieldAgent = async (fieldAgentId: string) => {
+    if (!selectedBranchManager) return;
+    try {
+      await dbOperations.removeFieldAgentFromBranchManager(
+        selectedBranchManager.id,
+        fieldAgentId
+      );
+      await loadBranchManagerFieldAgents(selectedBranchManager.id);
+      addNotification({
+        type: 'success',
+        title: 'تم الحذف',
+        message: 'تم حذف المحصل الميداني بنجاح'
+      });
+    } catch (error) {
+      console.error('Error removing field agent:', error);
+      addNotification({
+        type: 'error',
+        title: 'خطأ في الحذف',
+        message: error instanceof Error ? error.message : 'حدث خطأ أثناء حذف المحصل الميداني'
+      });
+    }
+  };
 
   // Filter users based on role and status
   const filteredUsers = users.filter(user => {
@@ -599,6 +677,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
               <option value="">جميع الأدوار</option>
               <option value="admin">مدير</option>
               <option value="employee">موظف</option>
+              <option value="branch_manager">مدير فرع</option>
               <option value="field_agent">محصل ميداني</option>
             </select>
           </div>
@@ -672,7 +751,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       ) : (
                         <Users className="w-3 h-3 ml-1" />
                       )}
-                      {user.role === 'admin' ? 'مدير' : user.role === 'employee' ? 'موظف' : 'محصل ميداني'}
+                      {user.role === 'admin' ? 'مدير' : user.role === 'employee' ? 'موظف' : user.role === 'branch_manager' ? 'مدير فرع' : 'محصل ميداني'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -738,6 +817,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
+                      {user.role === 'branch_manager' && (currentUser?.role === 'admin' || currentUser?.role === 'employee') && (
+                        <button
+                          onClick={() => handleManageFieldAgents(user)}
+                          className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
+                          title="إدارة المحصلين الميدانيين"
+                        >
+                          <Users className="w-4 h-4" />
+                        </button>
+                      )}
                       {currentUser?.role !== 'employee' && (
                         <button
                           onClick={() => handleDeleteUser(user.id)}
@@ -862,6 +950,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       <>
                         <option value="field_agent">محصل ميداني</option>
                         <option value="employee">موظف</option>
+                        <option value="branch_manager">مدير فرع</option>
                         <option value="admin">مدير</option>
                       </>
                     )}
@@ -1123,6 +1212,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       <>
                         <option value="field_agent">محصل ميداني</option>
                         <option value="employee">موظف</option>
+                        <option value="branch_manager">مدير فرع</option>
                         {currentUser?.role === 'admin' && <option value="admin">مدير</option>}
                       </>
                     )}
@@ -1172,6 +1262,108 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         cancelText="إلغاء"
         type="warning"
       />
+
+      {/* Branch Manager Field Agents Management Modal */}
+      {showFieldAgentsModal && selectedBranchManager && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  إدارة المحصلين الميدانيين - {selectedBranchManager.full_name}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowFieldAgentsModal(false);
+                    setSelectedBranchManager(null);
+                    setBranchManagerFieldAgents([]);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+              {/* Add Field Agent */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  إضافة محصل ميداني
+                </label>
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleAddFieldAgent(e.target.value);
+                      e.target.value = '';
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  disabled={loadingFieldAgents}
+                >
+                  <option value="">اختر محصل ميداني لإضافته</option>
+                  {users
+                    .filter(u => u.role === 'field_agent' && u.is_active && !branchManagerFieldAgents.includes(u.id))
+                    .map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.full_name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Current Field Agents */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  المحصلين الميدانيين الحاليين ({branchManagerFieldAgents.length})
+                </h4>
+                {loadingFieldAgents ? (
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-400">جاري التحميل...</p>
+                  </div>
+                ) : branchManagerFieldAgents.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    لا يوجد محصلين ميدانيين مرتبطين
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {branchManagerFieldAgents.map(fieldAgentId => {
+                      const fieldAgent = users.find(u => u.id === fieldAgentId);
+                      if (!fieldAgent) return null;
+                      return (
+                        <div
+                          key={fieldAgentId}
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                        >
+                          <div className="flex items-center">
+                            <UserIcon className="w-4 h-4 text-gray-500 dark:text-gray-400 ml-2" />
+                            <span className="text-sm text-gray-900 dark:text-white">
+                              {fieldAgent.full_name}
+                            </span>
+                            {!fieldAgent.is_active && (
+                              <span className="mr-2 text-xs text-red-600 dark:text-red-400">
+                                (معطل)
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleRemoveFieldAgent(fieldAgentId)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            title="حذف"
+                          >
+                            <UserX className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

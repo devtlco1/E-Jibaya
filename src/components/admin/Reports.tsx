@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CollectionRecord } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { dbOperations } from '../../lib/supabase';
 import { 
   FileBarChart, 
@@ -74,6 +75,7 @@ export function Reports({}: ReportsProps) {
   });
 
   const { addNotification } = useNotifications();
+  const { user: currentUser } = useAuth();
 
   // Load statistics only (not all records)
   React.useEffect(() => {
@@ -594,8 +596,8 @@ export function Reports({}: ReportsProps) {
     setGenerating(true);
     try {
       // جلب السجلات المفلترة مباشرة من قاعدة البيانات
-      // تمرير reportType لتحسين الأداء - لتقرير الارسالية يفلتر في قاعدة البيانات مباشرة
-      const records = await dbOperations.getFilteredRecordsForReport(filters, reportType);
+      // تمرير reportType و currentUser لتحسين الأداء - لتقرير الارسالية يفلتر في قاعدة البيانات مباشرة
+      const records = await dbOperations.getFilteredRecordsForReport(filters, reportType, currentUser);
       
       if (records.length === 0) {
         addNotification({

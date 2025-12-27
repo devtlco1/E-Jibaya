@@ -31,10 +31,13 @@ export function AdminDashboard() {
   
   const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities' | 'backup'>('records');
 
-  // Redirect employees to records tab if they try to access restricted tabs
+  // Redirect employees and branch managers to records tab if they try to access restricted tabs
   // Note: employees now have access to users tab for user management
   useEffect(() => {
-    if (user?.role === 'employee' && activeTab === 'activities') {
+    if ((user?.role === 'employee' || user?.role === 'branch_manager') && activeTab === 'activities') {
+      setActiveTab('records');
+    }
+    if (user?.role === 'branch_manager' && activeTab === 'backup') {
       setActiveTab('records');
     }
   }, [user?.role, activeTab]);
@@ -151,8 +154,9 @@ export function AdminDashboard() {
     setLoading(true);
     try {
       // Load only paginated records and stats (not all records)
+      // تمرير user لفلترة السجلات حسب صلاحيات مدير الفرع
       const [recordsResult, statsResult] = await Promise.all([
-        dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters),
+        dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters, user),
         dbOperations.getRecordsStats()
       ]);
       
@@ -749,7 +753,7 @@ export function AdminDashboard() {
                 <span className="sm:hidden">السجلات</span>
               </div>
             </button>
-            {(user?.role === 'admin' || user?.role === 'employee') && (
+            {(user?.role === 'admin' || user?.role === 'employee' || user?.role === 'branch_manager') && (
               <button
                 onClick={() => setActiveTab('users')}
                 className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${

@@ -2,7 +2,7 @@ export interface User {
   id: string;
   username: string;
   password_hash: string;
-  role: 'admin' | 'field_agent' | 'employee';
+  role: 'admin' | 'field_agent' | 'employee' | 'branch_manager';
   full_name: string;
   created_at: string;
   updated_at: string;

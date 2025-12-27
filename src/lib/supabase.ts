@@ -174,8 +174,91 @@ export const dbOperations = {
     }
   },
 
+  // Branch Manager Operations
+  async getBranchManagerFieldAgents(branchManagerId: string): Promise<string[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        console.warn('Supabase not configured - returning empty array');
+        return [];
+      }
+      
+      const { data, error } = await client
+        .from('branch_manager_field_agents')
+        .select('field_agent_id')
+        .eq('branch_manager_id', branchManagerId);
+      
+      if (error) {
+        console.error('Get branch manager field agents error:', error);
+        return [];
+      }
+      
+      return (data || []).map((item: any) => item.field_agent_id);
+    } catch (error) {
+      console.error('Get branch manager field agents error:', error);
+      return [];
+    }
+  },
+
+  async addFieldAgentToBranchManager(branchManagerId: string, fieldAgentId: string, createdBy?: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+      
+      const insertData: any = {
+        branch_manager_id: branchManagerId,
+        field_agent_id: fieldAgentId
+      };
+      
+      if (createdBy) {
+        insertData.created_by = createdBy;
+      }
+      
+      const { error } = await client
+        .from('branch_manager_field_agents')
+        .insert(insertData);
+      
+      if (error) {
+        console.error('Add field agent to branch manager error:', error);
+        throw new Error(`فشل في إضافة المحصل: ${error.message}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Add field agent to branch manager error:', error);
+      throw error;
+    }
+  },
+
+  async removeFieldAgentFromBranchManager(branchManagerId: string, fieldAgentId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+      
+      const { error } = await client
+        .from('branch_manager_field_agents')
+        .delete()
+        .eq('branch_manager_id', branchManagerId)
+        .eq('field_agent_id', fieldAgentId);
+      
+      if (error) {
+        console.error('Remove field agent from branch manager error:', error);
+        throw new Error(`فشل في حذف المحصل: ${error.message}`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Remove field agent from branch manager error:', error);
+      throw error;
+    }
+  },
+
   // Collection Records
-  async getRecordsWithPagination(page: number = 1, limit: number = 10, filters: any = {}): Promise<{
+  async getRecordsWithPagination(page: number = 1, limit: number = 10, filters: any = {}, currentUser?: User | null): Promise<{
     data: CollectionRecord[];
     total: number;
     totalPages: number;
@@ -190,6 +273,17 @@ export const dbOperations = {
       let query = client
         .from('collection_records')
         .select('*', { count: 'exact' });
+
+      // فلترة السجلات حسب صلاحيات مدير الفرع
+      if (currentUser?.role === 'branch_manager') {
+        const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(currentUser.id);
+        if (allowedFieldAgentIds.length > 0) {
+          query = query.in('field_agent_id', allowedFieldAgentIds);
+        } else {
+          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي سجلات
+          return { data: [], total: 0, totalPages: 0 };
+        }
+      }
 
       // Apply filters
       Object.entries(filters).forEach(([key, value]) => {
@@ -377,7 +471,7 @@ export const dbOperations = {
   },
 
   // جلب السجلات المفلترة للتقرير مباشرة من قاعدة البيانات (بدون تحميل جميع السجلات)
-  async getFilteredRecordsForReport(filters: any, reportType?: 'standard' | 'delivery'): Promise<CollectionRecord[]> {
+  async getFilteredRecordsForReport(filters: any, reportType?: 'standard' | 'delivery', currentUser?: User | null): Promise<CollectionRecord[]> {
     try {
       const client = checkSupabaseConnection();
       if (!client) {
@@ -388,6 +482,17 @@ export const dbOperations = {
       let query = client
         .from('collection_records')
         .select('*');
+
+      // فلترة السجلات حسب صلاحيات مدير الفرع
+      if (currentUser?.role === 'branch_manager') {
+        const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(currentUser.id);
+        if (allowedFieldAgentIds.length > 0) {
+          query = query.in('field_agent_id', allowedFieldAgentIds);
+        } else {
+          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي سجلات
+          return [];
+        }
+      }
 
       // لتقرير الارسالية: فلتر فقط السجلات التي لديها مبلغ مستلم (في قاعدة البيانات مباشرة)
       if (reportType === 'delivery') {
