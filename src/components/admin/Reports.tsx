@@ -785,6 +785,9 @@ export function Reports({ records }: ReportsProps) {
           ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0)
           : filteredRecords;
         
+        // استخدام deliveryRecords في جميع الإحصائيات
+        const statsRecords = deliveryRecords;
+        
         return (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
@@ -793,8 +796,10 @@ export function Reports({ records }: ReportsProps) {
                   <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">إجمالي السجلات</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{deliveryRecords.length}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {reportType === 'delivery' ? 'سجلات الإرسال' : 'إجمالي السجلات'}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{statsRecords.length}</p>
                 </div>
               </div>
             </div>
@@ -807,7 +812,7 @@ export function Reports({ records }: ReportsProps) {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على موقع</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {deliveryRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
+                    {statsRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
                   </p>
                 </div>
               </div>
@@ -821,7 +826,7 @@ export function Reports({ records }: ReportsProps) {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على صور</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {deliveryRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
+                    {statsRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
                   </p>
                 </div>
               </div>
@@ -835,7 +840,7 @@ export function Reports({ records }: ReportsProps) {
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {deliveryRecords.filter(r => r.is_refused).length}
+                    {statsRecords.filter(r => r.is_refused).length}
                   </p>
                 </div>
               </div>
