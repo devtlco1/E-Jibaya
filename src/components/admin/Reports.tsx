@@ -62,6 +62,7 @@ export function Reports({ records }: ReportsProps) {
   const [availableRegions, setAvailableRegions] = useState<string[]>([]);
   const [availableZones, setAvailableZones] = useState<string[]>([]);
   const [availableBlocks, setAvailableBlocks] = useState<string[]>([]);
+  const [reportType, setReportType] = useState<'standard' | 'delivery'>('standard');
 
   const { addNotification } = useNotifications();
 
@@ -216,15 +217,19 @@ export function Reports({ records }: ReportsProps) {
     setGenerating(true);
     
     try {
-      // Generate HTML report
-      const reportHtml = generateReportHTML();
+      // Generate HTML report based on report type
+      const reportHtml = reportType === 'delivery' 
+        ? generateDeliveryReportHTML() 
+        : generateReportHTML();
       
       // Create and download the report
       const blob = new Blob([reportHtml], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `تقرير_سجلات_المشتركين_${formatDateTimeForFilename(new Date())}.html`;
+      link.download = reportType === 'delivery'
+        ? `تقرير_الإرسال_${formatDateTimeForFilename(new Date())}.html`
+        : `تقرير_سجلات_المشتركين_${formatDateTimeForFilename(new Date())}.html`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -384,6 +389,114 @@ export function Reports({ records }: ReportsProps) {
         <div class="footer">
             <p>تم إنشاء هذا التقرير بواسطة نظام سجلات المشتركين</p>
             <p>عدد السجلات في التقرير: ${filteredRecords.length} سجل</p>
+        </div>
+    </div>
+</body>
+</html>
+    `;
+  };
+
+  const generateDeliveryReportHTML = () => {
+    const currentDate = formatDate(new Date());
+    
+    // تصفية السجلات التي لديها مبلغ مستلم
+    const recordsWithAmount = filteredRecords.filter(r => 
+      r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0
+    );
+
+    // حساب إجمالي المبلغ المستلم
+    const totalAmount = recordsWithAmount.reduce((sum, r) => sum + (r.current_amount || 0), 0);
+
+    return `
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير الإرسال</title>
+    <style>
+        * { font-family: 'Arial', sans-serif; }
+        body { margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
+        .header h1 { color: #1e40af; margin: 0; font-size: 28px; }
+        .header p { color: #6b7280; margin: 10px 0 0 0; }
+        .summary { background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; border-right: 4px solid #2563eb; }
+        .summary h3 { margin: 0; color: #1e40af; font-size: 24px; }
+        .summary p { margin: 5px 0 0 0; color: #6b7280; }
+        .filters-info { background: #eff6ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .filters-info h3 { margin: 0 0 10px 0; color: #1e40af; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .table th, .table td { border: 1px solid #d1d5db; padding: 8px 12px; text-align: right; font-size: 12px; }
+        .table th { background: #f3f4f6; font-weight: bold; color: #374151; }
+        .table tr:nth-child(even) { background: #f9fafb; }
+        .table tr:hover { background: #f3f4f6; }
+        .amount { font-weight: bold; color: #059669; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #d1d5db; text-align: center; color: #6b7280; font-size: 14px; }
+        @media print { 
+          body { background: white; } 
+          .container { box-shadow: none; }
+          @page { size: A4 landscape; margin: 0.5in; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>تقرير الإرسال</h1>
+            <p>تاريخ إنشاء التقرير: ${currentDate}</p>
+        </div>
+
+        <div class="summary">
+            <h3>${recordsWithAmount.length}</h3>
+            <p>عدد السجلات</p>
+            <h3 style="margin-top: 15px;">${totalAmount.toFixed(2)}</h3>
+            <p>إجمالي المبلغ المستلم</p>
+        </div>
+
+        ${filters.startDate || filters.endDate || filters.category ? `
+        <div class="filters-info">
+            <h3>مرشحات التقرير:</h3>
+            ${filters.startDate ? `<p><strong>من تاريخ:</strong> ${formatDate(filters.startDate)}</p>` : ''}
+            ${filters.endDate ? `<p><strong>إلى تاريخ:</strong> ${formatDate(filters.endDate)}</p>` : ''}
+            ${filters.category ? `<p><strong>الصنف:</strong> ${filters.category}</p>` : ''}
+        </div>
+        ` : ''}
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>تسلسل</th>
+                    <th>رقم الحساب</th>
+                    <th>المبلغ المستلم</th>
+                    <th>تاريخ الاستلام</th>
+                    <th>الصنف</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${recordsWithAmount.map((record, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${record.account_number || '-'}</td>
+                    <td class="amount">${record.current_amount?.toFixed(2) || '0.00'}</td>
+                    <td>${formatDate(record.submitted_at)}</td>
+                    <td>${record.category || '-'}</td>
+                </tr>
+                `).join('')}
+            </tbody>
+            <tfoot>
+                <tr style="background: #f3f4f6; font-weight: bold;">
+                    <td colspan="2" style="text-align: left;">الإجمالي:</td>
+                    <td class="amount">${totalAmount.toFixed(2)}</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="footer">
+            <p>تم إنشاء هذا التقرير بواسطة نظام سجلات المشتركين</p>
+            <p>عدد السجلات في التقرير: ${recordsWithAmount.length} سجل</p>
+            <p>إجمالي المبلغ المستلم: ${totalAmount.toFixed(2)}</p>
         </div>
     </div>
 </body>
@@ -711,6 +824,45 @@ export function Reports({ records }: ReportsProps) {
         </div>
       </div>
 
+      {/* Report Type Selection */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          نوع التقرير
+        </h3>
+        
+        <div className="flex flex-wrap gap-3 mb-6">
+          <button
+            onClick={() => setReportType('standard')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              reportType === 'standard'
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            تقرير سجلات المشتركين
+          </button>
+          
+          <button
+            onClick={() => setReportType('delivery')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              reportType === 'delivery'
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            تقرير الإرسال
+          </button>
+        </div>
+
+        {reportType === 'delivery' && (
+          <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>تقرير الإرسال:</strong> يعرض السجلات التي لديها مبلغ مستلم مع تفاصيل: التسلسل، رقم الحساب، المبلغ المستلم، تاريخ الاستلام، والصنف.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Actions */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -746,6 +898,15 @@ export function Reports({ records }: ReportsProps) {
             لا توجد سجلات تطابق المرشحات المحددة
           </p>
         )}
+        
+        {reportType === 'delivery' && (
+          <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              <strong>ملاحظة:</strong> تقرير الإرسال يعرض فقط السجلات التي لديها مبلغ مستلم (المبلغ الحالي أكبر من صفر).
+              عدد السجلات المؤهلة: {filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).length}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Preview Modal */}
@@ -770,10 +931,13 @@ export function Reports({ records }: ReportsProps) {
               <div className="space-y-4">
                 <div className="text-center">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    تقرير سجلات المشتركين
+                    {reportType === 'delivery' ? 'تقرير الإرسال' : 'تقرير سجلات المشتركين'}
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400">
-                    عدد السجلات: {filteredRecords.length}
+                    {reportType === 'delivery' 
+                      ? `عدد السجلات: ${filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).length}`
+                      : `عدد السجلات: ${filteredRecords.length}`
+                    }
                   </p>
                 </div>
 
@@ -793,53 +957,88 @@ export function Reports({ records }: ReportsProps) {
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">#</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المشترك</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الحساب</th>
-                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الحالة</th>
-                        {filters.includeImages && (
+                        {reportType === 'delivery' ? (
                           <>
-                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">صورة المقياس</th>
-                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">صورة الفاتورة</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">تسلسل</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">رقم الحساب</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المبلغ المستلم</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">تاريخ الاستلام</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الصنف</th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">#</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المشترك</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الحساب</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الحالة</th>
+                            {filters.includeImages && (
+                              <>
+                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">صورة المقياس</th>
+                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">صورة الفاتورة</th>
+                              </>
+                            )}
                           </>
                         )}
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredRecords.slice(0, 10).map((record, index) => (
+                      {(reportType === 'delivery' 
+                        ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).slice(0, 10)
+                        : filteredRecords.slice(0, 10)
+                      ).map((record, index) => (
                         <tr key={record.id}>
-                          <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{index + 1}</td>
-                          <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
-                            {record.subscriber_name || 'غير محدد'}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
-                            {record.account_number || 'غير محدد'}
-                          </td>
-                          <td className="px-4 py-2 text-sm">
-                            <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(getRecordStatus(record))}`}>
-                              {getRecordStatusText(record)}
-                            </span>
-                          </td>
-                          {filters.includeImages && (
+                          {reportType === 'delivery' ? (
                             <>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{index + 1}</td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
-                                {record.meter_photo_url ? (
-                                  <span className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs font-mono">
-                                    {extractImageId(record.meter_photo_url)}
-                                  </span>
-                                ) : (
-                                  'لا توجد'
-                                )}
+                                {record.account_number || 'غير محدد'}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white font-medium text-green-600 dark:text-green-400">
+                                {record.current_amount?.toFixed(2) || '0.00'}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
-                                {record.invoice_photo_url ? (
-                                  <span className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs font-mono">
-                                    {extractImageId(record.invoice_photo_url)}
-                                  </span>
-                                ) : (
-                                  'لا توجد'
-                                )}
+                                {formatDate(record.submitted_at)}
                               </td>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                {record.category || 'غير محدد'}
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">{index + 1}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                {record.subscriber_name || 'غير محدد'}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                {record.account_number || 'غير محدد'}
+                              </td>
+                              <td className="px-4 py-2 text-sm">
+                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(getRecordStatus(record))}`}>
+                                  {getRecordStatusText(record)}
+                                </span>
+                              </td>
+                              {filters.includeImages && (
+                                <>
+                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                    {record.meter_photo_url ? (
+                                      <span className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs font-mono">
+                                        {extractImageId(record.meter_photo_url)}
+                                      </span>
+                                    ) : (
+                                      'لا توجد'
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                    {record.invoice_photo_url ? (
+                                      <span className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs font-mono">
+                                        {extractImageId(record.invoice_photo_url)}
+                                      </span>
+                                    ) : (
+                                      'لا توجد'
+                                    )}
+                                  </td>
+                                </>
+                              )}
                             </>
                           )}
                         </tr>
@@ -848,9 +1047,15 @@ export function Reports({ records }: ReportsProps) {
                   </table>
                 </div>
 
-                {filteredRecords.length > 10 && (
+                {(reportType === 'delivery' 
+                  ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).length
+                  : filteredRecords.length
+                ) > 10 && (
                   <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
-                    ... و {filteredRecords.length - 10} سجل آخر
+                    ... و {(reportType === 'delivery' 
+                      ? filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).length
+                      : filteredRecords.length
+                    ) - 10} سجل آخر
                   </p>
                 )}
               </div>
