@@ -453,105 +453,102 @@ export function ActivityLogs() {
 
             {/* Content */}
             <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
-
-              <div className="space-y-6">
-                {/* Basic Information */}
-                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
+              <div className="space-y-4">
+                {/* المعلومات الأساسية */}
+                <div className="bg-gradient-to-l from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-5 border border-blue-200 dark:border-blue-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                    <Activity className="w-5 h-5 text-blue-600 dark:text-blue-400 ml-2" />
                     المعلومات الأساسية
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">التوقيت:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">التوقيت</span>
+                      <p className="text-gray-900 dark:text-white font-semibold text-sm">
                         {formatDateTime(viewingLog.created_at)}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">المستخدم:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المستخدم</span>
+                      <p className="text-gray-900 dark:text-white font-semibold text-sm">
                         {getUserName(viewingLog.user_id)}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">العملية:</span>
-                      <div className="flex items-center">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">العملية</span>
+                      <div className="flex items-center gap-2">
                         {getActionIcon(viewingLog.action)}
-                        <span className="mr-2 text-gray-900 dark:text-white font-medium">
+                        <span className="text-gray-900 dark:text-white font-semibold text-sm">
                           {getActionText(viewingLog.action)}
                         </span>
                       </div>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">نوع الهدف:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">نوع الهدف</span>
+                      <p className="text-gray-900 dark:text-white font-semibold text-sm">
                         {getTargetTypeText(viewingLog.target_type)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Target Information */}
-                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Target className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                {/* معلومات الهدف */}
+                <div className="bg-gradient-to-l from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-5 border border-green-200 dark:border-green-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                    <Target className="w-5 h-5 text-green-600 dark:text-green-400 ml-2" />
                     معلومات الهدف
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">معرف الهدف:</span>
-                      <p className="text-gray-900 dark:text-white font-medium font-mono text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">معرف الهدف</span>
+                      <p className="text-gray-900 dark:text-white font-semibold font-mono text-sm">
                         {viewingLog.target_id || 'غير محدد'}
                       </p>
                     </div>
-                    <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-                      <span className="text-gray-600 dark:text-gray-400 block text-xs">اسم الهدف:</span>
-                      <p className="text-gray-900 dark:text-white font-medium">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">اسم الهدف</span>
+                      <p className="text-gray-900 dark:text-white font-semibold text-sm">
                         {viewingLog.target_name || 'غير محدد'}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Details */}
+                {/* التفاصيل الإضافية */}
                 {viewingLog.details && Object.keys(viewingLog.details).length > 0 && (
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                      <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400 ml-2" />
+                  <div className="bg-gradient-to-l from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-5 border border-purple-200 dark:border-purple-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                      <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400 ml-2" />
                       التفاصيل الإضافية
                     </h4>
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                      <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap font-mono">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                      <pre className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap font-mono overflow-x-auto">
                         {JSON.stringify(viewingLog.details, null, 2)}
                       </pre>
                     </div>
                   </div>
                 )}
 
-                {/* Full Message */}
-                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <MessageSquare className="w-4 h-4 text-orange-600 dark:text-orange-400 ml-2" />
+                {/* الرسالة الكاملة */}
+                <div className="bg-gradient-to-l from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-5 border border-orange-200 dark:border-orange-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                    <MessageSquare className="w-5 h-5 text-orange-600 dark:text-orange-400 ml-2" />
                     الرسالة الكاملة
                   </h4>
-                  <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4">
-                    <p className="text-blue-900 dark:text-blue-200">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                       {formatLogMessage(viewingLog)}
                     </p>
                   </div>
                 </div>
 
-                {/* Close Button */}
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => setViewingLog(null)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
-                    >
-                      إغلاق
-                    </button>
-                  </div>
+                {/* زر الإغلاق */}
+                <div className="flex justify-end pt-4">
+                  <button
+                    onClick={() => setViewingLog(null)}
+                    className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                  >
+                    إغلاق
+                  </button>
                 </div>
               </div>
             </div>
