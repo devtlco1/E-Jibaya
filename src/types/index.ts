@@ -49,6 +49,9 @@ export interface CollectionRecord {
   invoice_photo_rejected?: boolean;
   // حالة التدقيق
   verification_status: 'غير مدقق' | 'مدقق' | null;
+  // المبالغ
+  total_amount: number | null;
+  current_amount: number | null;
 }
 
 export interface CreateRecordData {
@@ -59,6 +62,8 @@ export interface CreateRecordData {
   invoice_photo_url: string | null;
   notes: string | null;
   is_refused: boolean;
+  total_amount: number | null;
+  current_amount: number | null;
 }
 
 export interface UpdateRecordData {
@@ -76,6 +81,9 @@ export interface UpdateRecordData {
   meter_photo_verified?: boolean;
   invoice_photo_verified?: boolean;
   verification_status?: 'غير مدقق' | 'مدقق' | null;
+  // المبالغ
+  total_amount?: number | null;
+  current_amount?: number | null;
 }
 
 export interface AuthContextType {

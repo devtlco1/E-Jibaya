@@ -32,6 +32,8 @@ export function FieldAgentApp() {
   const [notes, setNotes] = useState('');
   const [additionalPhotosNotes, setAdditionalPhotosNotes] = useState('');
   const [isRefused, setIsRefused] = useState(false);
+  const [totalAmount, setTotalAmount] = useState('');
+  const [currentAmount, setCurrentAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -369,7 +371,9 @@ export function FieldAgentApp() {
         meter_photo_url: meterPhotoUrl,
         invoice_photo_url: invoicePhotoUrl,
         notes: notes || null,
-        is_refused: isRefused
+        is_refused: isRefused,
+        total_amount: totalAmount ? parseFloat(totalAmount) : null,
+        current_amount: currentAmount ? parseFloat(currentAmount) : null
       };
 
       const result = await dbOperations.createRecord(record);
@@ -431,6 +435,8 @@ export function FieldAgentApp() {
           setNotes('');
           setAdditionalPhotosNotes('');
           setIsRefused(false);
+          setTotalAmount('');
+          setCurrentAmount('');
         }, 2000);
       } else {
         setSubmitError('فشل في إرسال البيانات. يرجى المحاولة مرة أخرى');
@@ -506,7 +512,10 @@ export function FieldAgentApp() {
       // الترميز الجديد
       new_zone: selectedRecord.new_zone,
       new_block: selectedRecord.new_block,
-      new_home: selectedRecord.new_home
+      new_home: selectedRecord.new_home,
+      // المبالغ
+      total_amount: totalAmount ? parseFloat(totalAmount) : selectedRecord.total_amount,
+      current_amount: currentAmount ? parseFloat(currentAmount) : selectedRecord.current_amount
     };
 
     const success = await dbOperations.updateRecord(selectedRecord.id, updateData);
@@ -590,6 +599,8 @@ export function FieldAgentApp() {
         setAdditionalPhotosNotes('');
         setIsRefused(false);
         setSelectedRecord(null);
+        setTotalAmount('');
+        setCurrentAmount('');
       }, 2000);
     } else {
       setSubmitError('فشل في إضافة الصور. يرجى المحاولة مرة أخرى');
@@ -887,6 +898,53 @@ export function FieldAgentApp() {
             className="hidden"
           />
           
+        </div>
+
+        {/* Amount Fields */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            المبالغ
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                المبلغ الكلي
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={totalAmount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // السماح فقط بالأرقام والنقطة العشرية
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setTotalAmount(value);
+                  }
+                }}
+                placeholder="0.00"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                المبلغ الحالي
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={currentAmount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // السماح فقط بالأرقام والنقطة العشرية
+                  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                    setCurrentAmount(value);
+                  }
+                }}
+                placeholder="0.00"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Notes - Only show when creating new record */}

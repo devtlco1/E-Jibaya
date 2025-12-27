@@ -59,7 +59,10 @@ export function DataTable({
     // نوع المقياس
     phase: null as 'احادي' | 'ثلاثي' | 'سي تي' | null,
     // معامل الضرب (يظهر فقط عند اختيار سي تي)
-    multiplier: ''
+    multiplier: '',
+    // المبالغ
+    total_amount: '',
+    current_amount: ''
   });
   const [showFilters, setShowFilters] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
@@ -612,6 +615,9 @@ export function DataTable({
         region: (record.region && record.region !== 'غير محدد') ? record.region : '',
         last_reading: record.last_reading || '',
         status: getRecordStatus(record) as 'pending' | 'completed' | 'refused',
+        // المبالغ
+        total_amount: record.total_amount !== null && record.total_amount !== undefined ? record.total_amount.toString() : '',
+        current_amount: record.current_amount !== null && record.current_amount !== undefined ? record.current_amount.toString() : '',
       // الترميز الجديد
       new_zone: record.new_zone || '',
       new_block: record.new_block || '',
@@ -694,7 +700,10 @@ export function DataTable({
           ...editForm,
           completed_by: currentUser.id || editingRecord.completed_by,
           // إضافة معامل الضرب إذا كان موجوداً
-          multiplier: editForm.multiplier || null
+          multiplier: editForm.multiplier || null,
+          // المبالغ
+          total_amount: editForm.total_amount ? parseFloat(editForm.total_amount) : null,
+          current_amount: editForm.current_amount ? parseFloat(editForm.current_amount) : null
         };
 
         // Handle status logic
@@ -1112,6 +1121,12 @@ export function DataTable({
                   آخر قراءة
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                  المبلغ الكلي
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                  المبلغ الحالي
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   صورة المقياس
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
@@ -1221,6 +1236,26 @@ export function DataTable({
                     onClick={() => handleEdit(record)}
                   >
                     {record.last_reading || (
+                      <span className="text-gray-400 italic">غير محدد</span>
+                    )}
+                  </td>
+                  <td 
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden lg:table-cell"
+                    onClick={() => handleEdit(record)}
+                  >
+                    {record.total_amount !== null && record.total_amount !== undefined ? (
+                      <span className="font-medium">{record.total_amount.toFixed(2)}</span>
+                    ) : (
+                      <span className="text-gray-400 italic">غير محدد</span>
+                    )}
+                  </td>
+                  <td 
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden lg:table-cell"
+                    onClick={() => handleEdit(record)}
+                  >
+                    {record.current_amount !== null && record.current_amount !== undefined ? (
+                      <span className="font-medium">{record.current_amount.toFixed(2)}</span>
+                    ) : (
                       <span className="text-gray-400 italic">غير محدد</span>
                     )}
                   </td>
@@ -1521,6 +1556,22 @@ export function DataTable({
                         {viewingRecord.last_reading || 'غير محدد'}
                       </p>
                     </div>
+                    {(viewingRecord.total_amount !== null && viewingRecord.total_amount !== undefined) && (
+                      <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                        <span className="text-gray-600 dark:text-gray-400 block text-xs">المبلغ الكلي:</span>
+                        <p className="text-gray-900 dark:text-white font-medium">
+                          {viewingRecord.total_amount.toFixed(2)}
+                        </p>
+                      </div>
+                    )}
+                    {(viewingRecord.current_amount !== null && viewingRecord.current_amount !== undefined) && (
+                      <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
+                        <span className="text-gray-600 dark:text-gray-400 block text-xs">المبلغ الحالي:</span>
+                        <p className="text-gray-900 dark:text-white font-medium">
+                          {viewingRecord.current_amount.toFixed(2)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                   {viewingRecord.region && (
                     <div className="mt-4 border-b border-gray-100 dark:border-gray-700 pb-2">
@@ -2023,7 +2074,55 @@ export function DataTable({
                     </div>
                   </div>
 
-                  {/* 6. حالة السجل */}
+                  {/* 6. المبالغ */}
+                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                    <h4 className="text-sm font-semibold text-indigo-800 dark:text-indigo-200 mb-4 flex items-center">
+                      <FileText className="w-4 h-4 ml-2" />
+                      المبالغ
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          المبلغ الكلي
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={editForm.total_amount}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // السماح فقط بالأرقام والنقطة العشرية
+                            if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                              setEditForm({ ...editForm, total_amount: value });
+                            }
+                          }}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          المبلغ الحالي
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={editForm.current_amount}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // السماح فقط بالأرقام والنقطة العشرية
+                            if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                              setEditForm({ ...editForm, current_amount: value });
+                            }
+                          }}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 7. حالة السجل */}
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
                       <Shield className="w-4 h-4 ml-2" />
