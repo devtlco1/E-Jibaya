@@ -940,14 +940,6 @@ export function Reports({ records }: ReportsProps) {
             تقرير الارسالية
           </button>
         </div>
-
-        {reportType === 'delivery' && (
-          <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>تقرير الارسالية:</strong> يعرض السجلات التي لديها مبلغ مستلم مع تفاصيل: التسلسل، رقم الحساب، المبلغ الكلي، المبلغ المستلم، تاريخ الاستلام، والصنف.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Actions */}
