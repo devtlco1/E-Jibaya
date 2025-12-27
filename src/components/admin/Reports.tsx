@@ -356,6 +356,8 @@ export function Reports({ records }: ReportsProps) {
                     <th>الترميز</th>
                     <th>الصنف</th>
                     <th>النوع</th>
+                    <th>المبلغ الكلي</th>
+                    <th>المبلغ الحالي</th>
                     <th>الحالة</th>
                     ${filters.includeImages ? '<th>مقياس</th><th>فاتورة</th>' : ''}
                 </tr>
@@ -376,6 +378,8 @@ export function Reports({ records }: ReportsProps) {
                         '-'}</td>
                     <td>${record.category || '-'}</td>
                     <td>${record.phase || '-'}</td>
+                    <td>${record.total_amount ? formatIraqiCurrency(record.total_amount) : '-'}</td>
+                    <td>${record.current_amount ? formatIraqiCurrency(record.current_amount) : '-'}</td>
                     <td><span class="status status-${record.is_refused ? 'refused' : record.status}">${getStatusText(record)}</span></td>
                     ${filters.includeImages ? `
                     <td>${record.meter_photo_url ? `<span class="image-ref">${extractImageId(record.meter_photo_url)}</span>` : '-'}</td>
@@ -1024,7 +1028,7 @@ export function Reports({ records }: ReportsProps) {
                   </p>
                 </div>
 
-                {filters.includeImages && (
+                {filters.includeImages && reportType === 'standard' && (
                   <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
                     <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2 flex items-center">
                       <ImageIcon className="w-4 h-4 ml-2" />
