@@ -7,7 +7,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { PhotoComparison } from './PhotoComparison';
 import { LocationPopup } from './LocationPopup';
-import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield, Download, Maximize2 } from 'lucide-react';
+import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield, Download, Maximize2, CheckCircle, XCircle } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 interface DataTableProps {
@@ -1680,95 +1680,189 @@ export function DataTable({
                   </div>
                 </div>
 
-                {/* GPS Location */}
+                {/* حالة التدقيق */}
+                <div className="bg-gradient-to-l from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl p-5 border border-yellow-200 dark:border-yellow-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                    <Shield className="w-5 h-5 text-yellow-600 dark:text-yellow-400 ml-2" />
+                    حالة التدقيق والحالة
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">حالة السجل</span>
+                      <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(getRecordStatus(viewingRecord))}`}>
+                        {getRecordStatusText(viewingRecord)}
+                      </span>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">حالة التدقيق</span>
+                      <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-lg ${
+                        viewingRecord.verification_status === 'مدقق' 
+                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                      }`}>
+                        {viewingRecord.verification_status || 'غير مدقق'}
+                      </span>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">صورة المقياس</span>
+                      <div className="flex items-center gap-2">
+                        {viewingRecord.meter_photo_verified ? (
+                          <span className="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded text-xs font-semibold">
+                            <CheckCircle className="w-3 h-3 ml-1" />
+                            مدقق
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded text-xs font-semibold">
+                            غير مدقق
+                          </span>
+                        )}
+                        {viewingRecord.meter_photo_rejected && (
+                          <span className="inline-flex items-center px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs font-semibold">
+                            مرفوضة
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">صورة الفاتورة</span>
+                      <div className="flex items-center gap-2">
+                        {viewingRecord.invoice_photo_verified ? (
+                          <span className="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded text-xs font-semibold">
+                            <CheckCircle className="w-3 h-3 ml-1" />
+                            مدقق
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded text-xs font-semibold">
+                            غير مدقق
+                          </span>
+                        )}
+                        {viewingRecord.invoice_photo_rejected && (
+                          <span className="inline-flex items-center px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs font-semibold">
+                            مرفوضة
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {viewingRecord.is_refused && (
+                    <div className="mt-3 bg-red-50 dark:bg-red-900/30 rounded-lg p-3 border border-red-200 dark:border-red-700">
+                      <span className="text-red-600 dark:text-red-400 text-sm font-semibold flex items-center">
+                        <XCircle className="w-4 h-4 ml-2" />
+                        امتنع العميل عن الدفع
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* الموقع الجغرافي */}
                 {viewingRecord.gps_latitude && viewingRecord.gps_longitude && (
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                      <MapPin className="w-4 h-4 text-red-600 dark:text-red-400 ml-2" />
+                  <div className="bg-gradient-to-l from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-xl p-5 border border-red-200 dark:border-red-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                      <MapPin className="w-5 h-5 text-red-600 dark:text-red-400 ml-2" />
                       الموقع الجغرافي
                     </h4>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {viewingRecord.gps_latitude}, {viewingRecord.gps_longitude}
-                      </span>
-                      <a
-                        href={`https://maps.google.com/?q=${viewingRecord.gps_latitude},${viewingRecord.gps_longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-xs hover:bg-blue-200 dark:hover:bg-blue-800"
-                      >
-                        <ExternalLink className="w-3 h-3 ml-1" />
-                        عرض في الخريطة
-                      </a>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-red-700">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                          {viewingRecord.gps_latitude}, {viewingRecord.gps_longitude}
+                        </span>
+                        <a
+                          href={`https://maps.google.com/?q=${viewingRecord.gps_latitude},${viewingRecord.gps_longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <ExternalLink className="w-4 h-4 ml-2" />
+                          عرض في الخريطة
+                        </a>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* Photos */}
-                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Camera className="w-4 h-4 text-purple-600 dark:text-purple-400 ml-2" />
-                    الصور المرفقة
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {viewingRecord.meter_photo_url && (
-                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3">
-                        <h5 className="font-medium text-gray-900 dark:text-white mb-2 text-sm">صورة المقياس</h5>
-                        <img 
-                          src={viewingRecord.meter_photo_url} 
-                          alt="صورة المقياس" 
-                          className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => handleImageClick(viewingRecord.meter_photo_url!, 'صورة المقياس')}
-                        />
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">انقر للتكبير</p>
-                      </div>
-                    )}
-
-                    {viewingRecord.invoice_photo_url && (
-                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-3">
-                        <h5 className="font-medium text-gray-900 dark:text-white mb-2 text-sm">صورة الفاتورة</h5>
-                        <img 
-                          src={viewingRecord.invoice_photo_url} 
-                          alt="صورة الفاتورة" 
-                          className="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                          onClick={() => handleImageClick(viewingRecord.invoice_photo_url!, 'صورة الفاتورة')}
-                        />
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">انقر للتكبير</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {viewingRecord.notes && (
-                  <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                      <MessageSquare className="w-4 h-4 text-orange-600 dark:text-orange-400 ml-2" />
-                      الملاحظات
+                {/* الصور المرفقة */}
+                {(viewingRecord.meter_photo_url || viewingRecord.invoice_photo_url) && (
+                  <div className="bg-gradient-to-l from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-5 border border-purple-200 dark:border-purple-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                      <Camera className="w-5 h-5 text-purple-600 dark:text-purple-400 ml-2" />
+                      الصور المرفقة
                     </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                      {viewingRecord.notes}
-                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {viewingRecord.meter_photo_url && (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
+                              <Camera className="w-4 h-4 text-blue-600 ml-2" />
+                              صورة المقياس
+                            </h5>
+                            {viewingRecord.meter_photo_verified && (
+                              <span className="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded text-xs font-semibold">
+                                <CheckCircle className="w-3 h-3 ml-1" />
+                                مدقق
+                              </span>
+                            )}
+                            {viewingRecord.meter_photo_rejected && (
+                              <span className="inline-flex items-center px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs font-semibold">
+                                مرفوضة
+                              </span>
+                            )}
+                          </div>
+                          <img 
+                            src={viewingRecord.meter_photo_url} 
+                            alt="صورة المقياس" 
+                            className="w-full h-56 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-gray-200 dark:border-gray-600"
+                            onClick={() => handleImageClick(viewingRecord.meter_photo_url!, 'صورة المقياس')}
+                          />
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">انقر للتكبير</p>
+                        </div>
+                      )}
+
+                      {viewingRecord.invoice_photo_url && (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
+                              <FileText className="w-4 h-4 text-green-600 ml-2" />
+                              صورة الفاتورة
+                            </h5>
+                            {viewingRecord.invoice_photo_verified && (
+                              <span className="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded text-xs font-semibold">
+                                <CheckCircle className="w-3 h-3 ml-1" />
+                                مدقق
+                              </span>
+                            )}
+                            {viewingRecord.invoice_photo_rejected && (
+                              <span className="inline-flex items-center px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded text-xs font-semibold">
+                                مرفوضة
+                              </span>
+                            )}
+                          </div>
+                          <img 
+                            src={viewingRecord.invoice_photo_url} 
+                            alt="صورة الفاتورة" 
+                            className="w-full h-56 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-gray-200 dark:border-gray-600"
+                            onClick={() => handleImageClick(viewingRecord.invoice_photo_url!, 'صورة الفاتورة')}
+                          />
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">انقر للتكبير</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
-                {/* Status */}
-                <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-800">
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                    <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400 ml-2" />
-                    حالة السجل
-                  </h4>
-                  <div className="flex items-center space-x-2 space-x-reverse">
-                    <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(getRecordStatus(viewingRecord))}`}>
-                      {getRecordStatusText(viewingRecord)}
-                    </span>
-                    {viewingRecord.is_refused && (
-                      <span className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">
-                        امتنع العميل عن الدفع
-                      </span>
-                    )}
+                {/* الملاحظات */}
+                {viewingRecord.notes && (
+                  <div className="bg-gradient-to-l from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-5 border border-orange-200 dark:border-orange-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                      <MessageSquare className="w-5 h-5 text-orange-600 dark:text-orange-400 ml-2" />
+                      الملاحظات
+                    </h4>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                        {viewingRecord.notes}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Additional Actions */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
