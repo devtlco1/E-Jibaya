@@ -65,6 +65,7 @@ export function Reports({}: ReportsProps) {
   const [availableBlocks, setAvailableBlocks] = useState<string[]>([]);
   const [reportType, setReportType] = useState<'standard' | 'delivery'>('standard');
   const [loadingFilterData, setLoadingFilterData] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -665,13 +666,19 @@ export function Reports({}: ReportsProps) {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Filter className="w-5 h-5 ml-2" />
-          فلاتر التقرير
-        </h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <Filter className="w-4 h-4 ml-2" />
+            {showFilters ? 'إخفاء الفلاتر' : 'إظهار الفلاتر'}
+          </button>
+        </div>
         
-        <div className="space-y-4">
+        {showFilters && (
+          <div className="p-6 space-y-4">
           {/* الصف الأول: التواريخ والمحصل الميداني */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -876,7 +883,8 @@ export function Reports({}: ReportsProps) {
               تضمين أرقام الصور
             </label>
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Statistics - إحصائيات عامة فقط (بدون تحميل السجلات) */}
