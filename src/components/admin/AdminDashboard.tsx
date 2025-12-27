@@ -47,7 +47,6 @@ export function AdminDashboard() {
   });
   const [totalRecords, setTotalRecords] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [allRecords, setAllRecords] = useState<CollectionRecord[]>([]);
   
   // Real-time updates
   const realtimeSubscription = useRef<any>(null);
@@ -148,58 +147,24 @@ export function AdminDashboard() {
   const loadRecords = async () => {
     setLoading(true);
     try {
-      // Check if mobile device for optimized loading
-      const isMobile = window.innerWidth <= 768;
+      // Load only paginated records and stats (not all records)
+      const [recordsResult, statsResult] = await Promise.all([
+        dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters),
+        dbOperations.getRecordsStats()
+      ]);
       
-      if (isMobile) {
-        // For mobile: load only essential data first
-        const recordsResult = await dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters);
-        setRecords(recordsResult.data);
-        setTotalRecords(recordsResult.total);
-        setTotalPages(recordsResult.totalPages);
-        
-        // Load stats and all records in background
-        Promise.all([
-          dbOperations.getRecordsStats(),
-          dbOperations.getRecords()
-        ]).then(([statsResult, allRecordsResult]) => {
-          // استخدام locked من statsResult إذا كان موجوداً، وإلا نحسبه من allRecordsResult
-          const lockedCount = statsResult.locked !== undefined 
-            ? statsResult.locked 
-            : allRecordsResult.filter(record => record.locked_by).length;
-          setAllRecordsStats({
-            ...statsResult,
-            locked: lockedCount
-          });
-          setAllRecords(allRecordsResult);
-        }).catch(error => {
-          console.warn('Background data loading failed:', error);
-        });
-      } else {
-        // For desktop: load all data in parallel
-        const [recordsResult, statsResult, allRecordsResult] = await Promise.all([
-          dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters),
-          dbOperations.getRecordsStats(),
-          dbOperations.getRecords()
-        ]);
-        
-        setRecords(recordsResult.data);
-        setTotalRecords(recordsResult.total);
-        setTotalPages(recordsResult.totalPages);
-        setAllRecords(allRecordsResult);
-        
-        // استخدام locked من statsResult إذا كان موجوداً، وإلا نحسبه من allRecordsResult
-        const lockedCount = statsResult.locked !== undefined 
-          ? statsResult.locked 
-          : allRecordsResult.filter(record => record.locked_by).length;
-        setAllRecordsStats({
-          ...statsResult,
-          locked: lockedCount
-        });
-        
-        // Update last record count for polling
-        lastRecordCount.current = recordsResult.total;
-      }
+      setRecords(recordsResult.data);
+      setTotalRecords(recordsResult.total);
+      setTotalPages(recordsResult.totalPages);
+      
+      // استخدام locked من statsResult
+      setAllRecordsStats({
+        ...statsResult,
+        locked: statsResult.locked || 0
+      });
+      
+      // Update last record count for polling
+      lastRecordCount.current = recordsResult.total;
     } catch (error) {
       console.error('Error loading records:', error);
       addNotification({
@@ -878,7 +843,7 @@ export function AdminDashboard() {
         ) : activeTab === 'users' ? (
           <UserManagement onUserStatusChange={refreshFieldAgentsCount} />
         ) : activeTab === 'reports' ? (
-          <Reports records={allRecords} />
+          <Reports />
         ) : activeTab === 'activities' ? (
           <ActivityLogs />
         ) : (

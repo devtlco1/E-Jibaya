@@ -16,7 +16,7 @@ import {
 import { formatDate, formatDateTimeForFilename } from '../../utils/dateFormatter';
 
 interface ReportsProps {
-  records: CollectionRecord[];
+  // لا نحتاج records بعد الآن - سيتم جلبها عند الحاجة
 }
 
 interface ReportFilters {
@@ -37,7 +37,7 @@ interface ReportFilters {
   rejected_photos?: 'any' | 'none' | '';
 }
 
-export function Reports({ records }: ReportsProps) {
+export function Reports({}: ReportsProps) {
   const [filters, setFilters] = useState<ReportFilters>({
     startDate: '',
     endDate: '',
@@ -63,8 +63,30 @@ export function Reports({ records }: ReportsProps) {
   const [availableZones, setAvailableZones] = useState<string[]>([]);
   const [availableBlocks, setAvailableBlocks] = useState<string[]>([]);
   const [reportType, setReportType] = useState<'standard' | 'delivery'>('standard');
+  const [loadingFilterData, setLoadingFilterData] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    completed: 0,
+    verified: 0,
+    refused: 0,
+    locked: 0
+  });
 
   const { addNotification } = useNotifications();
+
+  // Load statistics only (not all records)
+  React.useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const statsData = await dbOperations.getRecordsStats();
+        setStats(statsData);
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    };
+    loadStats();
+  }, []);
 
   // Load users for filter dropdown
   React.useEffect(() => {
@@ -79,94 +101,57 @@ export function Reports({ records }: ReportsProps) {
     loadUsers();
   }, []);
 
-  // Load available filter data
+  // Load available filter data (regions, zones, blocks) - فقط عند الحاجة
   React.useEffect(() => {
-    // Load regions
-    const regions = Array.from(new Set(records.map(r => r.region).filter((region): region is string => Boolean(region)))).sort();
-    setAvailableRegions(regions);
+    const loadFilterData = async () => {
+      setLoadingFilterData(true);
+      try {
+        // جلب مناطق فريدة فقط
+        const { data: regionsData } = await dbOperations.supabase
+          ?.from('collection_records')
+          .select('region')
+          .not('region', 'is', null) || { data: [] };
+        
+        const regions = Array.from(new Set(
+          (regionsData || []).map((r: any) => r.region).filter(Boolean)
+        )).sort() as string[];
+        setAvailableRegions(regions);
 
-    // Load zones
-    const zones = Array.from(new Set(records.map(r => r.new_zone).filter((zone): zone is string => Boolean(zone)))).sort();
-    setAvailableZones(zones);
+        // جلب zones فريدة فقط
+        const { data: zonesData } = await dbOperations.supabase
+          ?.from('collection_records')
+          .select('new_zone')
+          .not('new_zone', 'is', null) || { data: [] };
+        
+        const zones = Array.from(new Set(
+          (zonesData || []).map((r: any) => r.new_zone).filter(Boolean)
+        )).sort() as string[];
+        setAvailableZones(zones);
 
-    // Load blocks based on selected zone
-    if (filters.new_zone) {
-      const blocks = Array.from(new Set(
-        records
-          .filter(r => r.new_zone === filters.new_zone)
-          .map(r => r.new_block)
-          .filter((block): block is string => Boolean(block))
-      )).sort();
-      setAvailableBlocks(blocks);
-    } else {
-      setAvailableBlocks([]);
-    }
-  }, [records, filters.new_zone]);
-
-  // Apply filters to records
-  React.useEffect(() => {
-    let filtered = records;
-
-    if (filters.startDate) {
-      filtered = filtered.filter(r => 
-        new Date(r.submitted_at) >= new Date(filters.startDate)
-      );
-    }
-
-    if (filters.endDate) {
-      filtered = filtered.filter(r => 
-        new Date(r.submitted_at) <= new Date(filters.endDate + 'T23:59:59')
-      );
-    }
-
-    if (filters.status) {
-      if (filters.status === 'refused') {
-        filtered = filtered.filter(r => r.is_refused);
-      } else {
-        filtered = filtered.filter(r => r.status === filters.status && !r.is_refused);
+        // جلب blocks بناءً على zone المحدد
+        if (filters.new_zone) {
+          const { data: blocksData } = await dbOperations.supabase
+            ?.from('collection_records')
+            .select('new_block')
+            .eq('new_zone', filters.new_zone)
+            .not('new_block', 'is', null) || { data: [] };
+          
+          const blocks = Array.from(new Set(
+            (blocksData || []).map((r: any) => r.new_block).filter(Boolean)
+          )).sort() as string[];
+          setAvailableBlocks(blocks);
+        } else {
+          setAvailableBlocks([]);
+        }
+      } catch (error) {
+        console.error('Error loading filter data:', error);
+      } finally {
+        setLoadingFilterData(false);
       }
-    }
-
-    if (filters.fieldAgent) {
-      filtered = filtered.filter(r => r.field_agent_id === filters.fieldAgent);
-    }
-
-    // تصفية الترميز الجديد
-    if (filters.new_zone) {
-      filtered = filtered.filter(r => r.new_zone === filters.new_zone);
-    }
-
-    if (filters.new_block) {
-      filtered = filtered.filter(r => r.new_block === filters.new_block);
-    }
-
-    // الفلاتر الجديدة
-    if (filters.region) {
-      filtered = filtered.filter(r => r.region === filters.region);
-    }
-
-    if (filters.verification_status) {
-      filtered = filtered.filter(r => r.verification_status === filters.verification_status);
-    }
-
-    if (filters.category) {
-      filtered = filtered.filter(r => r.category === filters.category);
-    }
-
-    if (filters.phase) {
-      filtered = filtered.filter(r => r.phase === filters.phase);
-    }
-
-    // الصور المرفوضة
-    if (filters.rejected_photos === 'any') {
-      filtered = filtered.filter(r => r.meter_photo_rejected || r.invoice_photo_rejected);
-    }
-    if (filters.rejected_photos === 'none') {
-      filtered = filtered.filter(r => !r.meter_photo_rejected && !r.invoice_photo_rejected);
-    }
-
-    setFilteredRecords(filtered);
-  }, [records, filters]);
+    };
+    
+    loadFilterData();
+  }, [filters.new_zone]);
 
   const getUserName = (userId: string | null) => {
     if (!userId) return 'غير محدد';
@@ -205,22 +190,34 @@ export function Reports({ records }: ReportsProps) {
   };
 
   const generateReport = async () => {
-    if (filteredRecords.length === 0) {
-      addNotification({
-        type: 'warning',
-        title: 'لا توجد بيانات',
-        message: 'لا توجد سجلات تطابق المرشحات المحددة'
-      });
-      return;
-    }
-
     setGenerating(true);
     
     try {
+      // جلب السجلات المفلترة مباشرة من قاعدة البيانات
+      addNotification({
+        type: 'info',
+        title: 'جاري تحميل البيانات',
+        message: 'يرجى الانتظار...'
+      });
+
+      const records = await dbOperations.getFilteredRecordsForReport(filters);
+      
+      if (records.length === 0) {
+        addNotification({
+          type: 'warning',
+          title: 'لا توجد بيانات',
+          message: 'لا توجد سجلات تطابق المرشحات المحددة'
+        });
+        setGenerating(false);
+        return;
+      }
+
+      setFilteredRecords(records);
+
       // Generate HTML report based on report type
       const reportHtml = reportType === 'delivery' 
-        ? generateDeliveryReportHTML() 
-        : generateReportHTML();
+        ? generateDeliveryReportHTML(records) 
+        : generateReportHTML(records);
       
       // Create and download the report
       const blob = new Blob([reportHtml], { type: 'text/html;charset=utf-8' });
@@ -238,7 +235,7 @@ export function Reports({ records }: ReportsProps) {
       addNotification({
         type: 'success',
         title: 'تم إنشاء التقرير',
-        message: `تم إنشاء تقرير يحتوي على ${filteredRecords.length} سجل`
+        message: `تم إنشاء تقرير يحتوي على ${records.length} سجل`
       });
     } catch (error) {
       console.error('Error generating report:', error);
@@ -262,14 +259,14 @@ export function Reports({ records }: ReportsProps) {
     return `${formatted} د.ع`;
   };
 
-  const generateReportHTML = () => {
+  const generateReportHTML = (records: CollectionRecord[]) => {
     const currentDate = formatDate(new Date());
 
     const stats = {
-      total: filteredRecords.length,
-      pending: filteredRecords.filter(r => !r.is_refused && r.status === 'pending').length,
-      completed: filteredRecords.filter(r => !r.is_refused && r.status === 'completed').length,
-      refused: filteredRecords.filter(r => r.is_refused).length
+      total: records.length,
+      pending: records.filter(r => !r.is_refused && r.status === 'pending').length,
+      completed: records.filter(r => !r.is_refused && r.status === 'completed').length,
+      refused: records.filter(r => r.is_refused).length
     };
 
     return `
@@ -373,7 +370,7 @@ export function Reports({ records }: ReportsProps) {
                 </tr>
             </thead>
             <tbody>
-                ${filteredRecords.map((record, index) => `
+                ${records.map((record, index) => `
                 <tr>
                     <td>${index + 1}</td>
                     <td>${formatDate(record.submitted_at)}</td>
@@ -402,7 +399,7 @@ export function Reports({ records }: ReportsProps) {
 
         <div class="footer">
             <p>تم إنشاء هذا التقرير بواسطة نظام سجلات المشتركين</p>
-            <p>عدد السجلات في التقرير: ${filteredRecords.length} سجل</p>
+            <p>عدد السجلات في التقرير: ${records.length} سجل</p>
         </div>
     </div>
 </body>
@@ -410,11 +407,11 @@ export function Reports({ records }: ReportsProps) {
     `;
   };
 
-  const generateDeliveryReportHTML = () => {
+  const generateDeliveryReportHTML = (records: CollectionRecord[]) => {
     const currentDate = formatDate(new Date());
     
     // تصفية السجلات التي لديها مبلغ مستلم
-    const recordsWithAmount = filteredRecords.filter(r => 
+    const recordsWithAmount = records.filter(r => 
       r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0
     );
 
@@ -593,16 +590,34 @@ export function Reports({ records }: ReportsProps) {
     `;
   };
 
-  const previewReport = () => {
-    if (filteredRecords.length === 0) {
+  const previewReport = async () => {
+    setGenerating(true);
+    try {
+      // جلب السجلات المفلترة مباشرة من قاعدة البيانات
+      const records = await dbOperations.getFilteredRecordsForReport(filters);
+      
+      if (records.length === 0) {
+        addNotification({
+          type: 'warning',
+          title: 'لا توجد بيانات',
+          message: 'لا توجد سجلات تطابق المرشحات المحددة'
+        });
+        setGenerating(false);
+        return;
+      }
+
+      setFilteredRecords(records);
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Error loading records for preview:', error);
       addNotification({
-        type: 'warning',
-        title: 'لا توجد بيانات',
-        message: 'لا توجد سجلات تطابق المرشحات المحددة'
+        type: 'error',
+        title: 'خطأ في تحميل البيانات',
+        message: 'حدث خطأ أثناء تحميل السجلات للمعاينة'
       });
-      return;
+    } finally {
+      setGenerating(false);
     }
-    setShowPreview(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -855,7 +870,7 @@ export function Reports({ records }: ReportsProps) {
         </div>
       </div>
 
-      {/* Statistics */}
+      {/* Statistics - إحصائيات عامة فقط (بدون تحميل السجلات) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
           <div className="flex items-center">
@@ -864,21 +879,19 @@ export function Reports({ records }: ReportsProps) {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">إجمالي السجلات</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{filteredRecords.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
           <div className="flex items-center">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg ml-3">
-              <MapPin className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg ml-3">
+              <FileText className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على موقع</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {filteredRecords.filter(r => r.gps_latitude && r.gps_longitude).length}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">قيد المراجعة</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
             </div>
           </div>
         </div>
@@ -886,13 +899,11 @@ export function Reports({ records }: ReportsProps) {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg ml-3">
-              <Camera className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">تحتوي على صور</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {filteredRecords.filter(r => r.meter_photo_url || r.invoice_photo_url).length}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">مكتملة</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completed}</p>
             </div>
           </div>
         </div>
@@ -904,9 +915,7 @@ export function Reports({ records }: ReportsProps) {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {filteredRecords.filter(r => r.is_refused).length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.refused}</p>
             </div>
           </div>
         </div>
@@ -952,16 +961,20 @@ export function Reports({ records }: ReportsProps) {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={previewReport}
-            disabled={filteredRecords.length === 0}
+            disabled={generating}
             className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
           >
-            <Eye className="w-4 h-4 ml-2" />
-            معاينة التقرير
+            {generating ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin ml-2"></div>
+            ) : (
+              <Eye className="w-4 h-4 ml-2" />
+            )}
+            {generating ? 'جاري التحميل...' : 'معاينة التقرير'}
           </button>
           
           <button
             onClick={generateReport}
-            disabled={generating || filteredRecords.length === 0}
+            disabled={generating}
             className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
           >
             {generating ? (
@@ -973,17 +986,14 @@ export function Reports({ records }: ReportsProps) {
           </button>
         </div>
 
-        {filteredRecords.length === 0 && (
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-3">
-            لا توجد سجلات تطابق المرشحات المحددة
-          </p>
-        )}
+        <p className="text-gray-500 dark:text-gray-400 text-sm mt-3">
+          سيتم جلب السجلات المفلترة من قاعدة البيانات عند إنشاء التقرير
+        </p>
         
         {reportType === 'delivery' && (
           <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
               <strong>ملاحظة:</strong> تقرير الارسالية يعرض فقط السجلات التي لديها مبلغ مستلم (المبلغ الحالي أكبر من صفر).
-              عدد السجلات المؤهلة: {filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).length}
             </p>
           </div>
         )}

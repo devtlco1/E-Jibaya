@@ -376,6 +376,109 @@ export const dbOperations = {
     }
   },
 
+  // جلب السجلات المفلترة للتقرير مباشرة من قاعدة البيانات (بدون تحميل جميع السجلات)
+  async getFilteredRecordsForReport(filters: any): Promise<CollectionRecord[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        console.warn('Supabase not configured - returning empty records array');
+        return [];
+      }
+      
+      let query = client
+        .from('collection_records')
+        .select('*');
+
+      // تطبيق الفلاتر
+      if (filters.startDate) {
+        query = query.gte('submitted_at', filters.startDate);
+      }
+
+      if (filters.endDate) {
+        query = query.lte('submitted_at', filters.endDate + 'T23:59:59');
+      }
+
+      if (filters.status) {
+        if (filters.status === 'refused') {
+          query = query.eq('is_refused', true);
+        } else {
+          query = query.eq('is_refused', false).eq('status', filters.status);
+        }
+      }
+
+      if (filters.fieldAgent) {
+        query = query.eq('field_agent_id', filters.fieldAgent);
+      }
+
+      if (filters.new_zone) {
+        query = query.eq('new_zone', filters.new_zone);
+      }
+
+      if (filters.new_block) {
+        query = query.eq('new_block', filters.new_block);
+      }
+
+      if (filters.region) {
+        query = query.eq('region', filters.region);
+      }
+
+      if (filters.verification_status) {
+        query = query.eq('verification_status', filters.verification_status);
+      }
+
+      if (filters.category) {
+        query = query.eq('category', filters.category);
+      }
+
+      if (filters.phase) {
+        query = query.eq('phase', filters.phase);
+      }
+
+      if (filters.rejected_photos === 'any') {
+        query = query.or('meter_photo_rejected.eq.true,invoice_photo_rejected.eq.true');
+      } else if (filters.rejected_photos === 'none') {
+        query = query.eq('meter_photo_rejected', false).eq('invoice_photo_rejected', false);
+      }
+
+      // جلب جميع السجلات المفلترة على دفعات
+      let allRecords: CollectionRecord[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const to = from + limit - 1;
+        const { data, error } = await query
+          .order('submitted_at', { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error('Get filtered records error:', error);
+          break;
+        }
+
+        if (!data || data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        allRecords.push(...data);
+        from += limit;
+
+        if (data.length < limit) {
+          hasMore = false;
+        }
+      }
+      
+      console.log(`Fetched ${allRecords.length} filtered records from database`);
+      
+      return allRecords;
+    } catch (error) {
+      console.error('Get filtered records error:', error);
+      return [];
+    }
+  },
+
   async updateRecord(id: string, updates: UpdateRecordData): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
