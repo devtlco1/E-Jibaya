@@ -48,9 +48,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const { addNotification } = useNotifications();
   const { user: currentUser } = useAuth();
 
-  // Load users on component mount
+  // Track if users have been loaded to prevent unnecessary reloads
+  const usersLoadedRef = React.useRef(false);
+
+  // Load users on component mount (only once)
   React.useEffect(() => {
-    loadUsers();
+    if (!usersLoadedRef.current) {
+      loadUsers();
+      usersLoadedRef.current = true;
+    }
   }, []);
 
   // Load field agents for branch manager

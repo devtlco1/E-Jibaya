@@ -832,31 +832,37 @@ export function AdminDashboard() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'records' ? (
-          <DataTable
-            records={records}
-            totalRecords={totalRecords}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            itemsPerPage={itemsPerPage}
-            loading={loading}
-            onPageChange={handlePageChange}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onUpdateRecord={handleUpdateRecord}
-            onDeleteRecord={handleDeleteRecord}
-            onRecordUpdate={updateRecordLockStatus}
-          />
-        ) : activeTab === 'users' ? (
-          <UserManagement onUserStatusChange={refreshFieldAgentsCount} />
-        ) : activeTab === 'reports' ? (
-          <Reports />
-        ) : activeTab === 'activities' ? (
-          <ActivityLogs />
-        ) : (
-          <BackupSystem />
-        )}
+        <div className="min-h-[400px]">
+          {activeTab === 'records' && (
+            <DataTable
+              records={records}
+              totalRecords={totalRecords}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              itemsPerPage={itemsPerPage}
+              loading={loading}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              onUpdateRecord={handleUpdateRecord}
+              onDeleteRecord={handleDeleteRecord}
+              onRecordUpdate={updateRecordLockStatus}
+            />
+          )}
+          {activeTab === 'users' && (
+            <UserManagement key="users-tab" onUserStatusChange={refreshFieldAgentsCount} />
+          )}
+          {activeTab === 'reports' && (
+            <Reports key="reports-tab" />
+          )}
+          {activeTab === 'activities' && (
+            <ActivityLogs key="activities-tab" />
+          )}
+          {activeTab === 'backup' && (
+            <BackupSystem key="backup-tab" />
+          )}
+        </div>
       </div>
     </div>
   );
