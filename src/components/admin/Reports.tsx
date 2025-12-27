@@ -25,6 +25,7 @@ interface ReportFilters {
   endDate: string;
   status: string;
   fieldAgent: string;
+  branchManager: string;
   includeImages: boolean;
   // الترميز الجديد
   new_zone: string;
@@ -44,6 +45,7 @@ export function Reports({}: ReportsProps) {
     endDate: '',
     status: '',
     fieldAgent: '',
+    branchManager: '',
     includeImages: true,
     // الترميز الجديد
     new_zone: '',
@@ -57,6 +59,8 @@ export function Reports({}: ReportsProps) {
     rejected_photos: ''
   });
   const [users, setUsers] = useState<any[]>([]);
+  const [branchManagers, setBranchManagers] = useState<any[]>([]);
+  const [branchManagerFieldAgents, setBranchManagerFieldAgents] = useState<string[]>([]);
   const [generating, setGenerating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [filteredRecords, setFilteredRecords] = useState<CollectionRecord[]>([]);
@@ -78,18 +82,30 @@ export function Reports({}: ReportsProps) {
   const { addNotification } = useNotifications();
   const { user: currentUser } = useAuth();
 
-  // Load statistics only (not all records)
+  // Load statistics based on filters (especially branch manager)
   React.useEffect(() => {
     const loadStats = async () => {
       try {
-        const statsData = await dbOperations.getRecordsStats(currentUser);
+        // إذا تم اختيار مدير فرع، نحتاج إلى حساب الإحصائيات فقط لسجلات محصليه
+        let statsData;
+        if (filters.branchManager) {
+          // إنشاء user مؤقت لمدير الفرع المحدد
+          const branchManagerUser = branchManagers.find(bm => bm.id === filters.branchManager);
+          if (branchManagerUser) {
+            statsData = await dbOperations.getRecordsStats(branchManagerUser);
+          } else {
+            statsData = await dbOperations.getRecordsStats(currentUser);
+          }
+        } else {
+          statsData = await dbOperations.getRecordsStats(currentUser);
+        }
         setStats(statsData);
       } catch (error) {
         console.error('Error loading stats:', error);
       }
     };
     loadStats();
-  }, [currentUser]);
+  }, [currentUser, filters.branchManager, branchManagers]);
 
   // Load users for filter dropdown
   React.useEffect(() => {
@@ -209,8 +225,17 @@ export function Reports({}: ReportsProps) {
         message: 'يرجى الانتظار...'
       });
 
-      // تمرير reportType لتحسين الأداء - لتقرير الارسالية يفلتر في قاعدة البيانات مباشرة
-      const records = await dbOperations.getFilteredRecordsForReport(filters, reportType);
+      // إنشاء user مؤقت لمدير الفرع المحدد إذا كان موجوداً
+      let userForFilter = currentUser;
+      if (filters.branchManager) {
+        const branchManagerUser = branchManagers.find(bm => bm.id === filters.branchManager);
+        if (branchManagerUser) {
+          userForFilter = branchManagerUser;
+        }
+      }
+      
+      // تمرير reportType و userForFilter لتحسين الأداء
+      const records = await dbOperations.getFilteredRecordsForReport(filters, reportType, userForFilter);
       
       if (records.length === 0) {
         addNotification({
@@ -707,12 +732,40 @@ export function Reports({}: ReportsProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                مدير الفرع
+              </label>
+              <select
+                value={filters.branchManager}
+                onChange={(e) => {
+                  setFilters({ 
+                    ...filters, 
+                    branchManager: e.target.value,
+                    fieldAgent: '' // إعادة تعيين المحصل الميداني عند تغيير مدير الفرع
+                  });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع مديري الفروع</option>
+                {branchManagers.map(bm => (
+                  <option key={bm.id} value={bm.id}>
+                    {bm.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* الصف الثاني: المحصل الميداني */}
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 المحصل الميداني
               </label>
               <select
                 value={filters.fieldAgent}
                 onChange={(e) => setFilters({ ...filters, fieldAgent: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                disabled={filters.branchManager && users.length === 0}
               >
                 <option value="">جميع المحصلين</option>
                 {users.map(user => (

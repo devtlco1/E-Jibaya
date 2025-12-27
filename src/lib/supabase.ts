@@ -517,6 +517,21 @@ export const dbOperations = {
         }
       }
 
+      // فلتر مدير الفرع: إذا تم اختيار مدير فرع، نفلتر فقط محصليه
+      if (filters.branchManager && currentUser?.role === 'branch_manager' && currentUser.id === filters.branchManager) {
+        // إذا كان المستخدم الحالي هو مدير الفرع المحدد، استخدم الفلتر الموجود
+        // (تم تطبيقه بالفعل في السطور السابقة)
+      } else if (filters.branchManager) {
+        // إذا تم اختيار مدير فرع آخر، جلب محصليه وفلتر السجلات
+        const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(filters.branchManager);
+        if (allowedFieldAgentIds.length > 0) {
+          query = query.in('field_agent_id', allowedFieldAgentIds);
+        } else {
+          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي سجلات
+          return [];
+        }
+      }
+
       if (filters.fieldAgent) {
         query = query.eq('field_agent_id', filters.fieldAgent);
       }
