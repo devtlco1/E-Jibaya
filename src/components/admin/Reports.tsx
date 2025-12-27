@@ -69,14 +69,11 @@ export function Reports({ records }: ReportsProps) {
   // حساب السجلات المؤهلة لتقرير الإرسال - يتحدث تلقائياً عند تغيير reportType أو filteredRecords
   const statsRecords = useMemo(() => {
     if (reportType === 'delivery') {
-      const deliveryRecords = filteredRecords.filter(r => 
+      return filteredRecords.filter(r => 
         r.current_amount !== null && 
         r.current_amount !== undefined && 
-        r.current_amount > 0
+        Number(r.current_amount) > 0
       );
-      console.log('Delivery Records Count:', deliveryRecords.length);
-      console.log('Filtered Records Count:', filteredRecords.length);
-      return deliveryRecords;
     }
     return filteredRecords;
   }, [reportType, filteredRecords]);
@@ -794,7 +791,7 @@ export function Reports({ records }: ReportsProps) {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div key={`stats-${reportType}-${filteredRecords.length}`} className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-3">
