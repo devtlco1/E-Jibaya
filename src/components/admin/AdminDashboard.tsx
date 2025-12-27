@@ -627,20 +627,24 @@ export function AdminDashboard() {
                 مرحباً، {user?.full_name}
               </span>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-3 space-x-reverse">
-              {/* Real-time connection indicator - أيقونة فقط */}
+            {/* Actions Bar - تصميم بسيط ومقسم بالتساوي */}
+            <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-1">
+              {/* Real-time connection indicator */}
               <button
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600 relative"
+                className="flex-1 flex items-center justify-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 title={isRealtimeConnected ? 'مباشر' : 'فحص دوري'}
                 aria-label={isRealtimeConnected ? 'مباشر' : 'فحص دوري'}
               >
-                <div className={`w-3 h-3 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`}></div>
+                <div className={`w-3 h-3 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-yellow-500'} ${isRealtimeConnected ? 'animate-pulse' : ''}`}></div>
               </button>
+              
+              {/* Divider */}
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
               
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"
+                className="flex-1 flex items-center justify-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 aria-label={isDark ? 'تبديل إلى الوضع النهاري' : 'تبديل إلى الوضع الليلي'}
                 title={isDark ? 'تبديل إلى الوضع النهاري' : 'تبديل إلى الوضع الليلي'}
               >
@@ -651,10 +655,13 @@ export function AdminDashboard() {
                 )}
               </button>
               
+              {/* Divider */}
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+              
               {/* Logout */}
               <button
                 onClick={logout}
-                className="p-2 rounded-lg bg-red-100 dark:bg-red-900 hover:bg-red-200 dark:hover:bg-red-800 transition-colors border border-red-200 dark:border-red-700"
+                className="flex-1 flex items-center justify-center p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                 title="تسجيل الخروج"
                 aria-label="تسجيل الخروج"
               >
