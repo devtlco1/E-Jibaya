@@ -1057,8 +1057,8 @@ export function DataTable({
 
             </div>
 
-            {/* الصف الرابع: الصنف، نوع المقياس */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* الصف الرابع: الصنف، نوع المقياس، المحصل الميداني */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   الصنف
@@ -1093,10 +1093,7 @@ export function DataTable({
                   <option value="المحولة الخاصة">المحولة الخاصة</option>
                 </select>
               </div>
-            </div>
 
-            {/* الصف الخامس: المحصل الميداني */}
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   المحصل الميداني
