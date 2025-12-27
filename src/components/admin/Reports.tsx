@@ -200,7 +200,8 @@ export function Reports({}: ReportsProps) {
         message: 'يرجى الانتظار...'
       });
 
-      const records = await dbOperations.getFilteredRecordsForReport(filters);
+      // تمرير reportType لتحسين الأداء - لتقرير الارسالية يفلتر في قاعدة البيانات مباشرة
+      const records = await dbOperations.getFilteredRecordsForReport(filters, reportType);
       
       if (records.length === 0) {
         addNotification({
@@ -410,10 +411,9 @@ export function Reports({}: ReportsProps) {
   const generateDeliveryReportHTML = (records: CollectionRecord[]) => {
     const currentDate = formatDate(new Date());
     
-    // تصفية السجلات التي لديها مبلغ مستلم
-    const recordsWithAmount = records.filter(r => 
-      r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0
-    );
+    // السجلات تم فلترتها بالفعل في قاعدة البيانات (current_amount > 0)
+    // لا حاجة لتصفية إضافية هنا
+    const recordsWithAmount = records;
 
     // حساب إجمالي المبلغ المستلم
     const totalAmount = recordsWithAmount.reduce((sum, r) => sum + (r.current_amount || 0), 0);
@@ -594,7 +594,8 @@ export function Reports({}: ReportsProps) {
     setGenerating(true);
     try {
       // جلب السجلات المفلترة مباشرة من قاعدة البيانات
-      const records = await dbOperations.getFilteredRecordsForReport(filters);
+      // تمرير reportType لتحسين الأداء - لتقرير الارسالية يفلتر في قاعدة البيانات مباشرة
+      const records = await dbOperations.getFilteredRecordsForReport(filters, reportType);
       
       if (records.length === 0) {
         addNotification({

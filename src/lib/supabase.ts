@@ -377,7 +377,7 @@ export const dbOperations = {
   },
 
   // جلب السجلات المفلترة للتقرير مباشرة من قاعدة البيانات (بدون تحميل جميع السجلات)
-  async getFilteredRecordsForReport(filters: any): Promise<CollectionRecord[]> {
+  async getFilteredRecordsForReport(filters: any, reportType?: 'standard' | 'delivery'): Promise<CollectionRecord[]> {
     try {
       const client = checkSupabaseConnection();
       if (!client) {
@@ -388,6 +388,12 @@ export const dbOperations = {
       let query = client
         .from('collection_records')
         .select('*');
+
+      // لتقرير الارسالية: فلتر فقط السجلات التي لديها مبلغ مستلم (في قاعدة البيانات مباشرة)
+      if (reportType === 'delivery') {
+        query = query.not('current_amount', 'is', null)
+                     .gt('current_amount', 0);
+      }
 
       // تطبيق الفلاتر
       if (filters.startDate) {
@@ -470,7 +476,7 @@ export const dbOperations = {
         }
       }
       
-      console.log(`Fetched ${allRecords.length} filtered records from database`);
+      console.log(`Fetched ${allRecords.length} filtered records from database (reportType: ${reportType || 'standard'})`);
       
       return allRecords;
     } catch (error) {
