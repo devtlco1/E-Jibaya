@@ -741,7 +741,7 @@ export function AdminDashboard() {
                 <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">المحصلين النشطين</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">المحصلين</p>
                 <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{fieldAgentsCount}</p>
               </div>
             </div>
