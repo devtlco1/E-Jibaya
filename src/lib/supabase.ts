@@ -1368,13 +1368,45 @@ export const dbOperations = {
     try {
       if (!supabase) throw new Error('Supabase not configured');
       
-      const { data, error } = await supabase
-        .from('collection_records')
-        .select('*')
-        .order('submitted_at', { ascending: false });
+      // جلب جميع السجلات على دفعات لتجاوز حد 1000 سجل في Supabase
+      let allRecords: any[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
-      return data || [];
+      console.log('Fetching all records for backup (with pagination)...');
+
+      while (hasMore) {
+        const to = from + limit - 1;
+        const { data, error } = await supabase
+          .from('collection_records')
+          .select('*')
+          .order('submitted_at', { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error('Get all records error:', error);
+          throw error;
+        }
+
+        if (!data || data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        allRecords.push(...data);
+        from += limit;
+
+        if (data.length < limit) {
+          hasMore = false;
+        }
+
+        console.log(`Fetched ${allRecords.length} records so far for backup...`);
+      }
+      
+      console.log(`Total fetched ${allRecords.length} records for backup`);
+      
+      return allRecords;
     } catch (error) {
       console.error('Error fetching all records:', error);
       throw error;
@@ -1385,13 +1417,36 @@ export const dbOperations = {
     try {
       if (!supabase) throw new Error('Supabase not configured');
       
-      const { data, error } = await supabase
-        .from('activity_logs')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // جلب جميع سجلات الأنشطة على دفعات
+      let allLogs: any[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
-      return data || [];
+      while (hasMore) {
+        const to = from + limit - 1;
+        const { data, error } = await supabase
+          .from('activity_logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        allLogs.push(...data);
+        from += limit;
+
+        if (data.length < limit) {
+          hasMore = false;
+        }
+      }
+      
+      return allLogs;
     } catch (error) {
       console.error('Error fetching all activity logs:', error);
       throw error;
@@ -1402,13 +1457,36 @@ export const dbOperations = {
     try {
       if (!supabase) throw new Error('Supabase not configured');
       
-      const { data, error } = await supabase
-        .from('record_photos')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // جلب جميع الصور على دفعات
+      let allPhotos: any[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
-      return data || [];
+      while (hasMore) {
+        const to = from + limit - 1;
+        const { data, error } = await supabase
+          .from('record_photos')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        allPhotos.push(...data);
+        from += limit;
+
+        if (data.length < limit) {
+          hasMore = false;
+        }
+      }
+      
+      return allPhotos;
     } catch (error) {
       console.error('Error fetching all record photos:', error);
       throw error;
@@ -1419,13 +1497,36 @@ export const dbOperations = {
     try {
       if (!supabase) throw new Error('Supabase not configured');
       
-      const { data, error } = await supabase
-        .from('user_sessions')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // جلب جميع الجلسات على دفعات
+      let allSessions: any[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
-      return data || [];
+      while (hasMore) {
+        const to = from + limit - 1;
+        const { data, error } = await supabase
+          .from('user_sessions')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        allSessions.push(...data);
+        from += limit;
+
+        if (data.length < limit) {
+          hasMore = false;
+        }
+      }
+      
+      return allSessions;
     } catch (error) {
       console.error('Error fetching all user sessions:', error);
       throw error;

@@ -8,7 +8,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "import-pdf": "node scripts/import-records-from-pdf.js",
-    "remove-duplicates": "node scripts/remove-duplicate-records.js"
+    "remove-duplicates": "node scripts/remove-duplicate-records.js",
+    "import-excel": "node scripts/import-records-from-excel.js",
+    "test-import": "node scripts/test-import-10-rows.js",
+    "import-all": "node scripts/import-all-records-direct.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
@@ -20,7 +23,8 @@
     "lucide-react": "^0.344.0",
     "pdf-parse": "^1.1.4",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",
