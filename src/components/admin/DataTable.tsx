@@ -2062,30 +2062,32 @@ export function DataTable({
                         )}
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          المنطقة
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.region}
-                          onChange={(e) => setEditForm({ ...editForm, region: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="أدخل المنطقة"
-                        />
-                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            المنطقة
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.region}
+                            onChange={(e) => setEditForm({ ...editForm, region: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="أدخل المنطقة"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          المقاطعة
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.district}
-                          onChange={(e) => setEditForm({ ...editForm, district: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                          placeholder="أدخل المقاطعة"
-                        />
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            المقاطعة
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.district}
+                            onChange={(e) => setEditForm({ ...editForm, district: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="أدخل المقاطعة"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
