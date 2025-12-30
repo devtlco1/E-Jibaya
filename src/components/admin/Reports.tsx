@@ -402,6 +402,7 @@ export function Reports({}: ReportsProps) {
                     <th>الحساب</th>
                     <th>المقياس</th>
                     <th>المنطقة</th>
+                    <th>المقاطعة</th>
                     <th>القراءة</th>
                     <th>الترميز</th>
                     <th>الصنف</th>
@@ -422,6 +423,7 @@ export function Reports({}: ReportsProps) {
                     <td>${record.account_number || '-'}</td>
                     <td>${record.meter_number || '-'}</td>
                     <td>${record.region || '-'}</td>
+                    <td>${record.district || '-'}</td>
                     <td>${record.last_reading || '-'}</td>
                     <td>${record.new_zone || record.new_block || record.new_home ? 
                         `${record.new_zone ? 'ز' + record.new_zone : ''}${record.new_block ? ' ب' + record.new_block : ''}${record.new_home ? ' م' + record.new_home : ''}`.trim() : 

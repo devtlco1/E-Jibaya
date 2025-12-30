@@ -48,6 +48,7 @@ export function DataTable({
     account_number: '',
     meter_number: '',
     region: '',
+    district: '',
     last_reading: '',
     status: 'pending' as 'pending' | 'completed' | 'refused',
     // الترميز الجديد
@@ -486,6 +487,10 @@ export function DataTable({
                         <td class="label">المنطقة</td>
                         <td class="value">${record.region || 'غير محدد'}</td>
                     </tr>
+                    <tr>
+                        <td class="label">المقاطعة</td>
+                        <td class="value">${record.district || 'غير محدد'}</td>
+                    </tr>
                     <tr class="coding-row">
                         <td class="label">الترميز الجديد</td>
                         <td class="value">${(() => {
@@ -613,6 +618,7 @@ export function DataTable({
         account_number: record.account_number || '',
         meter_number: record.meter_number || '',
         region: (record.region && record.region !== 'غير محدد') ? record.region : '',
+        district: (record.district && record.district !== 'غير محدد') ? record.district : '',
         last_reading: record.last_reading || '',
         status: getRecordStatus(record) as 'pending' | 'completed' | 'refused',
         // المبالغ
@@ -1136,6 +1142,9 @@ export function DataTable({
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   المنطقة
                 </th>
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                  المقاطعة
+                </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                   آخر قراءة
                 </th>
@@ -1206,7 +1215,7 @@ export function DataTable({
                 ))
               ) : records.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={10} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     لا توجد سجلات تطابق الفلاتر المحددة
                   </td>
                 </tr>
@@ -1247,6 +1256,14 @@ export function DataTable({
                     onClick={() => handleEdit(record)}
                   >
                     {record.region || (
+                      <span className="text-gray-400 italic">غير محدد</span>
+                    )}
+                  </td>
+                  <td 
+                    className="px-3 sm:px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate cursor-pointer hidden lg:table-cell"
+                    onClick={() => handleEdit(record)}
+                  >
+                    {record.district || (
                       <span className="text-gray-400 italic">غير محدد</span>
                     )}
                   </td>
@@ -1566,6 +1583,12 @@ export function DataTable({
                       <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المنطقة</span>
                       <p className="text-gray-900 dark:text-white font-semibold">
                         {viewingRecord.region || 'غير محدد'}
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المقاطعة</span>
+                      <p className="text-gray-900 dark:text-white font-semibold">
+                        {viewingRecord.district || 'غير محدد'}
                       </p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
@@ -2049,6 +2072,19 @@ export function DataTable({
                           onChange={(e) => setEditForm({ ...editForm, region: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                           placeholder="أدخل المنطقة"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          المقاطعة
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.district}
+                          onChange={(e) => setEditForm({ ...editForm, district: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="أدخل المقاطعة"
                         />
                       </div>
                     </div>

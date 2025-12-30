@@ -302,7 +302,7 @@ export const dbOperations = {
             } else if (value === 'none') {
               query = query.eq('meter_photo_rejected', false).eq('invoice_photo_rejected', false);
             }
-          } else if (['new_zone','new_block','category','phase','region','field_agent_id'].includes(key)) {
+          } else if (['new_zone','new_block','category','phase','region','district','field_agent_id'].includes(key)) {
             query = query.eq(key, value);
           } else if (['subscriber_name','account_number','meter_number'].includes(key)) {
             query = query.ilike(key, `%${value}%`);

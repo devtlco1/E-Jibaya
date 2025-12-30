@@ -22,6 +22,7 @@ export interface CollectionRecord {
   account_number: string | null;
   meter_number: string | null;
   region: string | null;
+  district: string | null;
   last_reading: string | null;
   status: 'pending' | 'completed' | 'refused';
   submitted_at: string;
@@ -72,6 +73,7 @@ export interface UpdateRecordData {
   account_number: string;
   meter_number: string;
   region: string;
+  district: string;
   last_reading: string;
   status: 'pending' | 'completed' | 'refused';
   // الترميز الجديد
@@ -104,6 +106,7 @@ export interface FilterState {
   account_number: string;
   meter_number: string;
   region: string;
+  district: string;
   status: string;
   // الترميز الجديد
   new_zone: string;
