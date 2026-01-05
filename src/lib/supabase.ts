@@ -484,7 +484,22 @@ export const dbOperations = {
           break;
         }
 
-        allRecords.push(...data);
+        // تحويل tags من JSONB إلى array لكل سجل
+        const processedData = data.map((record: any) => {
+          if (record.tags) {
+            if (typeof record.tags === 'string') {
+              try {
+                record.tags = JSON.parse(record.tags);
+              } catch (e) {
+                console.warn('Failed to parse tags for record:', record.id, e);
+                record.tags = [];
+              }
+            }
+          }
+          return record;
+        });
+
+        allRecords.push(...processedData);
         from += limit;
 
         if (data.length < limit) {
