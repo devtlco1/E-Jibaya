@@ -361,9 +361,15 @@ export const dbOperations = {
         throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
 
+      // تحويل tags إلى JSONB format إذا كانت موجودة
+      const recordData: any = { ...record };
+      if (recordData.tags && Array.isArray(recordData.tags)) {
+        recordData.tags = JSON.stringify(recordData.tags);
+      }
+
       const { data, error } = await client
         .from('collection_records')
-        .insert(record)
+        .insert(recordData)
         .select()
         .single();
 
@@ -377,6 +383,18 @@ export const dbOperations = {
       cacheService.clearUsersCache();
       localStorage.removeItem('ejibaya_cache');
       console.log('Record created successfully - cache cleared');
+      
+      // تحويل tags من JSONB إلى array إذا لزم الأمر
+      if (data && data.tags) {
+        if (typeof data.tags === 'string') {
+          try {
+            data.tags = JSON.parse(data.tags);
+          } catch (e) {
+            console.warn('Failed to parse tags:', e);
+            data.tags = [];
+          }
+        }
+      }
       
       return data;
     } catch (error) {
@@ -685,6 +703,22 @@ export const dbOperations = {
 
       console.log('Record updated successfully:', data);
       console.log('Updated fields:', Object.keys(updates));
+
+      // تحويل tags من JSONB إلى array إذا لزم الأمر
+      if (data && data.length > 0) {
+        data.forEach((record: any) => {
+          if (record.tags) {
+            if (typeof record.tags === 'string') {
+              try {
+                record.tags = JSON.parse(record.tags);
+              } catch (e) {
+                console.warn('Failed to parse tags:', e);
+                record.tags = [];
+              }
+            }
+          }
+        });
+      }
       console.log('Update result:', data);
       
       // التحقق من أن التحديث حدث فعلياً

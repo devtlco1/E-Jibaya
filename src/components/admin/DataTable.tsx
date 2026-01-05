@@ -2005,6 +2005,26 @@ export function DataTable({
                   </div>
                 )}
 
+                {/* تاغات المشاكل */}
+                {viewingRecord.tags && Array.isArray(viewingRecord.tags) && viewingRecord.tags.length > 0 && (
+                  <div className="bg-gradient-to-l from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-5 border border-purple-200 dark:border-purple-700">
+                    <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                      <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400 ml-2" />
+                      تاغات المشاكل
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {viewingRecord.tags.map((tag: string, index: number) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-purple-600 text-white rounded-full text-sm font-medium"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* الملاحظات */}
                 {viewingRecord.notes && (
                   <div className="bg-gradient-to-l from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-5 border border-orange-200 dark:border-orange-700">

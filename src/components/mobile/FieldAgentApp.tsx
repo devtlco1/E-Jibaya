@@ -35,6 +35,7 @@ export function FieldAgentApp() {
   const [totalAmount, setTotalAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('');
   const [category, setCategory] = useState<'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي'>('منزلي');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -374,7 +375,8 @@ export function FieldAgentApp() {
         is_refused: isRefused,
         total_amount: totalAmount ? parseFloat(totalAmount) : null,
         current_amount: currentAmount ? parseFloat(currentAmount) : null,
-        category: category
+        category: category,
+        tags: selectedTags.length > 0 ? selectedTags : null
       };
 
       const result = await dbOperations.createRecord(record);
@@ -439,6 +441,7 @@ export function FieldAgentApp() {
           setTotalAmount('');
           setCurrentAmount('');
           setCategory('منزلي');
+          setSelectedTags([]);
         }, 2000);
       } else {
         setSubmitError('فشل في إرسال البيانات. يرجى المحاولة مرة أخرى');
@@ -983,6 +986,49 @@ export function FieldAgentApp() {
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white transition-colors"
               placeholder="أضف أي ملاحظات..."
             />
+          </div>
+        )}
+
+        {/* Tags - تاغات المشاكل */}
+        {!selectedRecord && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <label className="block text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              تاغات المشاكل (اختياري)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {['عاطل', 'متلاعب', 'مغلق', 'مهدوم', 'متروك', 'لم يعثر عليه', 'م. بدون مقياس', 'م.على المقياس', 'ق.مشكوك بها'].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    if (selectedTags.includes(tag)) {
+                      setSelectedTags(selectedTags.filter(t => t !== tag));
+                    } else {
+                      setSelectedTags([...selectedTags, tag]);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedTags.includes(tag)
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+            {selectedTags.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">التاغات المحددة:</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedTags.map((tag) => (
+                    <span key={tag} className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-medium">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

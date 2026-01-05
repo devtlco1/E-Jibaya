@@ -53,6 +53,8 @@ export interface CollectionRecord {
   // المبالغ
   total_amount: number | null;
   current_amount: number | null;
+  // تاغات المشاكل
+  tags: string[] | null;
 }
 
 export interface CreateRecordData {
@@ -66,6 +68,7 @@ export interface CreateRecordData {
   total_amount: number | null;
   current_amount: number | null;
   category?: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | null;
+  tags?: string[] | null;
 }
 
 export interface UpdateRecordData {
@@ -87,6 +90,8 @@ export interface UpdateRecordData {
   // المبالغ
   total_amount?: number | null;
   current_amount?: number | null;
+  // تاغات المشاكل
+  tags?: string[] | null;
 }
 
 export interface AuthContextType {
