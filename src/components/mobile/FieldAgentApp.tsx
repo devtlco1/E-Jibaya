@@ -314,6 +314,7 @@ export function FieldAgentApp() {
       // If we have a selected record, add photos to it instead of creating new record
       if (selectedRecord) {
         await handleAddPhotosToExistingRecord();
+        // setIsSubmitting will be handled inside handleAddPhotosToExistingRecord
         return;
       }
 
@@ -424,11 +425,11 @@ export function FieldAgentApp() {
         }
         
         setSubmitted(true);
+        setIsSubmitting(false); // إعادة تعيين حالة الإرسال فوراً بعد النجاح
         
-        // Reset form after 3 seconds
+        // Reset form after 2 seconds
         setTimeout(() => {
           setSubmitted(false);
-          setIsSubmitting(false);
           setGpsData(null);
           setMeterPhoto(null);
           setInvoicePhoto(null);
@@ -589,8 +590,9 @@ export function FieldAgentApp() {
       }
       
       setSubmitted(true);
+      setIsSubmitting(false); // إعادة تعيين حالة الإرسال فوراً بعد النجاح
       
-      // Reset form after 3 seconds
+      // Reset form after 2 seconds
       setTimeout(() => {
         setSubmitted(false);
         setGpsData(null);
