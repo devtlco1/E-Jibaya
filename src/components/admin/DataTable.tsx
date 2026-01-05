@@ -298,23 +298,26 @@ export function DataTable({
         }
         
         .header {
-            background: #f8f9fa;
-            color: #333;
-            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
             text-align: center;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .header h1 {
-            font-size: 18px;
-            margin-bottom: 5px;
+            font-size: 20px;
+            margin-bottom: 8px;
             font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
         
         .header .subtitle {
-            font-size: 12px;
-            color: #666;
+            font-size: 13px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
         }
         
         .content {
@@ -329,6 +332,7 @@ export function DataTable({
             padding: 10px;
             border: 1px solid #ddd;
             margin-bottom: 10px;
+            border-radius: 4px;
         }
         
         .data-table {
@@ -338,24 +342,41 @@ export function DataTable({
         }
         
         .data-table td {
-            padding: 3px 5px;
+            padding: 6px 8px;
             border: 0.5px solid #ddd;
             vertical-align: top;
         }
         
         .data-table .label {
-            background: #f5f5f5;
+            background: #f8f9fa;
             font-weight: 600;
-            width: 30%;
+            width: 35%;
+            color: #495057;
         }
         
         .data-table .value {
             background: white;
-            width: 70%;
+            width: 65%;
+            color: #212529;
         }
         
         .coding-row {
             background: #e8f4fd !important;
+        }
+        
+        .amount-row {
+            background: #f0f9ff !important;
+        }
+        
+        .amount-row .label {
+            background: #dbeafe !important;
+            font-weight: 700;
+        }
+        
+        .amount-row .value {
+            background: #eff6ff !important;
+            font-weight: 600;
+            color: #1e40af;
         }
         
         .status-badge {
@@ -517,6 +538,14 @@ export function DataTable({
                         <td class="label">المقاطعة</td>
                         <td class="value">${record.district || 'غير محدد'}</td>
                     </tr>
+                    <tr>
+                        <td class="label">الصنف</td>
+                        <td class="value">${record.category || 'غير محدد'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">نوع المقياس</td>
+                        <td class="value">${record.phase || 'غير محدد'}${record.phase === 'سي تي' && record.multiplier ? ` (معامل الضرب: ${record.multiplier})` : ''}</td>
+                    </tr>
                     <tr class="coding-row">
                         <td class="label">الترميز الجديد</td>
                         <td class="value">${(() => {
@@ -527,14 +556,55 @@ export function DataTable({
                             return parts.join(' ') || 'غير محدد';
                         })()}</td>
                     </tr>
+                    ${(record.total_amount !== null && record.total_amount !== undefined) ? `
+                    <tr class="amount-row">
+                        <td class="label">المجموع المطلوب</td>
+                        <td class="value">${record.total_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع</td>
+                    </tr>
+                    ` : ''}
+                    ${(record.current_amount !== null && record.current_amount !== undefined) ? `
+                    <tr class="amount-row">
+                        <td class="label">المبلغ المستلم</td>
+                        <td class="value">${record.current_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع</td>
+                    </tr>
+                    ` : ''}
+                    ${((record.total_amount !== null && record.total_amount !== undefined) && 
+                       (record.current_amount !== null && record.current_amount !== undefined)) ? `
+                    <tr class="amount-row">
+                        <td class="label">المبلغ المتبقي</td>
+                        <td class="value">${(record.total_amount - record.current_amount).toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع</td>
+                    </tr>
+                    ` : ''}
                     <tr>
                         <td class="label">الموقع الجغرافي</td>
                         <td class="value">${(record.gps_latitude && record.gps_longitude) ? `${record.gps_latitude}, ${record.gps_longitude}` : 'غير محدد'}</td>
                     </tr>
                     <tr>
+                        <td class="label">حالة التدقيق</td>
+                        <td class="value">${record.verification_status || 'غير مدقق'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">صورة المقياس</td>
+                        <td class="value">${record.meter_photo_verified ? '✓ مدققة' : record.meter_photo_rejected ? '✗ مرفوضة' : 'غير مدققة'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">صورة الفاتورة</td>
+                        <td class="value">${record.invoice_photo_verified ? '✓ مدققة' : record.invoice_photo_rejected ? '✗ مرفوضة' : 'غير مدققة'}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">الحالة</td>
+                        <td class="value"><span class="status-badge status-${record.is_refused ? 'refused' : record.status}">${record.is_refused ? 'امتنع' : (record.status === 'pending' ? 'قيد المراجعة' : record.status === 'completed' ? 'مكتمل' : 'غير محدد')}</span></td>
+                    </tr>
+                    <tr>
                         <td class="label">تاريخ الإنشاء</td>
                         <td class="value">${formatDateTime(record.submitted_at)}</td>
                     </tr>
+                    ${record.completed_at ? `
+                    <tr>
+                        <td class="label">تاريخ الإكمال</td>
+                        <td class="value">${formatDateTime(record.completed_at)}</td>
+                    </tr>
+                    ` : ''}
                     <tr>
                         <td class="label">آخر تحديث</td>
                         <td class="value">${formatDateTime(record.updated_at)}</td>
@@ -543,14 +613,12 @@ export function DataTable({
                         <td class="label">تم الإنشاء بواسطة</td>
                         <td class="value">${getUserName(record.field_agent_id)}</td>
                     </tr>
+                    ${record.completed_by ? `
                     <tr>
-                        <td class="label">تم التعديل بواسطة</td>
-                        <td class="value">${record.completed_by ? getUserName(record.completed_by) : 'لم يتم التعديل'}</td>
+                        <td class="label">تم الإكمال بواسطة</td>
+                        <td class="value">${getUserName(record.completed_by)}</td>
                     </tr>
-                    <tr>
-                        <td class="label">الحالة</td>
-                        <td class="value">${record.status === 'refused' ? 'امتنع' : (record.status === 'pending' ? 'قيد المراجعة' : 'مكتمل')}</td>
-                    </tr>
+                    ` : ''}
                     ${record.notes ? `
                     <tr>
                         <td class="label">الملاحظات</td>
