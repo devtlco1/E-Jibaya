@@ -343,8 +343,23 @@ export const dbOperations = {
       const total = count || 0;
       const totalPages = Math.ceil(total / limit);
 
+      // تحويل tags من JSONB إلى array لكل سجل
+      const processedData = (data || []).map((record: any) => {
+        if (record.tags) {
+          if (typeof record.tags === 'string') {
+            try {
+              record.tags = JSON.parse(record.tags);
+            } catch (e) {
+              console.warn('Failed to parse tags for record:', record.id, e);
+              record.tags = [];
+            }
+          }
+        }
+        return record;
+      });
+
       return {
-        data: data || [],
+        data: processedData,
         total,
         totalPages
       };
