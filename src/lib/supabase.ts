@@ -274,9 +274,20 @@ export const dbOperations = {
         .from('collection_records')
         .select('*', { count: 'exact' });
 
-      // فلترة السجلات حسب صلاحيات مدير الفرع
+      // فلترة السجلات حسب صلاحيات مدير الفرع (إذا كان المستخدم الحالي مدير فرع)
       if (currentUser?.role === 'branch_manager') {
         const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(currentUser.id);
+        if (allowedFieldAgentIds.length > 0) {
+          query = query.in('field_agent_id', allowedFieldAgentIds);
+        } else {
+          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي سجلات
+          return { data: [], total: 0, totalPages: 0 };
+        }
+      }
+
+      // فلترة حسب مدير الفرع المحدد في الفلاتر
+      if (filters.branch_manager_id) {
+        const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(filters.branch_manager_id);
         if (allowedFieldAgentIds.length > 0) {
           query = query.in('field_agent_id', allowedFieldAgentIds);
         } else {
@@ -288,6 +299,10 @@ export const dbOperations = {
       // Apply filters
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
+          // تخطي branch_manager_id لأنه تم معالجته أعلاه
+          if (key === 'branch_manager_id') {
+            return;
+          }
           if (key === 'status') {
             if (value === 'refused') {
               query = query.eq('is_refused', true);

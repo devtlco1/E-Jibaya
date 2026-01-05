@@ -120,6 +120,8 @@ export interface FilterState {
   rejected_photos?: 'any' | 'none' | '';
   // المحصل الميداني
   field_agent_id: string;
+  // مدير الفرع
+  branch_manager_id: string;
 }
 
 export interface ActivityLog {

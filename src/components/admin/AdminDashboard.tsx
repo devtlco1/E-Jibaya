@@ -61,6 +61,7 @@ export function AdminDashboard() {
     account_number: '',
     meter_number: '',
     region: '',
+    district: '',
     status: '',
     // الترميز الجديد
     new_zone: '',
@@ -71,7 +72,9 @@ export function AdminDashboard() {
     category: '',
     phase: '',
     // المحصل الميداني
-    field_agent_id: ''
+    field_agent_id: '',
+    // مدير الفرع
+    branch_manager_id: ''
   });
   const [allRecordsStats, setAllRecordsStats] = useState({
     total: 0,
@@ -89,13 +92,15 @@ export function AdminDashboard() {
     account_number: '',
     meter_number: '',
     region: '',
+    district: '',
     status: '',
     new_zone: '',
     new_block: '',
     verification_status: '',
     category: '',
     phase: '',
-    field_agent_id: ''
+    field_agent_id: '',
+    branch_manager_id: ''
   });
 
   // Sync filtersRef whenever filters state changes

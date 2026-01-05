@@ -140,6 +140,8 @@ export function DataTable({
     recordName: ''
   });
   const [users, setUsers] = useState<any[]>([]);
+  const [branchManagers, setBranchManagers] = useState<any[]>([]);
+  const [branchManagerFieldAgents, setBranchManagerFieldAgents] = useState<string[]>([]);
   const [availableRegions, setAvailableRegions] = useState<string[]>([]);
   const [availableZones, setAvailableZones] = useState<string[]>([]);
   const [availableBlocks, setAvailableBlocks] = useState<string[]>([]);
@@ -157,11 +159,17 @@ export function DataTable({
           setTimeout(async () => {
             const userData = await dbOperations.getUsers();
             setUsers(userData);
+            // جلب مديري الفروع
+            const branchManagersData = userData.filter((u: any) => u.role === 'branch_manager' && u.is_active);
+            setBranchManagers(branchManagersData);
           }, 100);
         } else {
           // For desktop: load immediately
           const userData = await dbOperations.getUsers();
           setUsers(userData);
+          // جلب مديري الفروع
+          const branchManagersData = userData.filter((u: any) => u.role === 'branch_manager' && u.is_active);
+          setBranchManagers(branchManagersData);
         }
       } catch (error) {
         console.error('Error loading users:', error);
@@ -169,6 +177,24 @@ export function DataTable({
     };
     loadUsers();
   }, []);
+
+  // جلب المحصلين الميدانيين التابعين لمدير الفرع المحدد
+  React.useEffect(() => {
+    const loadBranchManagerFieldAgents = async () => {
+      if (filters.branch_manager_id) {
+        try {
+          const fieldAgentIds = await dbOperations.getBranchManagerFieldAgents(filters.branch_manager_id);
+          setBranchManagerFieldAgents(fieldAgentIds);
+        } catch (error) {
+          console.error('Error loading branch manager field agents:', error);
+          setBranchManagerFieldAgents([]);
+        }
+      } else {
+        setBranchManagerFieldAgents([]);
+      }
+    };
+    loadBranchManagerFieldAgents();
+  }, [filters.branch_manager_id]);
 
   // Load available regions, zones, and blocks
   React.useEffect(() => {
@@ -1097,6 +1123,7 @@ export function DataTable({
                   <option value="ثلاثي">ثلاثي</option>
                   <option value="سي تي">سي تي</option>
                   <option value="المحولة الخاصة">المحولة الخاصة</option>
+                  <option value="مقياس الكتروني">مقياس الكتروني</option>
                 </select>
               </div>
 
@@ -1108,15 +1135,41 @@ export function DataTable({
                   value={filters.field_agent_id || ''}
                   onChange={(e) => onFiltersChange({ ...filters, field_agent_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                  disabled={!!filters.branch_manager_id}
                 >
                   <option value="">جميع المحصلين</option>
-                  {users
-                    .filter(user => user.role === 'field_agent')
-                    .map(user => (
-                      <option key={user.id} value={user.id}>
-                        {user.full_name}
-                      </option>
-                    ))}
+                  {(filters.branch_manager_id && branchManagerFieldAgents.length > 0
+                    ? users.filter(user => user.role === 'field_agent' && branchManagerFieldAgents.includes(user.id))
+                    : users.filter(user => user.role === 'field_agent')
+                  ).map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* الصف الخامس: مدير الفرع */}
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  مدير الفرع
+                </label>
+                <select
+                  value={filters.branch_manager_id || ''}
+                  onChange={(e) => {
+                    const newFilters = { ...filters, branch_manager_id: e.target.value, field_agent_id: '' };
+                    onFiltersChange(newFilters);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">جميع مديري الفروع</option>
+                  {branchManagers.map(branchManager => (
+                    <option key={branchManager.id} value={branchManager.id}>
+                      {branchManager.full_name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

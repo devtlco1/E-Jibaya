@@ -906,6 +906,7 @@ export function Reports({}: ReportsProps) {
                 <option value="ثلاثي">ثلاثي</option>
                 <option value="سي تي">سي تي</option>
                 <option value="المحولة الخاصة">المحولة الخاصة</option>
+                <option value="مقياس الكتروني">مقياس الكتروني</option>
               </select>
             </div>
 
