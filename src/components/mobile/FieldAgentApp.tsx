@@ -989,12 +989,15 @@ export function FieldAgentApp() {
           </div>
         )}
 
-        {/* Tags - تاغات المشاكل */}
+        {/* Tags - تاغات المشاكل - يظهر دائماً عند إنشاء سجل جديد */}
         {!selectedRecord && (
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
             <label className="block text-lg font-semibold text-gray-900 dark:text-white mb-4">
               تاغات المشاكل (اختياري)
             </label>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              اختر التاغات التي تنطبق على هذا السجل:
+            </p>
             <div className="flex flex-wrap gap-2">
               {['عاطل', 'متلاعب', 'مغلق', 'مهدوم', 'متروك', 'لم يعثر عليه', 'م. بدون مقياس', 'م.على المقياس', 'ق.مشكوك بها'].map((tag) => (
                 <button
@@ -1007,10 +1010,10 @@ export function FieldAgentApp() {
                       setSelectedTags([...selectedTags, tag]);
                     }
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     selectedTags.includes(tag)
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      ? 'bg-blue-600 text-white shadow-md scale-105'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-blue-400'
                   }`}
                 >
                   {tag}
@@ -1019,11 +1022,19 @@ export function FieldAgentApp() {
             </div>
             {selectedTags.length > 0 && (
               <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">التاغات المحددة:</p>
+                <p className="text-sm text-blue-800 dark:text-blue-200 mb-2 font-medium">التاغات المحددة ({selectedTags.length}):</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedTags.map((tag) => (
-                    <span key={tag} className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-medium">
+                    <span key={tag} className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-medium flex items-center">
                       {tag}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTags(selectedTags.filter(t => t !== tag))}
+                        className="mr-2 hover:bg-blue-700 rounded-full p-0.5"
+                        aria-label={`إزالة ${tag}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </span>
                   ))}
                 </div>
