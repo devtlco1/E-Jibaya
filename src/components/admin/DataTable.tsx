@@ -450,13 +450,19 @@ export function DataTable({
         }
         
         .footer {
-            background: #f5f5f5;
-            padding: 5px;
+            background: #f8f9fa;
+            padding: 10px;
             text-align: center;
-            color: #666;
-            font-size: 9px;
-            margin-top: 5px;
-            border: 1px solid #ddd;
+            color: #495057;
+            font-size: 10px;
+            margin-top: 15px;
+            border-top: 2px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .footer p {
+            margin: 4px 0;
+            line-height: 1.5;
         }
         
         @media print {
@@ -650,8 +656,8 @@ export function DataTable({
         </div>
         
         <div class="footer">
-            <p>تم إنشاء هذا التقرير في ${formatDateTime(new Date().toISOString())}</p>
-            <p>نظام إدارة الجباية - E-Jibaya</p>
+            <p style="margin-bottom: 6px; font-weight: 500;">تم إنشاء هذا التقرير في ${formatDateTime(new Date().toISOString())}</p>
+            <p style="margin: 0; font-weight: 600; color: #667eea;">نظام إدارة الجباية - E-Jibaya</p>
         </div>
     </div>
 </body>
