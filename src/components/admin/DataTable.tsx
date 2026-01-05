@@ -651,13 +651,19 @@ export function DataTable({
                     </div>
                     ` : ''}
                 </div>
+                <!-- Footer داخل قسم الصور -->
+                <div class="footer">
+                    <p style="margin-bottom: 6px; font-weight: 500;">تم إنشاء هذا التقرير في ${formatDateTime(new Date().toISOString())}</p>
+                    <p style="margin: 0; font-weight: 600; color: #667eea;">نظام إدارة الجباية - E-Jibaya</p>
+                </div>
             </div>
-            ` : ''}
-        </div>
-        
-        <div class="footer">
-            <p style="margin-bottom: 6px; font-weight: 500;">تم إنشاء هذا التقرير في ${formatDateTime(new Date().toISOString())}</p>
-            <p style="margin: 0; font-weight: 600; color: #667eea;">نظام إدارة الجباية - E-Jibaya</p>
+            ` : `
+            <!-- Footer إذا لم تكن هناك صور -->
+            <div class="footer">
+                <p style="margin-bottom: 6px; font-weight: 500;">تم إنشاء هذا التقرير في ${formatDateTime(new Date().toISOString())}</p>
+                <p style="margin: 0; font-weight: 600; color: #667eea;">نظام إدارة الجباية - E-Jibaya</p>
+            </div>
+            `}
         </div>
     </div>
 </body>
