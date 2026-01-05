@@ -1020,26 +1020,6 @@ export function FieldAgentApp() {
                 </button>
               ))}
             </div>
-            {selectedTags.length > 0 && (
-              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-800 dark:text-blue-200 mb-2 font-medium">التاغات المحددة ({selectedTags.length}):</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedTags.map((tag) => (
-                    <span key={tag} className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-medium flex items-center">
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTags(selectedTags.filter(t => t !== tag))}
-                        className="mr-2 hover:bg-blue-700 rounded-full p-0.5"
-                        aria-label={`إزالة ${tag}`}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
