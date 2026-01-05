@@ -217,13 +217,11 @@ export function FieldAgentApp() {
 
     setIsSearching(true);
     try {
-      const records = await dbOperations.getRecords();
-      const filteredRecords = records.filter(record => 
-        record.account_number && record.account_number.includes(searchAccount.trim())
-      );
-      setExistingRecords(filteredRecords);
+      // استخدام دالة البحث المحسّنة بدلاً من جلب جميع السجلات
+      const records = await dbOperations.searchRecordsByAccountNumber(searchAccount.trim(), 50);
+      setExistingRecords(records);
       
-      if (filteredRecords.length === 0) {
+      if (records.length === 0) {
         addNotification({
           type: 'info',
           title: 'لا توجد سجلات',
@@ -911,7 +909,7 @@ export function FieldAgentApp() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                المبلغ الكلي
+                المجموع المطلوب
               </label>
               <input
                 type="text"
@@ -930,7 +928,7 @@ export function FieldAgentApp() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                المبلغ الحالي
+                المبلغ المستلم
               </label>
               <input
                 type="text"

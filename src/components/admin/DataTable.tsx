@@ -58,7 +58,7 @@ export function DataTable({
     // الصنف
     category: null as 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | null,
     // نوع المقياس
-    phase: null as 'احادي' | 'ثلاثي' | 'سي تي' | 'المحولة الخاصة' | null,
+    phase: null as 'احادي' | 'ثلاثي' | 'سي تي' | 'المحولة الخاصة' | 'مقياس الكتروني' | null,
     // معامل الضرب (يظهر فقط عند اختيار سي تي)
     multiplier: '',
     // المبالغ
@@ -1149,10 +1149,10 @@ export function DataTable({
                   آخر قراءة
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                  المبلغ الكلي
+                  المجموع المطلوب
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                  المبلغ الحالي
+                  المبلغ المستلم
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   صورة المقياس
@@ -1605,7 +1605,7 @@ export function DataTable({
                     </div>
                     {(viewingRecord.total_amount !== null && viewingRecord.total_amount !== undefined) && (
                       <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المبلغ الكلي</span>
+                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المجموع المطلوب</span>
                         <p className="text-gray-900 dark:text-white font-semibold">
                           {viewingRecord.total_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع
                         </p>
@@ -1613,7 +1613,7 @@ export function DataTable({
                     )}
                     {(viewingRecord.current_amount !== null && viewingRecord.current_amount !== undefined) && (
                       <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المبلغ الحالي</span>
+                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المبلغ المستلم</span>
                         <p className="text-gray-900 dark:text-white font-semibold text-green-600 dark:text-green-400">
                           {viewingRecord.current_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع
                         </p>
@@ -2159,8 +2159,8 @@ export function DataTable({
                       <FileText className="w-4 h-4 ml-2" />
                       نوع المقياس
                     </h4>
-                    <div className="flex gap-2">
-                      {['احادي', 'ثلاثي', 'سي تي', 'المحولة الخاصة'].map((ph) => (
+                    <div className="flex gap-2 flex-wrap">
+                      {['احادي', 'ثلاثي', 'سي تي', 'المحولة الخاصة', 'مقياس الكتروني'].map((ph) => (
                         <button
                           key={ph}
                           type="button"
@@ -2248,7 +2248,7 @@ export function DataTable({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          المبلغ الكلي
+                          المجموع المطلوب
                         </label>
                         <input
                           type="text"
@@ -2267,7 +2267,7 @@ export function DataTable({
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          المبلغ الحالي
+                          المبلغ المستلم
                         </label>
                         <input
                           type="text"

@@ -407,8 +407,8 @@ export function Reports({}: ReportsProps) {
                     <th>الترميز</th>
                     <th>الصنف</th>
                     <th>النوع</th>
-                    <th>المبلغ الكلي</th>
-                    <th>المبلغ الحالي</th>
+                    <th>المجموع المطلوب</th>
+                    <th>المبلغ المستلم</th>
                     <th>الحالة</th>
                     ${filters.includeImages ? '<th>مقياس</th><th>فاتورة</th>' : ''}
                 </tr>
@@ -546,7 +546,7 @@ export function Reports({}: ReportsProps) {
                 <tr>
                     <th>تسلسل</th>
                     <th>رقم الحساب</th>
-                    <th>المبلغ الكلي</th>
+                    <th>المجموع المطلوب</th>
                     <th>المبلغ المستلم</th>
                     <th>تاريخ الاستلام</th>
                     <th>الصنف</th>
@@ -582,7 +582,7 @@ export function Reports({}: ReportsProps) {
                     <tr>
                         <th>الصنف</th>
                         <th>عدد السجلات</th>
-                        <th>المبلغ الكلي</th>
+                        <th>المجموع المطلوب</th>
                         <th>المبلغ المستلم</th>
                         <th>المبلغ المتبقي</th>
                     </tr>
@@ -1070,7 +1070,7 @@ export function Reports({}: ReportsProps) {
         {reportType === 'delivery' && (
           <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              <strong>ملاحظة:</strong> تقرير الارسالية يعرض فقط السجلات التي لديها مبلغ مستلم (المبلغ الحالي أكبر من صفر).
+              <strong>ملاحظة:</strong> تقرير الارسالية يعرض فقط السجلات التي لديها مبلغ مستلم (المبلغ المستلم أكبر من صفر).
             </p>
           </div>
         )}
@@ -1128,7 +1128,7 @@ export function Reports({}: ReportsProps) {
                           <>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">تسلسل</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">رقم الحساب</th>
-                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المبلغ الكلي</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المجموع المطلوب</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المبلغ المستلم</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">تاريخ الاستلام</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الصنف</th>

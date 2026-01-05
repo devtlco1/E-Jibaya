@@ -470,6 +470,40 @@ export const dbOperations = {
     }
   },
 
+  // البحث عن السجلات برقم الحساب (محسّن للأداء)
+  async searchRecordsByAccountNumber(accountNumber: string, limit: number = 50): Promise<CollectionRecord[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        console.warn('Supabase not configured - returning empty records array');
+        return [];
+      }
+
+      if (!accountNumber || accountNumber.trim().length === 0) {
+        return [];
+      }
+
+      // استخدام ilike للبحث الجزئي (case-insensitive)
+      // استخدام limit لتقليل عدد النتائج
+      const { data, error } = await client
+        .from('collection_records')
+        .select('*')
+        .ilike('account_number', `%${accountNumber.trim()}%`)
+        .order('submitted_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Search records by account number error:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Search records by account number error:', error);
+      return [];
+    }
+  },
+
   // جلب السجلات المفلترة للتقرير مباشرة من قاعدة البيانات (بدون تحميل جميع السجلات)
   async getFilteredRecordsForReport(filters: any, reportType?: 'standard' | 'delivery', currentUser?: User | null): Promise<CollectionRecord[]> {
     try {
