@@ -53,6 +53,8 @@ export interface CollectionRecord {
   // المبالغ
   total_amount: number | null;
   current_amount: number | null;
+  // حالة الارض
+  land_status: 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القرادة' | null;
   // تاغات المشاكل
   tags: string[] | null;
 }
@@ -90,6 +92,8 @@ export interface UpdateRecordData {
   // المبالغ
   total_amount?: number | null;
   current_amount?: number | null;
+  // حالة الارض
+  land_status?: 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القرادة' | null;
   // تاغات المشاكل
   tags?: string[] | null;
 }

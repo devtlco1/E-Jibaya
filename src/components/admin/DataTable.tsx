@@ -63,7 +63,9 @@ export function DataTable({
     multiplier: '',
     // المبالغ
     total_amount: '',
-    current_amount: ''
+    current_amount: '',
+    // حالة الارض
+    land_status: null as 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القرادة' | null
   });
   const [showFilters, setShowFilters] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
@@ -739,7 +741,9 @@ export function DataTable({
       // نوع المقياس
       phase: record.phase,
       // معامل الضرب
-      multiplier: record.multiplier || ''
+      multiplier: record.multiplier || '',
+      // حالة الارض
+      land_status: record.land_status || null
       });
 
       // إشعار صامت - لا يظهر للمستخدمين الآخرين
@@ -815,7 +819,9 @@ export function DataTable({
           multiplier: editForm.multiplier || null,
           // المبالغ
           total_amount: editForm.total_amount ? parseFloat(editForm.total_amount) : null,
-          current_amount: editForm.current_amount ? parseFloat(editForm.current_amount) : null
+          current_amount: editForm.current_amount ? parseFloat(editForm.current_amount) : null,
+          // حالة الارض
+          land_status: editForm.land_status
         };
 
         // Handle status logic
@@ -1844,6 +1850,12 @@ export function DataTable({
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">حالة الارض</span>
+                      <span className="inline-block px-3 py-1 text-sm font-semibold rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200">
+                        {viewingRecord.land_status || '—'}
+                      </span>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700">
                       <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">حالة السجل</span>
                       <span className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(getRecordStatus(viewingRecord))}`}>
                         {getRecordStatusText(viewingRecord)}
@@ -2437,6 +2449,30 @@ export function DataTable({
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* 6.5. حالة الارض */}
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
+                      <Shield className="w-4 h-4 ml-2" />
+                      حالة الارض
+                    </h4>
+                    <div className="flex flex-wrap gap-3">
+                      {(['متروك', 'مهدوم', 'لم اعثر عليه', 'ممتنع', 'تجاوز', 'قيد الانشاء', 'مبدل', 'مغلق', 'لايوجد مقياس', 'فحص مقياس', 'فارغ', 'خطاء في القرادة'] as const).map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setEditForm({ ...editForm, land_status: editForm.land_status === opt ? null : opt })}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            editForm.land_status === opt
+                              ? 'bg-indigo-500 text-white shadow-lg'
+                              : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 hover:bg-indigo-200 dark:hover:bg-indigo-800'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
                     </div>
                   </div>
 

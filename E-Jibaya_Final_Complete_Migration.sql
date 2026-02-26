@@ -128,7 +128,9 @@ CREATE TABLE public.collection_records (
     -- تدقيق الصور (التطويرات الحديثة)
     meter_photo_verified BOOLEAN DEFAULT false,
     invoice_photo_verified BOOLEAN DEFAULT false,
-    verification_status VARCHAR(20) DEFAULT 'غير مدقق' CHECK (verification_status IN ('غير مدقق', 'مدقق'))
+    verification_status VARCHAR(20) DEFAULT 'غير مدقق' CHECK (verification_status IN ('غير مدقق', 'مدقق')),
+    -- حالة الارض
+    land_status VARCHAR(50) CHECK (land_status IS NULL OR land_status IN ('متروك', 'مهدوم', 'لم اعثر عليه', 'ممتنع', 'تجاوز', 'قيد الانشاء', 'مبدل', 'مغلق', 'لايوجد مقياس', 'فحص مقياس', 'فارغ', 'خطاء في القرادة'))
 );
 
 -- جدول الصور الإضافية

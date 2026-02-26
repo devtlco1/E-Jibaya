@@ -11,7 +11,8 @@
     "remove-duplicates": "node scripts/remove-duplicate-records.js",
     "import-excel": "node scripts/import-records-from-excel.js",
     "test-import": "node scripts/test-import-10-rows.js",
-    "import-all": "node scripts/import-all-records-direct.js"
+    "import-all": "node scripts/import-all-records-direct.js",
+    "migrate:land-status": "node scripts/run-land-status-migration.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
@@ -22,6 +23,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.344.0",
     "pdf-parse": "^1.1.4",
+    "pg": "^8.19.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "xlsx": "^0.18.5"
