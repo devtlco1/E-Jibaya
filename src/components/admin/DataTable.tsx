@@ -600,6 +600,10 @@ export function DataTable({
                         <td class="value">${record.invoice_photo_verified ? '✓ مدققة' : record.invoice_photo_rejected ? '✗ مرفوضة' : 'غير مدققة'}</td>
                     </tr>
                     <tr>
+                        <td class="label">حالة الارض</td>
+                        <td class="value">${record.land_status || '—'}</td>
+                    </tr>
+                    <tr>
                         <td class="label">الحالة</td>
                         <td class="value"><span class="status-badge status-${record.is_refused ? 'refused' : record.status}">${record.is_refused ? 'امتنع' : (record.status === 'pending' ? 'قيد المراجعة' : record.status === 'completed' ? 'مكتمل' : 'غير محدد')}</span></td>
                     </tr>
@@ -1125,8 +1129,33 @@ export function DataTable({
               </div>
             </div>
 
-            {/* الصف الثالث: الحالة، التدقيق، الصور المرفوضة */}
+            {/* الصف الثالث: حالة الارض، الحالة، التدقيق */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  حالة الارض
+                </label>
+                <select
+                  value={filters.land_status || ''}
+                  onChange={(e) => onFiltersChange({ ...filters, land_status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">جميع حالات الارض</option>
+                  <option value="متروك">متروك</option>
+                  <option value="مهدوم">مهدوم</option>
+                  <option value="لم اعثر عليه">لم اعثر عليه</option>
+                  <option value="ممتنع">ممتنع</option>
+                  <option value="تجاوز">تجاوز</option>
+                  <option value="قيد الانشاء">قيد الانشاء</option>
+                  <option value="مبدل">مبدل</option>
+                  <option value="مغلق">مغلق</option>
+                  <option value="لايوجد مقياس">لايوجد مقياس</option>
+                  <option value="فحص مقياس">فحص مقياس</option>
+                  <option value="فارغ">فارغ</option>
+                  <option value="خطاء في القرادة">خطاء في القرادة</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   الحالة
@@ -1299,6 +1328,9 @@ export function DataTable({
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   صورة الفاتورة
                 </th>
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                  حالة الارض
+                </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   الحالة
                 </th>
@@ -1354,7 +1386,7 @@ export function DataTable({
                 ))
               ) : records.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={15} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     لا توجد سجلات تطابق الفلاتر المحددة
                   </td>
                 </tr>
@@ -1478,6 +1510,14 @@ export function DataTable({
                       </div>
                     ) : (
                       <span className="text-gray-400 italic text-sm">لا توجد</span>
+                    )}
+                  </td>
+                  <td 
+                    className="px-3 sm:px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate cursor-pointer hidden lg:table-cell"
+                    onClick={() => handleEdit(record)}
+                  >
+                    {record.land_status || (
+                      <span className="text-gray-400 italic">—</span>
                     )}
                   </td>
                   <td 

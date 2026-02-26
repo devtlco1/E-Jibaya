@@ -125,6 +125,8 @@ export interface FilterState {
   // فلاتر إضافية
   category: string;
   phase: string;
+  // حالة الارض
+  land_status: string;
   // الصور المرفوضة
   rejected_photos?: 'any' | 'none' | '';
   // المحصل الميداني

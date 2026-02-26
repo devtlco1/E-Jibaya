@@ -71,6 +71,7 @@ export function AdminDashboard() {
     // فلاتر إضافية
     category: '',
     phase: '',
+    land_status: '',
     // المحصل الميداني
     field_agent_id: '',
     // مدير الفرع
@@ -99,6 +100,7 @@ export function AdminDashboard() {
     verification_status: '',
     category: '',
     phase: '',
+    land_status: '',
     field_agent_id: '',
     branch_manager_id: ''
   });

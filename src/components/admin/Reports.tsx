@@ -33,6 +33,7 @@ interface ReportFilters {
   // الفلاتر الجديدة
   region: string;
   verification_status: string;
+  land_status: string;
   category: string;
   phase: string;
   // الصور المرفوضة
@@ -53,6 +54,7 @@ export function Reports({}: ReportsProps) {
     // الفلاتر الجديدة
     region: '',
     verification_status: '',
+    land_status: '',
     category: '',
     phase: '',
     // الصور المرفوضة
@@ -376,7 +378,7 @@ export function Reports({}: ReportsProps) {
             </div>
         </div>
 
-        ${filters.startDate || filters.endDate || filters.status || filters.fieldAgent ? `
+        ${filters.startDate || filters.endDate || filters.status || filters.fieldAgent || filters.land_status ? `
         <div class="filters-info">
             <h3>مرشحات التقرير:</h3>
             ${filters.startDate ? `<p><strong>من تاريخ:</strong> ${formatDate(filters.startDate)}</p>` : ''}
@@ -387,6 +389,7 @@ export function Reports({}: ReportsProps) {
             ${filters.new_block ? `<p><strong>البلوك:</strong> ${filters.new_block}</p>` : ''}
             ${filters.region ? `<p><strong>المنطقة:</strong> ${filters.region}</p>` : ''}
             ${filters.verification_status ? `<p><strong>التدقيق:</strong> ${filters.verification_status}</p>` : ''}
+            ${filters.land_status ? `<p><strong>حالة الارض:</strong> ${filters.land_status}</p>` : ''}
             ${filters.category ? `<p><strong>الصنف:</strong> ${filters.category}</p>` : ''}
             ${filters.phase ? `<p><strong>نوع المقياس:</strong> ${filters.phase}</p>` : ''}
         </div>
@@ -409,6 +412,7 @@ export function Reports({}: ReportsProps) {
                     <th>النوع</th>
                     <th>المجموع المطلوب</th>
                     <th>المبلغ المستلم</th>
+                    <th>حالة الارض</th>
                     <th>الحالة</th>
                     ${filters.includeImages ? '<th>مقياس</th><th>فاتورة</th>' : ''}
                 </tr>
@@ -432,6 +436,7 @@ export function Reports({}: ReportsProps) {
                     <td>${record.phase || '-'}</td>
                     <td>${record.total_amount ? formatIraqiCurrency(record.total_amount) : '-'}</td>
                     <td>${record.current_amount ? formatIraqiCurrency(record.current_amount) : '-'}</td>
+                    <td>${record.land_status || '-'}</td>
                     <td><span class="status status-${record.is_refused ? 'refused' : record.status}">${getStatusText(record)}</span></td>
                     ${filters.includeImages ? `
                     <td>${record.meter_photo_url ? `<span class="image-ref">${extractImageId(record.meter_photo_url)}</span>` : '-'}</td>
@@ -532,12 +537,13 @@ export function Reports({}: ReportsProps) {
             <p>تاريخ إنشاء التقرير: ${currentDate}</p>
         </div>
 
-        ${filters.startDate || filters.endDate || filters.category ? `
+        ${filters.startDate || filters.endDate || filters.category || filters.land_status ? `
         <div class="filters-info">
             <h3>مرشحات التقرير:</h3>
             ${filters.startDate ? `<p><strong>من تاريخ:</strong> ${formatDate(filters.startDate)}</p>` : ''}
             ${filters.endDate ? `<p><strong>إلى تاريخ:</strong> ${formatDate(filters.endDate)}</p>` : ''}
             ${filters.category ? `<p><strong>الصنف:</strong> ${filters.category}</p>` : ''}
+            ${filters.land_status ? `<p><strong>حالة الارض:</strong> ${filters.land_status}</p>` : ''}
         </div>
         ` : ''}
 
@@ -858,6 +864,31 @@ export function Reports({}: ReportsProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                حالة الارض
+              </label>
+              <select
+                value={filters.land_status}
+                onChange={(e) => setFilters({ ...filters, land_status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">جميع حالات الارض</option>
+                <option value="متروك">متروك</option>
+                <option value="مهدوم">مهدوم</option>
+                <option value="لم اعثر عليه">لم اعثر عليه</option>
+                <option value="ممتنع">ممتنع</option>
+                <option value="تجاوز">تجاوز</option>
+                <option value="قيد الانشاء">قيد الانشاء</option>
+                <option value="مبدل">مبدل</option>
+                <option value="مغلق">مغلق</option>
+                <option value="لايوجد مقياس">لايوجد مقياس</option>
+                <option value="فحص مقياس">فحص مقياس</option>
+                <option value="فارغ">فارغ</option>
+                <option value="خطاء في القرادة">خطاء في القرادة</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الصور المرفوضة
               </label>
               <select
@@ -1139,6 +1170,7 @@ export function Reports({}: ReportsProps) {
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">#</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المشترك</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الحساب</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">حالة الارض</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الحالة</th>
                             {filters.includeImages && (
                               <>
@@ -1183,6 +1215,9 @@ export function Reports({}: ReportsProps) {
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
                                 {record.account_number || 'غير محدد'}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                {record.land_status || '—'}
                               </td>
                               <td className="px-4 py-2 text-sm">
                                 <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(getRecordStatus(record))}`}>
