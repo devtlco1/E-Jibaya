@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { User, CollectionRecord, CreateRecordData, UpdateRecordData, ActivityLog, CreateActivityLogData, RecordPhoto } from '../types';
+import { User, CollectionRecord, CreateRecordData, CreateRecordFromDashboardData, UpdateRecordData, ActivityLog, CreateActivityLogData, RecordPhoto } from '../types';
 import { hashPassword, verifyPassword } from '../utils/hash';
 import { rateLimiter } from '../utils/rateLimiter';
 import { cacheService } from '../utils/cache';
@@ -414,6 +414,64 @@ export const dbOperations = {
       return data;
     } catch (error) {
       console.error('Create record error:', error);
+      throw error;
+    }
+  },
+
+  // إنشاء سجل من الداشبورد (بدون صور وبدون GPS - المحصل يضيفها لاحقاً)
+  async createRecordFromDashboard(data: CreateRecordFromDashboardData): Promise<CollectionRecord | null> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      const recordData: any = {
+        subscriber_name: data.subscriber_name || null,
+        account_number: data.account_number || null,
+        meter_number: data.meter_number || null,
+        region: data.region || null,
+        district: data.district || null,
+        last_reading: data.last_reading || null,
+        new_zone: data.new_zone || null,
+        new_block: data.new_block || null,
+        new_home: data.new_home || null,
+        category: data.category,
+        phase: data.phase,
+        multiplier: data.multiplier || null,
+        total_amount: data.total_amount ?? null,
+        current_amount: data.current_amount ?? null,
+        land_status: data.land_status ?? null,
+        status: data.status || 'pending',
+        field_agent_id: null,
+        gps_latitude: null,
+        gps_longitude: null,
+        meter_photo_url: null,
+        invoice_photo_url: null,
+        is_refused: false,
+        meter_photo_verified: false,
+        invoice_photo_verified: false,
+        verification_status: 'غير مدقق'
+      };
+
+      const { data: result, error } = await client
+        .from('collection_records')
+        .insert(recordData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Create record from dashboard error:', error);
+        throw new Error(`فشل في إنشاء السجل: ${error.message}`);
+      }
+
+      cacheService.clearRecordsCache();
+      cacheService.clearUsersCache();
+      localStorage.removeItem('ejibaya_cache');
+
+      return result;
+    } catch (error) {
+      console.error('Create record from dashboard error:', error);
       throw error;
     }
   },

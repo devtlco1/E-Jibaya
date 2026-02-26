@@ -73,6 +73,25 @@ export interface CreateRecordData {
   tags?: string[] | null;
 }
 
+export interface CreateRecordFromDashboardData {
+  subscriber_name: string;
+  account_number: string;
+  meter_number: string;
+  region: string;
+  district: string;
+  last_reading: string;
+  new_zone?: string | null;
+  new_block?: string | null;
+  new_home?: string | null;
+  category: 'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي' | null;
+  phase: 'احادي' | 'ثلاثي' | 'سي تي' | 'المحولة الخاصة' | 'مقياس الكتروني' | null;
+  multiplier?: string | null;
+  total_amount?: number | null;
+  current_amount?: number | null;
+  land_status?: 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القرادة' | null;
+  status?: 'pending' | 'completed' | 'refused';
+}
+
 export interface UpdateRecordData {
   subscriber_name: string;
   account_number: string;

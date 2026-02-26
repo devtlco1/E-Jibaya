@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DataTable } from './DataTable';
+import { AddRecordModal } from './AddRecordModal';
 import { UserManagement } from './UserManagement';
 import { Reports } from './Reports';
 import { ActivityLogs } from './ActivityLogs';
@@ -21,7 +22,8 @@ import {
   FileBarChart,
   UserCheck,
   HardDrive,
-  Lock
+  Lock,
+  Plus
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -86,6 +88,7 @@ export function AdminDashboard() {
     locked: 0
   });
   const [fieldAgentsCount, setFieldAgentsCount] = useState(0);
+  const [showAddRecordModal, setShowAddRecordModal] = useState(false);
 
   // Keep latest filters in a ref to avoid stale closures inside realtime/polling callbacks
   const filtersRef = useRef<FilterState>({
@@ -841,7 +844,17 @@ export function AdminDashboard() {
         {/* Tab Content */}
         <div className="min-h-[400px]">
           {activeTab === 'records' && (
-            <DataTable
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowAddRecordModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4 ml-2" />
+                  إضافة سجل
+                </button>
+              </div>
+              <DataTable
               records={records}
               totalRecords={totalRecords}
               currentPage={currentPage}
@@ -856,6 +869,7 @@ export function AdminDashboard() {
               onDeleteRecord={handleDeleteRecord}
               onRecordUpdate={updateRecordLockStatus}
             />
+            </div>
           )}
           {activeTab === 'users' && (
             <UserManagement key="users-tab" onUserStatusChange={refreshFieldAgentsCount} />
@@ -870,6 +884,21 @@ export function AdminDashboard() {
             <BackupSystem key="backup-tab" />
           )}
         </div>
+
+        {showAddRecordModal && (
+          <AddRecordModal
+            onClose={() => setShowAddRecordModal(false)}
+            onSuccess={() => {
+              loadRecords();
+              const fetchStats = async () => {
+                const newStats = await dbOperations.getRecordsStats();
+                const lockedCount = newStats.locked ?? 0;
+                setAllRecordsStats({ ...newStats, locked: lockedCount });
+              };
+              fetchStats();
+            }}
+          />
+        )}
       </div>
     </div>
   );
