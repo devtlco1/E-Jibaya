@@ -1121,6 +1121,14 @@ export const dbOperations = {
         throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
 
+      // منع تعطيل أو حذف المدير الأساسي (username: admin)
+      if (updates.is_active === false || (typeof updates.username === 'string' && updates.username.includes('(محذوف)'))) {
+        const { data: user } = await client.from('users').select('username').eq('id', id).single();
+        if (user && (user.username?.replace?.(' (محذوف)', '') === 'admin' || id === '1')) {
+          throw new Error('لا يمكن حذف أو تعطيل حساب المدير الأساسي');
+        }
+      }
+
       const updateData = { ...updates };
       
       // تشفير كلمة المرور إذا تم تحديثها
