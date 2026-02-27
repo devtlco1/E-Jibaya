@@ -12,7 +12,8 @@
     "import-excel": "node scripts/import-records-from-excel.js",
     "test-import": "node scripts/test-import-10-rows.js",
     "import-all": "node scripts/import-all-records-direct.js",
-    "migrate:land-status": "node scripts/run-land-status-migration.js"
+    "migrate:land-status": "node scripts/run-land-status-migration.js",
+    "migrate:branch-employees": "node scripts/run-branch-manager-employees-migration.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

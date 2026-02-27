@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { User, CollectionRecord, CreateRecordData, CreateRecordFromDashboardData, UpdateRecordData, ActivityLog, CreateActivityLogData, RecordPhoto } from '../types';
+import { User, CollectionRecord, CreateRecordData, CreateRecordFromDashboardData, UpdateRecordData, UserAchievement, ActivityLog, CreateActivityLogData, RecordPhoto } from '../types';
 import { hashPassword, verifyPassword } from '../utils/hash';
 import { rateLimiter } from '../utils/rateLimiter';
 import { cacheService } from '../utils/cache';
@@ -253,6 +253,64 @@ export const dbOperations = {
       return true;
     } catch (error) {
       console.error('Remove field agent from branch manager error:', error);
+      throw error;
+    }
+  },
+
+  async getBranchManagerEmployees(branchManagerId: string): Promise<string[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return [];
+      
+      const { data, error } = await client
+        .from('branch_manager_employees')
+        .select('employee_id')
+        .eq('branch_manager_id', branchManagerId);
+      
+      if (error) {
+        console.error('Get branch manager employees error:', error);
+        return [];
+      }
+      
+      return (data || []).map((item: any) => item.employee_id);
+    } catch (error) {
+      console.error('Get branch manager employees error:', error);
+      return [];
+    }
+  },
+
+  async addEmployeeToBranchManager(branchManagerId: string, employeeId: string, createdBy?: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) throw new Error('فشل في الاتصال بقاعدة البيانات');
+      
+      const insertData: any = { branch_manager_id: branchManagerId, employee_id: employeeId };
+      if (createdBy) insertData.created_by = createdBy;
+      
+      const { error } = await client.from('branch_manager_employees').insert(insertData);
+      if (error) throw new Error(`فشل في إضافة الموظف: ${error.message}`);
+      return true;
+    } catch (error) {
+      console.error('Add employee to branch manager error:', error);
+      throw error;
+    }
+  },
+
+  async removeEmployeeFromBranchManager(branchManagerId: string, employeeId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) throw new Error('فشل في الاتصال بقاعدة البيانات');
+      
+      const { error } = await client
+        .from('branch_manager_employees')
+        .delete()
+        .eq('branch_manager_id', branchManagerId)
+        .eq('employee_id', employeeId);
+      
+      if (error) throw new Error(`فشل في حذف الموظف: ${error.message}`);
+      return true;
+    } catch (error) {
+      console.error('Remove employee from branch manager error:', error);
       throw error;
     }
   },
@@ -902,6 +960,88 @@ export const dbOperations = {
     } catch (error) {
       console.error('Delete record error:', error);
       throw error;
+    }
+  },
+
+  // إنجازات المستخدمين (للمدير فقط)
+  async getUsersAchievements(startDate: string, endDate: string): Promise<UserAchievement[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return [];
+
+      const start = `${startDate}T00:00:00`;
+      const end = `${endDate}T23:59:59`;
+
+      const [usersRes, recordsSubmittedRes, recordsCompletedRes, activityRes] = await Promise.all([
+        client.from('users').select('id, full_name, username, role').eq('is_active', true),
+        client.from('collection_records')
+          .select('field_agent_id, submitted_at')
+          .gte('submitted_at', start)
+          .lte('submitted_at', end),
+        client.from('collection_records')
+          .select('completed_by, completed_at, status, is_refused')
+          .not('completed_at', 'is', null)
+          .gte('completed_at', start)
+          .lte('completed_at', end),
+        client.from('activity_logs')
+          .select('user_id, action, created_at, details')
+          .gte('created_at', start)
+          .lte('created_at', end)
+      ]);
+
+      const users = usersRes.data || [];
+      const recordsSubmitted = recordsSubmittedRes.data || [];
+      const recordsCompleted = recordsCompletedRes.data || [];
+      const activities = activityRes.data || [];
+
+      const achievements: UserAchievement[] = users.map((u: User) => {
+        const recordsAdded = recordsSubmitted.filter((r: any) => r.field_agent_id === u.id).length;
+        const recordsAddedDashboard = activities.filter((a: any) => a.user_id === u.id && a.action === 'create_record' && a.details?.from_dashboard).length;
+        const rcCount = recordsCompleted.filter((r: any) => r.completed_by === u.id && !r.is_refused && r.status === 'completed').length;
+        const rrCount = recordsCompleted.filter((r: any) => r.completed_by === u.id && (r.is_refused || r.status === 'refused')).length;
+        const recordsUpdated = activities.filter((a: any) => a.user_id === u.id && a.action === 'update_record').length;
+        const userActivities = activities.filter((a: any) => a.user_id === u.id);
+        const lastInRange = userActivities.length > 0
+          ? userActivities.reduce((max: string, a: any) => (a.created_at > max ? a.created_at : max), '')
+          : null;
+        const allUserActivities = activities; // نحتاج آخر نشاط من كل الactivity_logs - سنجلبها بشكل منفصل
+        return {
+          user_id: u.id,
+          full_name: u.full_name,
+          username: u.username,
+          role: u.role,
+          records_added: recordsAdded,
+          records_added_dashboard: recordsAddedDashboard,
+          records_completed: rcCount,
+          records_refused: rrCount,
+          records_updated: recordsUpdated,
+          total_actions: userActivities.length,
+          last_activity: lastInRange
+        };
+      });
+
+      // جلب آخر نشاط فعلي لكل مستخدم (خارج نطاق التاريخ إن لزم)
+      const { data: lastActs } = await client
+        .from('activity_logs')
+        .select('user_id, created_at')
+        .order('created_at', { ascending: false });
+
+      const lastByUser: Record<string, string> = {};
+      (lastActs || []).forEach((a: any) => {
+        if (a.user_id && !lastByUser[a.user_id]) lastByUser[a.user_id] = a.created_at;
+      });
+      achievements.forEach(a => {
+        a.last_activity = a.last_activity || lastByUser[a.user_id] || null;
+      });
+
+      return achievements.sort((a, b) => {
+        const totalA = a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated;
+        const totalB = b.records_added + b.records_added_dashboard + b.records_completed + b.records_updated;
+        return totalB - totalA;
+      });
+    } catch (error) {
+      console.error('Get users achievements error:', error);
+      return [];
     }
   },
 

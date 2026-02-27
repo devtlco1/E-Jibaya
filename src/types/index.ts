@@ -154,6 +154,20 @@ export interface FilterState {
   branch_manager_id: string;
 }
 
+export interface UserAchievement {
+  user_id: string;
+  full_name: string;
+  username: string;
+  role: string;
+  records_added: number;
+  records_added_dashboard: number;
+  records_completed: number;
+  records_refused: number;
+  records_updated: number;
+  total_actions: number;
+  last_activity: string | null;
+}
+
 export interface ActivityLog {
   id: string;
   user_id: string | null;

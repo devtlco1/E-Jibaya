@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DataTable } from './DataTable';
 import { AddRecordModal } from './AddRecordModal';
+import { Achievements } from './Achievements';
 import { UserManagement } from './UserManagement';
 import { Reports } from './Reports';
 import { ActivityLogs } from './ActivityLogs';
@@ -23,7 +24,8 @@ import {
   UserCheck,
   HardDrive,
   Lock,
-  Plus
+  Plus,
+  Trophy
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -31,7 +33,7 @@ export function AdminDashboard() {
   const { isDark, toggleTheme } = useTheme();
   const { addNotification } = useNotifications();
   
-  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities' | 'backup'>('records');
+  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities' | 'backup' | 'achievements'>('records');
 
   // Redirect employees and branch managers to records tab if they try to access restricted tabs
   // Note: employees now have access to users tab for user management
@@ -40,6 +42,9 @@ export function AdminDashboard() {
       setActiveTab('records');
     }
     if (user?.role === 'branch_manager' && activeTab === 'backup') {
+      setActiveTab('records');
+    }
+    if (user?.role !== 'admin' && activeTab === 'achievements') {
       setActiveTab('records');
     }
   }, [user?.role, activeTab]);
@@ -391,25 +396,23 @@ export function AdminDashboard() {
     try {
       const isMobile = window.innerWidth <= 768;
       if (isMobile) {
-        // For mobile: delay loading field agents count
+        // For mobile: delay loading users count
         setTimeout(async () => {
           const users = await dbOperations.getUsers();
-          const activeFieldAgents = users.filter(user => 
-            user.role === 'field_agent' && 
-            user.is_active && 
+          const activeUsers = users.filter(user =>
+            user.is_active &&
             !user.username.includes('(محذوف)')
           );
-          setFieldAgentsCount(activeFieldAgents.length);
+          setFieldAgentsCount(activeUsers.length);
         }, 200);
       } else {
         // For desktop: load immediately
         const users = await dbOperations.getUsers();
-        const activeFieldAgents = users.filter(user => 
-          user.role === 'field_agent' && 
-          user.is_active && 
+        const activeUsers = users.filter(user =>
+          user.is_active &&
           !user.username.includes('(محذوف)')
         );
-        setFieldAgentsCount(activeFieldAgents.length);
+        setFieldAgentsCount(activeUsers.length);
       }
     } catch (error) {
       console.error('Error loading field agents count:', error);
@@ -751,7 +754,7 @@ export function AdminDashboard() {
                 <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">المحصلين</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">المستخدمين</p>
                 <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{fieldAgentsCount}</p>
               </div>
             </div>
@@ -806,6 +809,22 @@ export function AdminDashboard() {
                 <span className="sm:hidden">التقارير</span>
               </div>
             </button>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setActiveTab('achievements')}
+                className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                  activeTab === 'achievements'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center">
+                  <Trophy className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                  <span className="hidden sm:inline">الانجازات</span>
+                  <span className="sm:hidden">الانجازات</span>
+                </div>
+              </button>
+            )}
             {user?.role === 'admin' && (
               <button
                 onClick={() => setActiveTab('activities')}
@@ -876,6 +895,9 @@ export function AdminDashboard() {
           )}
           {activeTab === 'reports' && (
             <Reports key="reports-tab" />
+          )}
+          {activeTab === 'achievements' && (
+            <Achievements key="achievements-tab" />
           )}
           {activeTab === 'activities' && (
             <ActivityLogs key="activities-tab" />
