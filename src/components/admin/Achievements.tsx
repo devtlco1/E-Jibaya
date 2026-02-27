@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, Users } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { UserAchievement } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { Pagination } from '../common/Pagination';
 
 export function Achievements() {
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d.toISOString().slice(0, 10);
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [startDate, setStartDate] = useState('2000-01-01');
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,6 +28,7 @@ export function Achievements() {
     try {
       const data = await dbOperations.getUsersAchievements(startDate, endDate);
       setAchievements(data);
+      setCurrentPage(1);
     } catch (error) {
       addNotification({
         type: 'error',
@@ -39,6 +39,10 @@ export function Achievements() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadAchievements();
+  }, []);
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
@@ -53,6 +57,11 @@ export function Achievements() {
   const getTotalScore = (a: UserAchievement) =>
     a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated;
 
+  const totalItems = achievements.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedAchievements = achievements.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -65,7 +74,7 @@ export function Achievements() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex flex-wrap items-end gap-4 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">من تاريخ</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">من تاريخ (فلتر)</label>
             <input
               type="date"
               value={startDate}
@@ -74,7 +83,7 @@ export function Achievements() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">إلى تاريخ</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">إلى تاريخ (فلتر)</label>
             <input
               type="date"
               value={endDate}
@@ -88,7 +97,7 @@ export function Achievements() {
             className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium disabled:opacity-50"
           >
             <TrendingUp className="w-4 h-4 ml-2" />
-            {loading ? 'جاري التحميل...' : 'عرض النتائج'}
+            {loading ? 'جاري التحميل...' : 'تطبيق الفلتر'}
           </button>
         </div>
 
@@ -110,15 +119,17 @@ export function Achievements() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {achievements.map((a, i) => (
+                {paginatedAchievements.map((a, i) => {
+                  const rank = startIndex + i + 1;
+                  return (
                   <tr key={a.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                      {i < 3 && getTotalScore(a) > 0 ? (
-                        <span className={`font-bold ${i === 0 ? 'text-amber-500' : i === 1 ? 'text-gray-400' : 'text-amber-700'}`}>
-                          {i + 1}
+                      {rank <= 3 && getTotalScore(a) > 0 ? (
+                        <span className={`font-bold ${rank === 1 ? 'text-amber-500' : rank === 2 ? 'text-gray-400' : 'text-amber-700'}`}>
+                          {rank}
                         </span>
                       ) : (
-                        i + 1
+                        rank
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
@@ -150,16 +161,33 @@ export function Achievements() {
                       {a.last_activity ? formatDateTime(a.last_activity) : '—'}
                     </td>
                   </tr>
-                ))}
+                );})}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {achievements.length > 0 && (
+          <div className="mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(n) => {
+                setItemsPerPage(n);
+                setCurrentPage(1);
+              }}
+              loading={loading}
+            />
           </div>
         )}
 
         {achievements.length === 0 && !loading && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>اختر الفترة الزمنية واضغط "عرض النتائج" لعرض إنجازات المستخدمين</p>
+            <p>لا توجد إنجازات في الفترة المحددة</p>
           </div>
         )}
       </div>

@@ -58,13 +58,20 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     ? (currentUser.username?.replace?.(' (محذوف)', '') === 'admin' || currentUser.id === '1')
     : false;
 
-  // هل يسمح للمستخدم الحالي بإدارة هذا المستخدم (تعديل/حذف/تعطيل)؟
-  // المدير الأساسي: يكدر يغير الكل (ماعدا admin المحمي)
-  // المدير العادي: يكدر يغير الكل ماعدا المستخدمين بنفس صلاحيته (admin)
-  const canManageUser = (targetUser: User) => {
+  // هل يسمح للمستخدم الحالي بتعديل هذا المستخدم؟ (المدير الأساسي يكدر يغير كلمة مرور حسابه)
+  const canEditUser = (targetUser: User) => {
+    if (isProtectedAdminUser(targetUser)) {
+      return targetUser.id === currentUser?.id; // المدير الأساسي يكدر يغير حسابه (كلمة مرور)
+    }
+    if (isMainAdmin) return true;
+    if (targetUser.role === 'admin') return false;
+    return true;
+  };
+
+  // هل يسمح بالحذف/التعطيل؟ (حساب admin لا ينحذف ولا ينعطل حتى من نفسه)
+  const canDeleteOrToggleUser = (targetUser: User) => {
     if (isProtectedAdminUser(targetUser)) return false;
     if (isMainAdmin) return true;
-    // مدير عادي: لا يكدر يغير مديرين آخرين، لكن يكدر يغير البقية
     if (targetUser.role === 'admin') return false;
     return true;
   };
@@ -351,8 +358,8 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   };
 
   const handleEditUser = (user: User) => {
-    // منع تعديل المدير الأساسي
-    if (isProtectedAdminUser(user)) {
+    // المدير الأساسي يكدر يغير حسابه (كلمة المرور)
+    if (isProtectedAdminUser(user) && user.id !== currentUser?.id) {
       addNotification({
         type: 'error',
         title: 'غير مسموح',
@@ -399,7 +406,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
 
   const handleUpdateUser = async () => {
     if (editingUser) {
-      if (isProtectedAdminUser(editingUser)) {
+      if (isProtectedAdminUser(editingUser) && editingUser.id !== currentUser?.id) {
         addNotification({
           type: 'error',
           title: 'غير مسموح',
@@ -408,6 +415,39 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         return;
       }
       try {
+        // المدير الأساسي يعدل حسابه: كلمة المرور فقط
+        const isAdminSelfEdit = isProtectedAdminUser(editingUser) && editingUser.id === currentUser?.id;
+        if (isAdminSelfEdit) {
+          const updates: Partial<User> = {};
+          if (newUser.password) {
+            updates.password_hash = newUser.password;
+          } else {
+            addNotification({
+              type: 'warning',
+              title: 'تحذير',
+              message: 'يرجى إدخال كلمة مرور جديدة'
+            });
+            return;
+          }
+          const success = await dbOperations.updateUser(editingUser.id, updates);
+          if (success) {
+            setEditingUser(null);
+            setNewUser({ username: '', password: '', full_name: '', role: 'field_agent' });
+            setShowPassword(false);
+            addNotification({
+              type: 'success',
+              title: 'تم التحديث',
+              message: 'تم تحديث كلمة المرور بنجاح'
+            });
+          } else {
+            addNotification({
+              type: 'error',
+              title: 'فشل في التحديث',
+              message: 'حدث خطأ أثناء تحديث كلمة المرور'
+            });
+          }
+          return;
+        }
         // صلاحيات الموظف: إذا كان الموظف يعدل حسابه الخاص، يمكنه تغيير كلمة المرور فقط
         if (currentUser?.role === 'employee' && editingUser.id === currentUser.id) {
           const updates: Partial<User> = {};
@@ -834,15 +874,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     ) : (
                       <button
                         onClick={() => toggleUserStatus(user.id)}
-                        disabled={!canManageUser(user)}
+                        disabled={!canDeleteOrToggleUser(user)}
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
                           user.is_active
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={
-                          !canManageUser(user)
-                            ? 'لا يمكنك تعديل المستخدمين بنفس صلاحيتك (مدير)'
+                          !canDeleteOrToggleUser(user)
+                            ? (isProtectedAdminUser(user) ? 'لا يمكن تعطيل المدير الأساسي' : 'لا يمكنك تعديل المستخدمين بنفس صلاحيتك (مدير)')
                             : user.is_active ? 'تعطيل' : 'تفعيل'
                         }
                       >
@@ -869,12 +909,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       </button>
                       <button
                         onClick={() => handleEditUser(user)}
-                        disabled={!canManageUser(user)}
+                        disabled={!canEditUser(user)}
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={
-                          !canManageUser(user)
-                            ? 'لا يمكنك تعديل المستخدمين بنفس صلاحيتك (مدير)'
-                            : 'تعديل'
+                          !canEditUser(user)
+                            ? (isProtectedAdminUser(user) && user.id !== currentUser?.id ? 'لا يمكن تعديل المدير الأساسي' : 'لا يمكنك تعديل المستخدمين بنفس صلاحيتك (مدير)')
+                            : (isProtectedAdminUser(user) && user.id === currentUser?.id ? 'تعديل كلمة المرور' : 'تعديل')
                         }
                       >
                         <Edit className="w-4 h-4" />
@@ -892,12 +932,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                         <button
                           onClick={() => handleDeleteUser(user.id)}
                           disabled={
-                            !canManageUser(user) ||
+                            !canDeleteOrToggleUser(user) ||
                             (users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin')
                           }
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={
-                            !canManageUser(user)
+                            !canDeleteOrToggleUser(user)
                               ? (isProtectedAdminUser(user) ? 'لا يمكن حذف أو تعطيل المدير الأساسي' : 'لا يمكنك تعديل المستخدمين بنفس صلاحيتك (مدير)')
                               : users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin'
                                 ? 'لا يمكن إلغاء تفعيل آخر مدير'
@@ -1189,7 +1229,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  تعديل المستخدم
+                  {isProtectedAdminUser(editingUser) && editingUser.id === currentUser?.id ? 'تعديل كلمة المرور' : 'تعديل المستخدم'}
                 </h3>
                 <button
                   onClick={() => setEditingUser(null)}
@@ -1200,13 +1240,13 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
               </div>
 
               <div className="space-y-4">
-                {currentUser?.role === 'employee' && editingUser.id === currentUser.id && (
+                {(currentUser?.role === 'employee' && editingUser.id === currentUser.id) || (isProtectedAdminUser(editingUser) && editingUser.id === currentUser?.id) ? (
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
                     <p className="text-sm text-blue-800 dark:text-blue-200">
                       يمكنك تغيير كلمة المرور فقط
                     </p>
                   </div>
-                )}
+                ) : null}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     اسم المستخدم
@@ -1215,7 +1255,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     type="text"
                     value={newUser.username}
                     onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                    disabled={currentUser?.role === 'employee' && editingUser.id === currentUser.id}
+                    disabled={editingUser.id === currentUser?.id && (currentUser?.role === 'employee' || isProtectedAdminUser(editingUser))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="أدخل اسم المستخدم"
                   />
@@ -1223,7 +1263,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {currentUser?.role === 'employee' && editingUser.id === currentUser.id 
+                    {(currentUser?.role === 'employee' || (isProtectedAdminUser(editingUser) && editingUser.id === currentUser?.id)) && editingUser.id === currentUser?.id
                       ? 'كلمة المرور الجديدة' 
                       : 'كلمة المرور (اتركها فارغة لعدم التغيير)'}
                   </label>
@@ -1244,7 +1284,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     type="text"
                     value={newUser.full_name}
                     onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
-                    disabled={currentUser?.role === 'employee' && editingUser.id === currentUser.id}
+                    disabled={editingUser.id === currentUser?.id && (currentUser?.role === 'employee' || isProtectedAdminUser(editingUser))}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="أدخل الاسم الكامل"
                   />
@@ -1276,7 +1316,11 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                   </button>
                   <button
                     onClick={handleUpdateUser}
-                    disabled={!newUser.username || !newUser.full_name}
+                    disabled={
+                      (isProtectedAdminUser(editingUser) && editingUser.id === currentUser?.id)
+                        ? !newUser.password
+                        : !newUser.username || !newUser.full_name
+                    }
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center"
                   >
                     <Save className="w-4 h-4 ml-2" />
