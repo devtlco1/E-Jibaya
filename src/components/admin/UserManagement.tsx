@@ -53,6 +53,19 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const isProtectedAdminUser = (user: User) =>
     user.username.replace(' (محذوف)', '') === 'admin' || user.id === '1';
 
+  // المدير الأساسي الحالي - له صلاحية تغيير كل المستخدمين
+  const isMainAdmin = currentUser
+    ? (currentUser.username?.replace?.(' (محذوف)', '') === 'admin' || currentUser.id === '1')
+    : false;
+
+  // هل يسمح للمستخدم الحالي بإدارة هذا المستخدم (تعديل/حذف/تعطيل)؟
+  const canManageUser = (targetUser: User) => {
+    if (isProtectedAdminUser(targetUser)) return false;
+    if (isMainAdmin) return true;
+    // المديرون الآخرون: حسابه الخاص فقط
+    return targetUser.id === currentUser?.id;
+  };
+
   // Load users on component mount
   React.useEffect(() => {
     loadUsers();
@@ -344,6 +357,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       });
       return;
     }
+    // المدير (غير الأساسي): حسابه الخاص فقط
+    if (currentUser?.role === 'admin' && !isMainAdmin && user.id !== currentUser.id) {
+      addNotification({
+        type: 'error',
+        title: 'غير مسموح',
+        message: 'يمكنك تعديل حسابك الخاص فقط'
+      });
+      return;
+    }
     
     // صلاحيات الموظف: يمكن تعديل حسابه الخاص فقط (كلمة المرور فقط)
     if (currentUser?.role === 'employee') {
@@ -539,6 +561,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         return;
       }
       
+      // المدير (غير الأساسي): حسابه الخاص فقط
+      if (currentUser?.role === 'admin' && !isMainAdmin && user.id !== currentUser.id) {
+        addNotification({
+          type: 'error',
+          title: 'غير مسموح',
+          message: 'يمكنك إدارة حسابك الخاص فقط'
+        });
+        return;
+      }
       // صلاحيات الموظف: لا يمكن حذف أو تعطيل حسابات الموظفين أو المديرين
       if (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) {
         addNotification({
@@ -643,6 +674,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         });
         return;
       }
+      // المدير (غير الأساسي): حسابه الخاص فقط
+      if (currentUser?.role === 'admin' && !isMainAdmin && user.id !== currentUser.id) {
+        addNotification({
+          type: 'error',
+          title: 'غير مسموح',
+          message: 'يمكنك إدارة حسابك الخاص فقط'
+        });
+        return;
+      }
       // صلاحيات الموظف: يمكن تعطيل/تفعيل المحصل الميداني فقط
       if (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) {
         addNotification({
@@ -715,16 +755,18 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
           إدارة المستخدمين
         </h2>
-        <button
-          onClick={() => {
-            setNewUser({ username: '', password: '', full_name: '', role: currentUser?.role === 'employee' ? 'field_agent' : 'field_agent' });
-            setShowCreateForm(true);
-          }}
-          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-        >
-          <UserPlus className="w-4 h-4 ml-2" />
-          إضافة مستخدم جديد
-        </button>
+        {(isMainAdmin || currentUser?.role === 'employee') && (
+          <button
+            onClick={() => {
+              setNewUser({ username: '', password: '', full_name: '', role: currentUser?.role === 'employee' ? 'field_agent' : 'field_agent' });
+              setShowCreateForm(true);
+            }}
+            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+          >
+            <UserPlus className="w-4 h-4 ml-2" />
+            إضافة مستخدم جديد
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -829,21 +871,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     ) : (
                       <button
                         onClick={() => toggleUserStatus(user.id)}
-                        disabled={
-                          isProtectedAdminUser(user) ||
-                          (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
-                        }
+                        disabled={!canManageUser(user)}
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
                           user.is_active
                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={
-                          isProtectedAdminUser(user)
-                            ? 'لا يمكن تعطيل المدير الأساسي'
-                            : (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee'))
-                              ? 'يمكن للموظفين تعطيل/تفعيل حسابات المحصلين الميدانيين فقط'
-                              : user.is_active ? 'تعطيل' : 'تفعيل'
+                          !canManageUser(user)
+                            ? 'يمكنك إدارة حسابك الخاص فقط'
+                            : user.is_active ? 'تعطيل' : 'تفعيل'
                         }
                       >
                         {user.is_active ? (
@@ -869,24 +906,19 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       </button>
                       <button
                         onClick={() => handleEditUser(user)}
-                        disabled={
-                          isProtectedAdminUser(user) ||
-                          (currentUser?.role === 'employee' && user.id !== currentUser.id && (user.role === 'admin' || user.role === 'employee'))
-                        }
+                        disabled={!canManageUser(user)}
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={
-                          isProtectedAdminUser(user)
-                            ? 'لا يمكن تعديل المدير الأساسي'
-                            : (currentUser?.role === 'employee' && user.id !== currentUser.id && (user.role === 'admin' || user.role === 'employee'))
-                              ? 'لا يمكن للموظفين تعديل حسابات المديرين أو الموظفين الآخرين'
-                              : (currentUser?.role === 'employee' && user.id === currentUser.id)
-                                ? 'تعديل كلمة المرور'
-                                : 'تعديل'
+                          !canManageUser(user)
+                            ? 'يمكنك تعديل حسابك الخاص فقط'
+                            : (currentUser?.role === 'employee' && user.id === currentUser.id)
+                              ? 'تعديل كلمة المرور'
+                              : 'تعديل'
                         }
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      {user.role === 'branch_manager' && (currentUser?.role === 'admin' || currentUser?.role === 'employee') && (
+                      {user.role === 'branch_manager' && (isMainAdmin || currentUser?.role === 'employee') && (
                         <button
                           onClick={() => handleManageFieldAgents(user)}
                           className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
@@ -899,13 +931,13 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                         <button
                           onClick={() => handleDeleteUser(user.id)}
                           disabled={
-                            isProtectedAdminUser(user) ||
+                            !canManageUser(user) ||
                             (users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin')
                           }
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={
-                            isProtectedAdminUser(user)
-                              ? 'لا يمكن حذف أو تعطيل المدير الأساسي'
+                            !canManageUser(user)
+                              ? (isProtectedAdminUser(user) ? 'لا يمكن حذف أو تعطيل المدير الأساسي' : 'يمكنك إدارة حسابك الخاص فقط')
                               : users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin'
                                 ? 'لا يمكن إلغاء تفعيل آخر مدير'
                                 : 'إلغاء تفعيل'
