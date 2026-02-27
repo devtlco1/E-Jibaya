@@ -5,7 +5,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
-import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX } from 'lucide-react';
+import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX, Search } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatter';
 
 interface UserManagementProps {
@@ -38,6 +38,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   // Filter state
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Branch Manager Field Agents Management
   const [branchManagerFieldAgents, setBranchManagerFieldAgents] = useState<string[]>([]);
@@ -201,7 +202,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     }
   };
 
-  // Filter users based on role and status
+  // Filter users based on role, status, and search (اسم أو يوزر)
   const filteredUsers = users.filter(user => {
     const roleMatch = !roleFilter || user.role === roleFilter;
     const statusMatch = !statusFilter || (
@@ -209,7 +210,13 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       statusFilter === 'inactive' ? !user.is_active && !user.username.includes('(محذوف)') :
       statusFilter === 'deleted' ? user.username.includes('(محذوف)') : true
     );
-    return roleMatch && statusMatch;
+    const searchMatch = !searchQuery.trim() || (() => {
+      const q = searchQuery.trim().toLowerCase();
+      const username = (user.username || '').replace(' (محذوف)', '').toLowerCase();
+      const fullName = (user.full_name || '').toLowerCase();
+      return username.includes(q) || fullName.includes(q);
+    })();
+    return roleMatch && statusMatch && searchMatch;
   });
 
   // Pagination calculations
@@ -237,7 +244,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
-    setCurrentPage(1); // Reset to first page when changing filters
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
   };
 
   const loadUsers = async () => {
@@ -774,7 +786,34 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              بحث (الاسم أو اليوزر)
+            </label>
+            <div className="relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="ابحث بالاسم أو اسم المستخدم..."
+                className="w-full pr-10 pl-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => handleSearchChange('')}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+                  title="مسح"
+                  aria-label="مسح البحث"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
           {/* Role Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
