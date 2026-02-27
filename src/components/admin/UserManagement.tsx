@@ -59,11 +59,14 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     : false;
 
   // هل يسمح للمستخدم الحالي بإدارة هذا المستخدم (تعديل/حذف/تعطيل)؟
+  // المدير الأساسي: يكدر يغير الكل (ماعدا admin المحمي)
+  // المدير العادي: يكدر يغير الكل ماعدا المستخدمين بنفس صلاحيته (admin)
   const canManageUser = (targetUser: User) => {
     if (isProtectedAdminUser(targetUser)) return false;
     if (isMainAdmin) return true;
-    // المديرون الآخرون: حسابه الخاص فقط
-    return targetUser.id === currentUser?.id;
+    // مدير عادي: لا يكدر يغير مديرين آخرين، لكن يكدر يغير البقية
+    if (targetUser.role === 'admin') return false;
+    return true;
   };
 
   // Load users on component mount
@@ -265,12 +268,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     try {
       validateUserData(newUser);
       
-      // صلاحيات الموظف: يمكن إنشاء محصل ميداني فقط
-      if (currentUser?.role === 'employee' && newUser.role !== 'field_agent') {
+      // المدير الأساسي فقط يمكنه إنشاء مديرين جدد
+      if (!isMainAdmin && newUser.role === 'admin') {
         addNotification({
           type: 'error',
           title: 'غير مسموح',
-          message: 'يمكن للموظفين إنشاء حسابات محصل ميداني فقط'
+          message: 'المدير الأساسي فقط يمكنه إنشاء حسابات مدير'
         });
         return;
       }
@@ -357,17 +360,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       });
       return;
     }
-    // المدير (غير الأساسي): حسابه الخاص فقط
-    if (currentUser?.role === 'admin' && !isMainAdmin && user.id !== currentUser.id) {
-      addNotification({
-        type: 'error',
-        title: 'غير مسموح',
-        message: 'يمكنك تعديل حسابك الخاص فقط'
-      });
-      return;
-    }
-    
-    // صلاحيات الموظف: يمكن تعديل حسابه الخاص فقط (كلمة المرور فقط)
+    // صلاحيات الموظف: يمكن تعديل حسابه الخاص فقط (كلمة المرور فقط) - الموظف لا يصل لهذه الصفحة
     if (currentUser?.role === 'employee') {
       // إذا كان الموظف يحاول تعديل حسابه الخاص، اسمح له
       if (user.id === currentUser.id) {
@@ -469,22 +462,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
           return;
         }
         
-        // صلاحيات الموظف: لا يمكن تغيير الدور إلى مدير أو موظف
-        if (currentUser?.role === 'employee' && (newUser.role === 'admin' || newUser.role === 'employee')) {
+        // المدير الأساسي فقط يمكنه تعيين أو تغيير دور المستخدم إلى مدير
+        if (!isMainAdmin && newUser.role === 'admin') {
           addNotification({
             type: 'error',
             title: 'غير مسموح',
-            message: 'لا يمكن للموظفين تعيين دور مدير أو موظف للمستخدمين'
-          });
-          return;
-        }
-        
-        // صلاحيات الموظف: لا يمكن تغيير دور المحصل الميداني إلى أي دور آخر
-        if (currentUser?.role === 'employee' && editingUser.role === 'field_agent' && newUser.role !== 'field_agent') {
-          addNotification({
-            type: 'error',
-            title: 'غير مسموح',
-            message: 'لا يمكن للموظفين تغيير دور المحصل الميداني'
+            message: 'المدير الأساسي فقط يمكنه تعيين دور مدير'
           });
           return;
         }
@@ -561,16 +544,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         return;
       }
       
-      // المدير (غير الأساسي): حسابه الخاص فقط
-      if (currentUser?.role === 'admin' && !isMainAdmin && user.id !== currentUser.id) {
-        addNotification({
-          type: 'error',
-          title: 'غير مسموح',
-          message: 'يمكنك إدارة حسابك الخاص فقط'
-        });
-        return;
-      }
-      // صلاحيات الموظف: لا يمكن حذف أو تعطيل حسابات الموظفين أو المديرين
+      // صلاحيات الموظف: لا يمكن حذف أو تعطيل حسابات الموظفين أو المديرين - الموظف لا يصل لهذه الصفحة
       if (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) {
         addNotification({
           type: 'error',
@@ -674,16 +648,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         });
         return;
       }
-      // المدير (غير الأساسي): حسابه الخاص فقط
-      if (currentUser?.role === 'admin' && !isMainAdmin && user.id !== currentUser.id) {
-        addNotification({
-          type: 'error',
-          title: 'غير مسموح',
-          message: 'يمكنك إدارة حسابك الخاص فقط'
-        });
-        return;
-      }
-      // صلاحيات الموظف: يمكن تعطيل/تفعيل المحصل الميداني فقط
+      // صلاحيات الموظف: يمكن تعطيل/تفعيل المحصل الميداني فقط - الموظف لا يصل لهذه الصفحة
       if (currentUser?.role === 'employee' && (user.role === 'admin' || user.role === 'employee')) {
         addNotification({
           type: 'error',
@@ -755,18 +720,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
           إدارة المستخدمين
         </h2>
-        {(isMainAdmin || currentUser?.role === 'employee') && (
-          <button
-            onClick={() => {
-              setNewUser({ username: '', password: '', full_name: '', role: currentUser?.role === 'employee' ? 'field_agent' : 'field_agent' });
-              setShowCreateForm(true);
-            }}
-            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-          >
-            <UserPlus className="w-4 h-4 ml-2" />
-            إضافة مستخدم جديد
-          </button>
-        )}
+        <button
+          onClick={() => {
+            setNewUser({ username: '', password: '', full_name: '', role: 'field_agent' });
+            setShowCreateForm(true);
+          }}
+          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+        >
+          <UserPlus className="w-4 h-4 ml-2" />
+          إضافة مستخدم جديد
+        </button>
       </div>
 
       {/* Filters */}
@@ -879,7 +842,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={
                           !canManageUser(user)
-                            ? 'يمكنك إدارة حسابك الخاص فقط'
+                            ? 'لا يمكنك تعديل المستخدمين بنفس صلاحيتك (مدير)'
                             : user.is_active ? 'تعطيل' : 'تفعيل'
                         }
                       >
@@ -910,15 +873,13 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={
                           !canManageUser(user)
-                            ? 'يمكنك تعديل حسابك الخاص فقط'
-                            : (currentUser?.role === 'employee' && user.id === currentUser.id)
-                              ? 'تعديل كلمة المرور'
-                              : 'تعديل'
+                            ? 'لا يمكنك تعديل المستخدمين بنفس صلاحيتك (مدير)'
+                            : 'تعديل'
                         }
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      {user.role === 'branch_manager' && (isMainAdmin || currentUser?.role === 'employee') && (
+                      {user.role === 'branch_manager' && (
                         <button
                           onClick={() => handleManageFieldAgents(user)}
                           className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
@@ -937,7 +898,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={
                             !canManageUser(user)
-                              ? (isProtectedAdminUser(user) ? 'لا يمكن حذف أو تعطيل المدير الأساسي' : 'يمكنك إدارة حسابك الخاص فقط')
+                              ? (isProtectedAdminUser(user) ? 'لا يمكن حذف أو تعطيل المدير الأساسي' : 'لا يمكنك تعديل المستخدمين بنفس صلاحيتك (مدير)')
                               : users.filter(u => u.role === 'admin').length === 1 && user.role === 'admin'
                                 ? 'لا يمكن إلغاء تفعيل آخر مدير'
                                 : 'إلغاء تفعيل'
@@ -1043,24 +1004,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     value={newUser.role}
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                    disabled={currentUser?.role === 'employee'}
                   >
-                    {currentUser?.role === 'employee' ? (
-                      <option value="field_agent">محصل ميداني</option>
-                    ) : (
-                      <>
-                        <option value="field_agent">محصل ميداني</option>
-                        <option value="employee">موظف</option>
-                        <option value="branch_manager">مدير فرع</option>
-                        <option value="admin">مدير</option>
-                      </>
-                    )}
+                    <option value="field_agent">محصل ميداني</option>
+                    <option value="employee">موظف</option>
+                    <option value="branch_manager">مدير فرع</option>
+                    {isMainAdmin && <option value="admin">مدير</option>}
                   </select>
-                  {currentUser?.role === 'employee' && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      يمكن للموظفين إنشاء حسابات محصل ميداني فقط
-                    </p>
-                  )}
                 </div>
 
                 <div className="flex justify-end space-x-2 space-x-reverse pt-4">
@@ -1308,35 +1257,14 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                   <select
                     value={newUser.role}
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
-                    disabled={
-                      editingUser && isProtectedAdminUser(editingUser) ||
-                      (currentUser?.role === 'employee' && editingUser.id === currentUser.id) || // Prevent employees from changing their own role
-                      (currentUser?.role === 'employee' && (editingUser.role === 'admin' || editingUser.role === 'employee')) || // Prevent employees from changing admin or employee roles
-                      (currentUser?.role === 'employee' && editingUser.role === 'field_agent') // Prevent employees from changing field agent role
-                    }
+                    disabled={editingUser ? isProtectedAdminUser(editingUser) : false}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {currentUser?.role === 'employee' && editingUser.role === 'field_agent' ? (
-                      <option value="field_agent">محصل ميداني</option>
-                    ) : (
-                      <>
-                        <option value="field_agent">محصل ميداني</option>
-                        <option value="employee">موظف</option>
-                        <option value="branch_manager">مدير فرع</option>
-                        {currentUser?.role === 'admin' && <option value="admin">مدير</option>}
-                      </>
-                    )}
+                    <option value="field_agent">محصل ميداني</option>
+                    <option value="employee">موظف</option>
+                    <option value="branch_manager">مدير فرع</option>
+                    {isMainAdmin && <option value="admin">مدير</option>}
                   </select>
-                  {currentUser?.role === 'employee' && editingUser.role === 'field_agent' && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      لا يمكن للموظفين تغيير دور المحصل الميداني
-                    </p>
-                  )}
-                  {currentUser?.role === 'employee' && editingUser.id === currentUser.id && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      لا يمكنك تغيير دورك
-                    </p>
-                  )}
                 </div>
 
                 <div className="flex justify-end space-x-2 space-x-reverse pt-4">
