@@ -876,6 +876,8 @@ export function Reports({}: ReportsProps) {
                 <option value="مهدوم">مهدوم</option>
                 <option value="لم اعثر عليه">لم اعثر عليه</option>
                 <option value="ممتنع">ممتنع</option>
+                <option value="إيقاف قراءة">إيقاف قراءة</option>
+                <option value="عاطل">عاطل</option>
                 <option value="تجاوز">تجاوز</option>
                 <option value="قيد الانشاء">قيد الانشاء</option>
                 <option value="مبدل">مبدل</option>
@@ -883,7 +885,7 @@ export function Reports({}: ReportsProps) {
                 <option value="لايوجد مقياس">لايوجد مقياس</option>
                 <option value="فحص مقياس">فحص مقياس</option>
                 <option value="فارغ">فارغ</option>
-                <option value="خطاء في القرادة">خطاء في القرادة</option>
+                <option value="خطاء في القراءة">خطاء في القراءة</option>
               </select>
             </div>
 

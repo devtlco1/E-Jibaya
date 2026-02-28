@@ -65,7 +65,7 @@ export function DataTable({
     total_amount: '',
     current_amount: '',
     // حالة الارض
-    land_status: null as 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القرادة' | null
+    land_status: null as 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القراءة' | 'إيقاف قراءة' | 'عاطل' | null
   });
   const [showFilters, setShowFilters] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{ url: string; title: string } | null>(null);
@@ -1145,6 +1145,8 @@ export function DataTable({
                   <option value="مهدوم">مهدوم</option>
                   <option value="لم اعثر عليه">لم اعثر عليه</option>
                   <option value="ممتنع">ممتنع</option>
+                  <option value="إيقاف قراءة">إيقاف قراءة</option>
+                  <option value="عاطل">عاطل</option>
                   <option value="تجاوز">تجاوز</option>
                   <option value="قيد الانشاء">قيد الانشاء</option>
                   <option value="مبدل">مبدل</option>
@@ -1152,7 +1154,7 @@ export function DataTable({
                   <option value="لايوجد مقياس">لايوجد مقياس</option>
                   <option value="فحص مقياس">فحص مقياس</option>
                   <option value="فارغ">فارغ</option>
-                  <option value="خطاء في القرادة">خطاء في القرادة</option>
+                  <option value="خطاء في القراءة">خطاء في القراءة</option>
                 </select>
               </div>
 
@@ -2499,7 +2501,7 @@ export function DataTable({
                       حالة الارض
                     </h4>
                     <div className="flex flex-wrap gap-3">
-                      {(['متروك', 'مهدوم', 'لم اعثر عليه', 'ممتنع', 'تجاوز', 'قيد الانشاء', 'مبدل', 'مغلق', 'لايوجد مقياس', 'فحص مقياس', 'فارغ', 'خطاء في القرادة'] as const).map((opt) => (
+                      {(['متروك', 'مهدوم', 'لم اعثر عليه', 'ممتنع', 'تجاوز', 'قيد الانشاء', 'مبدل', 'مغلق', 'لايوجد مقياس', 'فحص مقياس', 'فارغ', 'خطاء في القراءة', 'إيقاف قراءة', 'عاطل'] as const).map((opt) => (
                         <button
                           key={opt}
                           type="button"

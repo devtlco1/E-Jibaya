@@ -25,7 +25,7 @@ const initialForm = {
   multiplier: '',
   total_amount: '',
   current_amount: '',
-  land_status: null as 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القرادة' | null,
+  land_status: null as 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القراءة' | 'إيقاف قراءة' | 'عاطل' | null,
   status: 'pending' as 'pending' | 'completed' | 'refused'
 };
 
@@ -315,7 +315,7 @@ export function AddRecordModal({ onClose, onSuccess }: AddRecordModalProps) {
               <Shield className="w-4 h-4 ml-2" /> حالة الارض
             </h4>
             <div className="flex flex-wrap gap-2">
-              {(['متروك', 'مهدوم', 'لم اعثر عليه', 'ممتنع', 'تجاوز', 'قيد الانشاء', 'مبدل', 'مغلق', 'لايوجد مقياس', 'فحص مقياس', 'فارغ', 'خطاء في القرادة'] as const).map((opt) => (
+              {(['متروك', 'مهدوم', 'لم اعثر عليه', 'ممتنع', 'تجاوز', 'قيد الانشاء', 'مبدل', 'مغلق', 'لايوجد مقياس', 'فحص مقياس', 'فارغ', 'خطاء في القراءة', 'إيقاف قراءة', 'عاطل'] as const).map((opt) => (
                 <button
                   key={opt}
                   type="button"
