@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Trophy, TrendingUp, Users } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { UserAchievement } from '../../types';
@@ -13,6 +13,7 @@ export function Achievements() {
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const { addNotification } = useNotifications();
 
   const loadAchievements = async () => {
@@ -25,6 +26,7 @@ export function Achievements() {
       return;
     }
     setLoading(true);
+    setHasSearched(true);
     try {
       const data = await dbOperations.getUsersAchievements(startDate, endDate);
       setAchievements(data);
@@ -39,10 +41,6 @@ export function Achievements() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadAchievements();
-  }, []);
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
@@ -187,7 +185,11 @@ export function Achievements() {
         {achievements.length === 0 && !loading && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>لا توجد إنجازات في الفترة المحددة</p>
+            <p>
+              {hasSearched
+                ? 'لا توجد إنجازات في الفترة المحددة'
+                : 'حدّد الفترة من التاريخ إلى التاريخ ثم اضغط تطبيق الفلتر لتحميل الإنجازات'}
+            </p>
           </div>
         )}
       </div>
