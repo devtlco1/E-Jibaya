@@ -978,87 +978,35 @@ export const dbOperations = {
     }
   },
 
-  // إنجازات المستخدمين (للمدير فقط) - يشمل كل الفترة من فلتر التاريخ
+  // إنجازات المستخدمين (للمدير فقط) - عبر RPC للتجميع في DB بدون حد صفوف
   async getUsersAchievements(startDate: string, endDate: string): Promise<UserAchievement[]> {
     try {
       const client = checkSupabaseConnection();
       if (!client) return [];
 
-      // تنسيق UTC لتجنب مشاكل التوقيت
-      const start = `${startDate}T00:00:00.000Z`;
-      const end = `${endDate}T23:59:59.999Z`;
-      const LIMIT = 100000; // تجاوز حد 1000 الافتراضي لتشمل كل السجلات في الفترة
-
-      const [usersRes, recordsSubmittedRes, recordsCompletedRes, activityRes] = await Promise.all([
-        client.from('users').select('id, full_name, username, role').eq('is_active', true),
-        client.from('collection_records')
-          .select('field_agent_id, submitted_at')
-          .gte('submitted_at', start)
-          .lte('submitted_at', end)
-          .limit(LIMIT),
-        client.from('collection_records')
-          .select('completed_by, completed_at, status, is_refused')
-          .not('completed_at', 'is', null)
-          .gte('completed_at', start)
-          .lte('completed_at', end)
-          .limit(LIMIT),
-        client.from('activity_logs')
-          .select('user_id, action, created_at, details')
-          .gte('created_at', start)
-          .lte('created_at', end)
-          .limit(LIMIT)
-      ]);
-
-      const users = usersRes.data || [];
-      const recordsSubmitted = recordsSubmittedRes.data || [];
-      const recordsCompleted = recordsCompletedRes.data || [];
-      const activities = activityRes.data || [];
-
-      const achievements: UserAchievement[] = users.map((u: User) => {
-        const recordsAdded = recordsSubmitted.filter((r: any) => r.field_agent_id === u.id).length;
-        const recordsAddedDashboard = activities.filter((a: any) => a.user_id === u.id && a.action === 'create_record' && a.details?.from_dashboard).length;
-        const rcCount = recordsCompleted.filter((r: any) => r.completed_by === u.id && !r.is_refused && r.status === 'completed').length;
-        const rrCount = recordsCompleted.filter((r: any) => r.completed_by === u.id && (r.is_refused || r.status === 'refused')).length;
-        const recordsUpdated = activities.filter((a: any) => a.user_id === u.id && a.action === 'update_record').length;
-        const userActivities = activities.filter((a: any) => a.user_id === u.id);
-        const lastInRange = userActivities.length > 0
-          ? userActivities.reduce((max: string, a: any) => (a.created_at > max ? a.created_at : max), '')
-          : null;
-        const allUserActivities = activities; // نحتاج آخر نشاط من كل الactivity_logs - سنجلبها بشكل منفصل
-        return {
-          user_id: u.id,
-          full_name: u.full_name,
-          username: u.username,
-          role: u.role,
-          records_added: recordsAdded,
-          records_added_dashboard: recordsAddedDashboard,
-          records_completed: rcCount,
-          records_refused: rrCount,
-          records_updated: recordsUpdated,
-          total_actions: userActivities.length,
-          last_activity: lastInRange
-        };
+      const { data, error } = await client.rpc('get_users_achievements', {
+        p_start_date: startDate,
+        p_end_date: endDate
       });
 
-      // جلب آخر نشاط فعلي لكل مستخدم (خارج نطاق التاريخ إن لزم)
-      const { data: lastActs } = await client
-        .from('activity_logs')
-        .select('user_id, created_at')
-        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Get users achievements RPC error:', error);
+        return [];
+      }
 
-      const lastByUser: Record<string, string> = {};
-      (lastActs || []).forEach((a: any) => {
-        if (a.user_id && !lastByUser[a.user_id]) lastByUser[a.user_id] = a.created_at;
-      });
-      achievements.forEach(a => {
-        a.last_activity = a.last_activity || lastByUser[a.user_id] || null;
-      });
-
-      return achievements.sort((a, b) => {
-        const totalA = a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated;
-        const totalB = b.records_added + b.records_added_dashboard + b.records_completed + b.records_updated;
-        return totalB - totalA;
-      });
+      return (data || []).map((row: any) => ({
+        user_id: row.user_id,
+        full_name: row.full_name || '',
+        username: row.username || '',
+        role: row.role || '',
+        records_added: Number(row.records_added) || 0,
+        records_added_dashboard: Number(row.records_added_dashboard) || 0,
+        records_completed: Number(row.records_completed) || 0,
+        records_refused: Number(row.records_refused) || 0,
+        records_updated: Number(row.records_updated) || 0,
+        total_actions: Number(row.total_actions) || 0,
+        last_activity: row.last_activity || null
+      }));
     } catch (error) {
       console.error('Get users achievements error:', error);
       return [];
