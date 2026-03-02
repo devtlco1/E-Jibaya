@@ -978,30 +978,35 @@ export const dbOperations = {
     }
   },
 
-  // إنجازات المستخدمين (للمدير فقط)
+  // إنجازات المستخدمين (للمدير فقط) - يشمل كل الفترة من فلتر التاريخ
   async getUsersAchievements(startDate: string, endDate: string): Promise<UserAchievement[]> {
     try {
       const client = checkSupabaseConnection();
       if (!client) return [];
 
-      const start = `${startDate}T00:00:00`;
-      const end = `${endDate}T23:59:59`;
+      // تنسيق UTC لتجنب مشاكل التوقيت
+      const start = `${startDate}T00:00:00.000Z`;
+      const end = `${endDate}T23:59:59.999Z`;
+      const LIMIT = 100000; // تجاوز حد 1000 الافتراضي لتشمل كل السجلات في الفترة
 
       const [usersRes, recordsSubmittedRes, recordsCompletedRes, activityRes] = await Promise.all([
         client.from('users').select('id, full_name, username, role').eq('is_active', true),
         client.from('collection_records')
           .select('field_agent_id, submitted_at')
           .gte('submitted_at', start)
-          .lte('submitted_at', end),
+          .lte('submitted_at', end)
+          .limit(LIMIT),
         client.from('collection_records')
           .select('completed_by, completed_at, status, is_refused')
           .not('completed_at', 'is', null)
           .gte('completed_at', start)
-          .lte('completed_at', end),
+          .lte('completed_at', end)
+          .limit(LIMIT),
         client.from('activity_logs')
           .select('user_id, action, created_at, details')
           .gte('created_at', start)
           .lte('created_at', end)
+          .limit(LIMIT)
       ]);
 
       const users = usersRes.data || [];
