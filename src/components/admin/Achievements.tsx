@@ -1,34 +1,27 @@
-import React, { useState } from 'react';
-import { Trophy, TrendingUp, Users } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Trophy, Users } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { UserAchievement } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { Pagination } from '../common/Pagination';
 
+const START_DATE = '2000-01-01';
+const REFRESH_INTERVAL_MS = 60000; // تحديث تلقائي كل دقيقة
+
 export function Achievements() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [startDate, setStartDate] = useState('2000-01-01');
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
   const { addNotification } = useNotifications();
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadAchievements = async () => {
-    if (!startDate || !endDate) {
-      addNotification({ type: 'error', title: 'خطأ', message: 'حدد تاريخ البداية والنهاية' });
-      return;
-    }
-    if (startDate > endDate) {
-      addNotification({ type: 'error', title: 'خطأ', message: 'تاريخ البداية يجب أن يكون قبل تاريخ النهاية' });
-      return;
-    }
+    const endDate = new Date().toISOString().slice(0, 10);
     setLoading(true);
-    setHasSearched(true);
     try {
-      const data = await dbOperations.getUsersAchievements(startDate, endDate);
+      const data = await dbOperations.getUsersAchievements(START_DATE, endDate);
       setAchievements(data);
       setCurrentPage(1);
     } catch (error) {
@@ -41,6 +34,14 @@ export function Achievements() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadAchievements();
+    refreshIntervalRef.current = setInterval(loadAchievements, REFRESH_INTERVAL_MS);
+    return () => {
+      if (refreshIntervalRef.current) clearInterval(refreshIntervalRef.current);
+    };
+  }, []);
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
@@ -70,34 +71,9 @@ export function Achievements() {
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-        <div className="flex flex-wrap items-end gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">من تاريخ (فلتر)</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">إلى تاريخ (فلتر)</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
-            />
-          </div>
-          <button
-            onClick={loadAchievements}
-            disabled={loading}
-            className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium disabled:opacity-50"
-          >
-            <TrendingUp className="w-4 h-4 ml-2" />
-            {loading ? 'جاري التحميل...' : 'تطبيق الفلتر'}
-          </button>
-        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          إنجازات جميع الموظفين من بداية النظام حتى الآن — يتحدث تلقائياً
+        </p>
 
         {achievements.length > 0 && (
           <div className="overflow-x-auto">
@@ -185,11 +161,7 @@ export function Achievements() {
         {achievements.length === 0 && !loading && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>
-              {hasSearched
-                ? 'لا توجد إنجازات في الفترة المحددة'
-                : 'حدّد الفترة من التاريخ إلى التاريخ ثم اضغط تطبيق الفلتر لتحميل الإنجازات'}
-            </p>
+            <p>لا توجد إنجازات</p>
           </div>
         )}
       </div>
