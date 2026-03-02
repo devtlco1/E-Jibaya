@@ -124,7 +124,7 @@ export function Reports({}: ReportsProps) {
         
         // لمدير الفرع: عرض فقط المحصلين الميدانيين المحددين له
         if (currentUser?.role === 'branch_manager') {
-          const allowedFieldAgentIds = await dbOperations.getBranchManagerFieldAgents(currentUser.id);
+          const allowedFieldAgentIds = await dbOperations.getBranchManagerSubordinateIds(currentUser.id);
           setUsers(userData.filter(u => u.role === 'field_agent' && allowedFieldAgentIds.includes(u.id)));
         } else {
           setUsers(userData.filter(u => u.role === 'field_agent'));

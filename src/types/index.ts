@@ -76,6 +76,7 @@ export interface CreateRecordData {
 export interface CreateRecordFromDashboardData {
   subscriber_name: string;
   account_number: string;
+  field_agent_id?: string | null; // من أضاف السجل (محصل/موظف) - لربطه بمدير الفرع
   meter_number: string;
   region: string;
   district: string;

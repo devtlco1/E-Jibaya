@@ -200,6 +200,25 @@ export const dbOperations = {
     }
   },
 
+  // محصلي وموظفين ومدير الفرع نفسه - لفلترة السجلات والإحصائيات
+  async getBranchManagerSubordinateIds(branchManagerId: string, includeManager = true): Promise<string[]> {
+    try {
+      const [fieldAgentIds, employeeIds] = await Promise.all([
+        this.getBranchManagerFieldAgents(branchManagerId),
+        this.getBranchManagerEmployees(branchManagerId)
+      ]);
+      const ids = [...new Set([
+        ...fieldAgentIds,
+        ...employeeIds,
+        ...(includeManager ? [branchManagerId] : [])
+      ])];
+      return ids;
+    } catch (error) {
+      console.error('Get branch manager subordinates error:', error);
+      return [];
+    }
+  },
+
   async addFieldAgentToBranchManager(branchManagerId: string, fieldAgentId: string, createdBy?: string): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
@@ -332,24 +351,23 @@ export const dbOperations = {
         .from('collection_records')
         .select('*', { count: 'exact' });
 
-      // فلترة السجلات حسب صلاحيات مدير الفرع (إذا كان المستخدم الحالي مدير فرع)
+      // فلترة السجلات حسب صلاحيات مدير الفرع (محصلين + موظفين)
       if (currentUser?.role === 'branch_manager') {
-        const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(currentUser.id);
-        if (allowedFieldAgentIds.length > 0) {
-          query = query.in('field_agent_id', allowedFieldAgentIds);
+        const subordinateIds = await this.getBranchManagerSubordinateIds(currentUser.id);
+        if (subordinateIds.length > 0) {
+          query = query.in('field_agent_id', subordinateIds);
         } else {
-          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي سجلات
+          // إذا لم يكن لديه محصلين أو موظفين، لا يعرض أي سجلات
           return { data: [], total: 0, totalPages: 0 };
         }
       }
 
       // فلترة حسب مدير الفرع المحدد في الفلاتر
       if (filters.branch_manager_id) {
-        const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(filters.branch_manager_id);
-        if (allowedFieldAgentIds.length > 0) {
-          query = query.in('field_agent_id', allowedFieldAgentIds);
+        const subordinateIds = await this.getBranchManagerSubordinateIds(filters.branch_manager_id);
+        if (subordinateIds.length > 0) {
+          query = query.in('field_agent_id', subordinateIds);
         } else {
-          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي سجلات
           return { data: [], total: 0, totalPages: 0 };
         }
       }
@@ -501,7 +519,7 @@ export const dbOperations = {
         current_amount: data.current_amount ?? null,
         land_status: data.land_status ?? null,
         status: data.status || 'pending',
-        field_agent_id: null,
+        field_agent_id: data.field_agent_id ?? null,
         gps_latitude: null,
         gps_longitude: null,
         meter_photo_url: null,
@@ -696,13 +714,12 @@ export const dbOperations = {
         .from('collection_records')
         .select('*');
 
-      // فلترة السجلات حسب صلاحيات مدير الفرع
+      // فلترة السجلات حسب صلاحيات مدير الفرع (محصلين + موظفين)
       if (currentUser?.role === 'branch_manager') {
-        const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(currentUser.id);
-        if (allowedFieldAgentIds.length > 0) {
-          query = query.in('field_agent_id', allowedFieldAgentIds);
+        const subordinateIds = await this.getBranchManagerSubordinateIds(currentUser.id);
+        if (subordinateIds.length > 0) {
+          query = query.in('field_agent_id', subordinateIds);
         } else {
-          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي سجلات
           return [];
         }
       }
@@ -735,12 +752,10 @@ export const dbOperations = {
         // إذا كان المستخدم الحالي هو مدير الفرع المحدد، استخدم الفلتر الموجود
         // (تم تطبيقه بالفعل في السطور السابقة)
       } else if (filters.branchManager) {
-        // إذا تم اختيار مدير فرع آخر، جلب محصليه وفلتر السجلات
-        const allowedFieldAgentIds = await this.getBranchManagerFieldAgents(filters.branchManager);
-        if (allowedFieldAgentIds.length > 0) {
-          query = query.in('field_agent_id', allowedFieldAgentIds);
+        const subordinateIds = await this.getBranchManagerSubordinateIds(filters.branchManager);
+        if (subordinateIds.length > 0) {
+          query = query.in('field_agent_id', subordinateIds);
         } else {
-          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي سجلات
           return [];
         }
       }
@@ -1205,12 +1220,11 @@ export const dbOperations = {
         return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0 };
       }
       
-      // فلترة السجلات حسب صلاحيات مدير الفرع
+      // فلترة السجلات حسب صلاحيات مدير الفرع (محصلين + موظفين)
       let allowedFieldAgentIds: string[] | null = null;
       if (currentUser?.role === 'branch_manager') {
-        allowedFieldAgentIds = await this.getBranchManagerFieldAgents(currentUser.id);
+        allowedFieldAgentIds = await this.getBranchManagerSubordinateIds(currentUser.id);
         if (allowedFieldAgentIds.length === 0) {
-          // إذا لم يكن لديه محصلين ميدانيين، لا يعرض أي إحصائيات
           return { total: 0, pending: 0, completed: 0, verified: 0, refused: 0, locked: 0 };
         }
       }
@@ -1240,7 +1254,7 @@ export const dbOperations = {
       console.error('Get records stats error:', error);
       // Fallback: استخدام الاستعلام المباشر
       const allowedFieldAgentIds = currentUser?.role === 'branch_manager' 
-        ? await this.getBranchManagerFieldAgents(currentUser.id)
+        ? await this.getBranchManagerSubordinateIds(currentUser.id)
         : null;
       return await this.getRecordsStatsFallback(allowedFieldAgentIds);
     }

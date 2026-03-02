@@ -185,7 +185,7 @@ export function DataTable({
     const loadBranchManagerFieldAgents = async () => {
       if (filters.branch_manager_id) {
         try {
-          const fieldAgentIds = await dbOperations.getBranchManagerFieldAgents(filters.branch_manager_id);
+          const fieldAgentIds = await dbOperations.getBranchManagerSubordinateIds(filters.branch_manager_id);
           setBranchManagerFieldAgents(fieldAgentIds);
         } catch (error) {
           console.error('Error loading branch manager field agents:', error);

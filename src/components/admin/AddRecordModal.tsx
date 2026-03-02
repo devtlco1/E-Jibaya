@@ -81,7 +81,8 @@ export function AddRecordModal({ onClose, onSuccess }: AddRecordModalProps) {
         total_amount: form.total_amount ? parseFloat(form.total_amount) : null,
         current_amount: form.current_amount ? parseFloat(form.current_amount) : null,
         land_status: form.land_status,
-        status: form.status
+        status: form.status,
+        field_agent_id: user?.id ?? null
       };
 
       const record = await dbOperations.createRecordFromDashboard(data);

@@ -120,11 +120,16 @@ export function AdminDashboard() {
     filtersRef.current = filters;
   }, [filters]);
 
-  // Load records on component mount
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  // Load records on component mount وعند تغيّر user
   useEffect(() => {
     loadRecords();
     loadFieldAgentsCount();
-  }, [currentPage, itemsPerPage, filters]);
+  }, [currentPage, itemsPerPage, filters, user?.id]);
 
   // Load data only when tab is active (for mobile performance)
   useEffect(() => {
@@ -229,6 +234,13 @@ export function AdminDashboard() {
           if (payload.eventType === 'INSERT') {
             // New record added
             const newRecord = payload.new as CollectionRecord;
+            
+            // مدير الفرع: نحدّث بالكامل للتأكد من الفلترة الصحيحة
+            if (userRef.current?.role === 'branch_manager') {
+              loadRecords();
+              loadFieldAgentsCount();
+              return;
+            }
             
             // Check if the new record matches current filters
             const matchesFilters = checkRecordMatchesFilters(newRecord, filtersRef.current);
@@ -343,7 +355,7 @@ export function AdminDashboard() {
     pollingInterval.current = setInterval(async () => {
       try {
         // Use current filters for polling to avoid false positives and preserve UI state
-        const result = await dbOperations.getRecordsWithPagination(1, 1, filtersRef.current);
+        const result = await dbOperations.getRecordsWithPagination(1, 1, filtersRef.current, userRef.current);
         const currentCount = result.total;
         
         // If count increased, there's a new record
@@ -351,7 +363,7 @@ export function AdminDashboard() {
           console.log('New record detected via polling! Count:', currentCount);
           
           // Get the latest record with current filters only
-          const latestFiltered = await dbOperations.getRecordsWithPagination(1, 1, filtersRef.current);
+          const latestFiltered = await dbOperations.getRecordsWithPagination(1, 1, filtersRef.current, userRef.current);
           const latestRecord = latestFiltered.data[0];
 
           if (latestRecord) {
