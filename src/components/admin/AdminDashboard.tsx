@@ -307,19 +307,12 @@ export function AdminDashboard() {
             // Always refresh stats
             loadFieldAgentsCount();
           } else if (payload.eventType === 'DELETE') {
-            // Record deleted
             addNotification({
               type: 'warning',
               title: 'حذف سجل',
               message: 'تم حذف سجل من النظام'
             });
-            
-            // Refresh current page (respects current filters)
             loadRecords();
-            // Refresh current page (respects current filters)
-            loadRecords();
-            
-            // Also refresh stats
             loadFieldAgentsCount();
           }
         }
@@ -345,36 +338,34 @@ export function AdminDashboard() {
       });
   };
 
-  // Smart polling fallback for real-time updates (still active for new records)
+  // Smart polling - 5 ثوانٍ افتراضياً، تراجع عند الأخطاء (لتجنب ERR_CONNECTION_CLOSED في Bolt)
+  const pollIntervalRef = useRef(5000);
+  const POLL_MIN = 5000;
+  const POLL_MAX = 60000;
+  
   const startPolling = () => {
     if (pollingInterval.current) {
       clearInterval(pollingInterval.current);
     }
-
+    pollIntervalRef.current = POLL_MIN;
     console.log('Starting smart polling for new records...');
-    pollingInterval.current = setInterval(async () => {
+    
+    const doPoll = async () => {
       try {
-        // Use current filters for polling to avoid false positives and preserve UI state
         const result = await dbOperations.getRecordsWithPagination(1, 1, filtersRef.current, userRef.current);
         const currentCount = result.total;
+        pollIntervalRef.current = POLL_MIN; // نجاح: إعادة الفاصل الأصلي
         
-        // If count increased, there's a new record
         if (currentCount > lastRecordCount.current && lastRecordCount.current > 0) {
           console.log('New record detected via polling! Count:', currentCount);
-          
-          // Get the latest record with current filters only
           const latestFiltered = await dbOperations.getRecordsWithPagination(1, 1, filtersRef.current, userRef.current);
           const latestRecord = latestFiltered.data[0];
-
           if (latestRecord) {
-            // Notify only if the new record matches current filters
             addNotification({
               type: 'success',
               title: 'سجل جديد',
               message: `تم إضافة سجل جديد: ${latestRecord.subscriber_name || 'غير محدد'}`
             });
-
-            // تحديث محلي بدون ريفرش كامل (مع منع التكرار)
             setRecords(prev => {
               if (prev.some(r => r.id === latestRecord.id)) return prev;
               const next = [latestRecord, ...prev];
@@ -386,48 +377,52 @@ export function AdminDashboard() {
               return next.slice(0, itemsPerPage);
             });
             loadFieldAgentsCount();
-          } else {
-            // No matching record for current filters; skip notification and heavy refresh
-            console.log('New record detected but does not match current filters - skipping UI refresh');
           }
         }
-
         lastRecordCount.current = currentCount;
       } catch (error) {
         console.error('Polling error:', error);
+        pollIntervalRef.current = Math.min(pollIntervalRef.current * 1.5, POLL_MAX);
       }
-    }, 2000); // Check every 2 seconds for faster response
+      pollingInterval.current = setTimeout(doPoll, pollIntervalRef.current);
+    };
+    pollingInterval.current = setTimeout(doPoll, pollIntervalRef.current);
   };
 
   const stopPolling = () => {
     if (pollingInterval.current) {
-      clearInterval(pollingInterval.current);
+      clearTimeout(pollingInterval.current);
       pollingInterval.current = null;
     }
   };
 
+  // Cooldown لطلبات getUsers (30 ثانية) لتقليل ERR_CONNECTION_CLOSED في Bolt
+  const lastGetUsersRef = useRef<number>(0);
+  const GET_USERS_COOLDOWN_MS = 30000;
+  
   const loadFieldAgentsCount = async () => {
     try {
+      // مدير الفرع: عدد الفريق (محصلين + موظفين) بدلاً من جلب كل المستخدمين
+      if (user?.role === 'branch_manager' && user?.id) {
+        const ids = await dbOperations.getBranchManagerSubordinateIds(user.id);
+        setFieldAgentsCount(ids.length);
+        return;
+      }
+      // Admin: تحقق من التبريد لتجنب الطلبات المتكررة
+      const now = Date.now();
+      if (now - lastGetUsersRef.current < GET_USERS_COOLDOWN_MS) return;
+      lastGetUsersRef.current = now;
+      
       const isMobile = window.innerWidth <= 768;
-      if (isMobile) {
-        // For mobile: delay loading users count
-        setTimeout(async () => {
-          const users = await dbOperations.getUsers();
-          const activeUsers = users.filter(user =>
-            user.is_active &&
-            !user.username.includes('(محذوف)')
-          );
-          setFieldAgentsCount(activeUsers.length);
-        }, 200);
-      } else {
-        // For desktop: load immediately
+      const load = async () => {
         const users = await dbOperations.getUsers();
-        const activeUsers = users.filter(user =>
-          user.is_active &&
-          !user.username.includes('(محذوف)')
+        const activeUsers = users.filter(u =>
+          u.is_active && !u.username?.includes('(محذوف)')
         );
         setFieldAgentsCount(activeUsers.length);
-      }
+      };
+      if (isMobile) setTimeout(load, 200);
+      else await load();
     } catch (error) {
       console.error('Error loading field agents count:', error);
     }
@@ -768,7 +763,9 @@ export function AdminDashboard() {
                 <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">المستخدمين</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  {user?.role === 'branch_manager' ? 'فريقك' : 'المستخدمين'}
+                </p>
                 <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{fieldAgentsCount}</p>
               </div>
             </div>

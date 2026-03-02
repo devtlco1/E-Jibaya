@@ -1060,8 +1060,14 @@ export const dbOperations = {
     }
   },
 
-  // User Management
-  async getUsers(): Promise<User[]> {
+  // User Management - مع تخزين مؤقت (60 ثانية) لتقليل الطلبات في بيئات متقطعة (مثل Bolt)
+  async getUsers(bypassCache = false): Promise<User[]> {
+    const CACHE_KEY = 'all_users';
+    const CACHE_TTL = 60 * 1000; // 60 ثانية
+    if (!bypassCache) {
+      const cached = cacheService.get(CACHE_KEY);
+      if (cached && Array.isArray(cached)) return cached;
+    }
     try {
       const client = checkSupabaseConnection();
       if (!client) {
@@ -1078,9 +1084,14 @@ export const dbOperations = {
         console.error('Get users error:', error);
         return [];
       }
-      return data || [];
+      const result = data || [];
+      cacheService.set(CACHE_KEY, result, CACHE_TTL);
+      return result;
     } catch (error) {
       console.error('Get users error:', error);
+      // إرجاع النسخة المخزنة عند الفشل لتجنب شاشة فارغة
+      const cached = cacheService.get(CACHE_KEY);
+      if (cached && Array.isArray(cached)) return cached;
       return [];
     }
   },
