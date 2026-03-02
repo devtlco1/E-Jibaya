@@ -24,9 +24,9 @@ DECLARE
 BEGIN
   RETURN QUERY
   WITH active_users AS (
-    SELECT id, full_name, username, role
-    FROM public.users
-    WHERE is_active = true
+    SELECT us.id, us.full_name AS u_full_name, us.username AS u_username, us.role AS u_role
+    FROM public.users us
+    WHERE us.is_active = true
   ),
   recs_submitted AS (
     SELECT cr.field_agent_id AS uid, COUNT(*)::bigint AS cnt
@@ -91,9 +91,9 @@ BEGIN
   )
   SELECT
     u.id,
-    u.full_name::text,
-    u.username::text,
-    u.role::text,
+    u.u_full_name::text,
+    u.u_username::text,
+    u.u_role::text,
     COALESCE(rs.cnt, 0),
     COALESCE(rd.cnt, 0),
     COALESCE(rc.completed, 0),
