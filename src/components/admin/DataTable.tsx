@@ -1626,16 +1626,18 @@ export function DataTable({
                           <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                       )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(record.id);
-                        }}
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        title="حذف"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {currentUser?.role === 'admin' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(record.id);
+                          }}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                          title="حذف"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

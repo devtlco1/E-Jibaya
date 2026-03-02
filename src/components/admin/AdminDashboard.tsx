@@ -584,6 +584,16 @@ export function AdminDashboard() {
 
   const handleDeleteRecord = async (id: string) => {
     try {
+      // صلاحية الحذف مقتصرة على المدير فقط
+      if (user?.role !== 'admin') {
+        addNotification({
+          type: 'error',
+          title: 'غير مصرح',
+          message: 'صلاحية حذف السجلات مقتصرة على المدير فقط'
+        });
+        return;
+      }
+
       // Get record details before deletion for logging
       const recordToDelete = records.find(record => record.id === id);
       
