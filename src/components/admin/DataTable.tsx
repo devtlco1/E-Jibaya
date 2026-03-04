@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CollectionRecord, FilterState } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,6 +24,8 @@ interface DataTableProps {
   onFiltersChange: (filters: FilterState) => void;
   onUpdateRecord: (id: string, updates: Partial<CollectionRecord>) => void;
   onDeleteRecord: (id: string) => void;
+  recordToEdit?: CollectionRecord | null;
+  onRecordToEditConsumed?: () => void;
 }
 
 export function DataTable({ 
@@ -39,7 +41,9 @@ export function DataTable({
   onFiltersChange, 
   onUpdateRecord, 
   onDeleteRecord,
-  onRecordUpdate
+  onRecordUpdate,
+  recordToEdit,
+  onRecordToEditConsumed
 }: DataTableProps) {
   const [viewingRecord, setViewingRecord] = useState<CollectionRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<CollectionRecord | null>(null);
@@ -150,6 +154,14 @@ export function DataTable({
 
   const { addNotification } = useNotifications();
   const { user: currentUser } = useAuth();
+
+  // فتح تعديل سجل عند الطلب (مثلاً من نافذة إضافة عند وجود تكرار برقم الحساب)
+  useEffect(() => {
+    if (recordToEdit && currentUser) {
+      handleEdit(recordToEdit);
+      onRecordToEditConsumed?.();
+    }
+  }, [recordToEdit?.id]);
 
   // Load users for displaying names
   React.useEffect(() => {
@@ -812,6 +824,20 @@ export function DataTable({
               message: 'رقم الحساب يجب أن يكون 12 رقم أو أقل'
             });
             return;
+          }
+
+          // منع التكرار: إذا تغيّر رقم الحساب، التحقق من عدم وجوده لدى سجل آخر
+          const originalAccount = (editingRecord.account_number || '').trim();
+          if (accountNumber !== originalAccount) {
+            const existing = await dbOperations.getRecordByAccountNumber(accountNumber);
+            if (existing && existing.id !== editingRecord.id) {
+              addNotification({
+                type: 'error',
+                title: 'رقم الحساب موجود',
+                message: `رقم الحساب ${accountNumber} مستخدم بالفعل في سجل آخر. لا يمكن تكرار رقم الحساب.`
+              });
+              return;
+            }
           }
         }
 

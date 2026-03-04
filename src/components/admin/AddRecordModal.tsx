@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { X, FileText, Camera, Shield } from 'lucide-react';
-import { CreateRecordFromDashboardData } from '../../types';
+import { CreateRecordFromDashboardData, CollectionRecord } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface AddRecordModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  onEditExisting?: (record: CollectionRecord) => void;
 }
 
 const initialForm = {
@@ -29,9 +31,10 @@ const initialForm = {
   status: 'pending' as 'pending' | 'completed' | 'refused'
 };
 
-export function AddRecordModal({ onClose, onSuccess }: AddRecordModalProps) {
+export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecordModalProps) {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
+  const [duplicateRecord, setDuplicateRecord] = useState<CollectionRecord | null>(null);
   const { user } = useAuth();
   const { addNotification } = useNotifications();
 
@@ -60,6 +63,13 @@ export function AddRecordModal({ onClose, onSuccess }: AddRecordModalProps) {
     }
     if (!/^\d+$/.test(form.account_number.trim()) || form.account_number.length > 12) {
       addNotification({ type: 'error', title: 'خطأ', message: 'رقم الحساب يجب أن يكون أرقام فقط وحتى 12 رقم' });
+      return;
+    }
+
+    // التحقق من عدم تكرار رقم الحساب
+    const existingRecord = await dbOperations.getRecordByAccountNumber(form.account_number.trim());
+    if (existingRecord) {
+      setDuplicateRecord(existingRecord);
       return;
     }
 
@@ -117,6 +127,7 @@ export function AddRecordModal({ onClose, onSuccess }: AddRecordModalProps) {
   };
 
   return (
+    <>
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
@@ -378,5 +389,23 @@ export function AddRecordModal({ onClose, onSuccess }: AddRecordModalProps) {
         </form>
       </div>
     </div>
+
+    <ConfirmDialog
+      isOpen={!!duplicateRecord}
+      onClose={() => setDuplicateRecord(null)}
+      onConfirm={() => {
+        if (duplicateRecord && onEditExisting) {
+          onEditExisting(duplicateRecord);
+          onClose();
+        }
+        setDuplicateRecord(null);
+      }}
+      title="الحساب موجود"
+      message={duplicateRecord ? `رقم الحساب ${duplicateRecord.account_number} موجود بالفعل. هل تريد تعديل السجل الموجود؟` : ''}
+      confirmText="تعديل"
+      cancelText="إلغاء"
+      type="warning"
+    />
+    </>
   );
 }

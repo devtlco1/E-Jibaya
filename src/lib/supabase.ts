@@ -494,6 +494,30 @@ export const dbOperations = {
     }
   },
 
+  // التحقق من وجود سجل برقم حساب معين (للتأكد من عدم التكرار)
+  async getRecordByAccountNumber(accountNumber: string): Promise<CollectionRecord | null> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return null;
+
+      const { data, error } = await client
+        .from('collection_records')
+        .select('*')
+        .eq('account_number', accountNumber.trim())
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('getRecordByAccountNumber error:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('getRecordByAccountNumber error:', error);
+      return null;
+    }
+  },
+
   // إنشاء سجل من الداشبورد (بدون صور وبدون GPS - المحصل يضيفها لاحقاً)
   async createRecordFromDashboard(data: CreateRecordFromDashboardData): Promise<CollectionRecord | null> {
     try {

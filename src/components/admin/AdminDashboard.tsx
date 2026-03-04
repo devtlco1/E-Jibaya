@@ -96,6 +96,7 @@ export function AdminDashboard() {
   });
   const [fieldAgentsCount, setFieldAgentsCount] = useState(0);
   const [showAddRecordModal, setShowAddRecordModal] = useState(false);
+  const [recordToEdit, setRecordToEdit] = useState<CollectionRecord | null>(null);
 
   // Keep latest filters in a ref to avoid stale closures inside realtime/polling callbacks
   const filtersRef = useRef<FilterState>({
@@ -908,6 +909,8 @@ export function AdminDashboard() {
               onUpdateRecord={handleUpdateRecord}
               onDeleteRecord={handleDeleteRecord}
               onRecordUpdate={updateRecordLockStatus}
+              recordToEdit={recordToEdit}
+              onRecordToEditConsumed={() => setRecordToEdit(null)}
             />
             </div>
           )}
@@ -939,6 +942,10 @@ export function AdminDashboard() {
                 setAllRecordsStats({ ...newStats, locked: lockedCount });
               };
               fetchStats();
+            }}
+            onEditExisting={(record) => {
+              setShowAddRecordModal(false);
+              setRecordToEdit(record);
             }}
           />
         )}
