@@ -9,13 +9,26 @@ import { Pagination } from '../common/Pagination';
 const START_DATE = '2000-01-01';
 const REFRESH_INTERVAL_MS = 60000; // تحديث تلقائي كل دقيقة
 
+const ROLE_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: 'all', label: 'الكل' },
+  { value: 'employee', label: 'موظف' },
+  { value: 'branch_manager', label: 'مدير فرع' },
+  { value: 'field_agent', label: 'محصل ميداني' },
+  { value: 'admin', label: 'مدير' }
+];
+
 export function Achievements() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
+  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const { addNotification } = useNotifications();
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const filteredAchievements = roleFilter === 'all'
+    ? achievements
+    : achievements.filter(a => a.role === roleFilter);
 
   const loadAchievements = async () => {
     const endDate = new Date().toISOString().slice(0, 10);
@@ -43,6 +56,10 @@ export function Achievements() {
     };
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [roleFilter]);
+
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
       admin: 'مدير',
@@ -56,10 +73,10 @@ export function Achievements() {
   const getTotalScore = (a: UserAchievement) =>
     a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated;
 
-  const totalItems = achievements.length;
+  const totalItems = filteredAchievements.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedAchievements = achievements.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedAchievements = filteredAchievements.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="space-y-6">
@@ -68,14 +85,30 @@ export function Achievements() {
           <Trophy className="w-6 h-6 text-amber-500 ml-3" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">الانجازات</h2>
         </div>
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">فلتر حسب الدور:</label>
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-amber-500"
+          >
+            {ROLE_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          إنجازات جميع الموظفين من بداية النظام حتى الآن — يتحدث تلقائياً
+          {roleFilter === 'all'
+            ? 'إنجازات جميع الموظفين من بداية النظام حتى الآن — يتحدث تلقائياً'
+            : `إنجازات ${ROLE_FILTER_OPTIONS.find(o => o.value === roleFilter)?.label} فقط — يتحدث تلقائياً`}
         </p>
 
-        {achievements.length > 0 && (
+        {filteredAchievements.length > 0 && (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-900">
@@ -141,7 +174,7 @@ export function Achievements() {
           </div>
         )}
 
-        {achievements.length > 0 && (
+        {filteredAchievements.length > 0 && (
           <div className="mt-4">
             <Pagination
               currentPage={currentPage}
@@ -158,10 +191,12 @@ export function Achievements() {
           </div>
         )}
 
-        {achievements.length === 0 && !loading && (
+        {filteredAchievements.length === 0 && !loading && (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>لا توجد إنجازات</p>
+            <p>
+              {roleFilter === 'all' ? 'لا توجد إنجازات' : `لا توجد إنجازات لـ ${ROLE_FILTER_OPTIONS.find(o => o.value === roleFilter)?.label}`}
+            </p>
           </div>
         )}
       </div>
