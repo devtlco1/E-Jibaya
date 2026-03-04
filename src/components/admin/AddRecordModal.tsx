@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, Camera, Shield } from 'lucide-react';
+import { X, FileText, Camera, Shield, Search, CheckCircle } from 'lucide-react';
 import { CreateRecordFromDashboardData, CollectionRecord } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,12 +31,37 @@ const initialForm = {
   status: 'pending' as 'pending' | 'completed' | 'refused'
 };
 
+type CheckStatus = 'idle' | 'checking' | 'found' | 'not_found';
+
 export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecordModalProps) {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [duplicateRecord, setDuplicateRecord] = useState<CollectionRecord | null>(null);
+  const [checkAccountInput, setCheckAccountInput] = useState('');
+  const [checkStatus, setCheckStatus] = useState<CheckStatus>('idle');
   const { user } = useAuth();
   const { addNotification } = useNotifications();
+
+  const handleCheckAccount = async () => {
+    const val = checkAccountInput.trim();
+    if (!val) {
+      addNotification({ type: 'error', title: 'خطأ', message: 'أدخل رقم الحساب للفحص' });
+      return;
+    }
+    if (!/^\d+$/.test(val) || val.length > 12) {
+      addNotification({ type: 'error', title: 'خطأ', message: 'رقم الحساب يجب أن يكون أرقام فقط وحتى 12 رقم' });
+      return;
+    }
+    setCheckStatus('checking');
+    const existing = await dbOperations.getRecordByAccountNumber(val);
+    if (existing) {
+      setDuplicateRecord(existing);
+      setCheckStatus('found');
+    } else {
+      setForm(prev => ({ ...prev, account_number: val }));
+      setCheckStatus('not_found');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,6 +166,48 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
           <p className="text-sm text-gray-500 dark:text-gray-400">
             أضف بيانات السجل الأساسية. المحصل الميداني سيرفع الصور والموقع عند الزيارة.
           </p>
+
+          {/* فحص سريع برقم الحساب */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg space-y-3">
+            <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 flex items-center">
+              <Search className="w-4 h-4 ml-2" /> فحص برقم الحساب
+            </h4>
+            <div className="flex gap-2 items-center flex-wrap">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={checkAccountInput}
+                onChange={(e) => {
+                  if (/^\d*$/.test(e.target.value) && e.target.value.length <= 12) {
+                    setCheckAccountInput(e.target.value);
+                    setCheckStatus('idle');
+                  }
+                }}
+                placeholder="اكتب رقم الحساب للفحص..."
+                className="flex-1 min-w-[140px] px-3 py-2 border border-blue-300 dark:border-blue-700 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                maxLength={12}
+              />
+              <button
+                type="button"
+                onClick={handleCheckAccount}
+                disabled={checkStatus === 'checking' || !checkAccountInput.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
+              >
+                {checkStatus === 'checking' ? 'جاري البحث...' : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    بحث
+                  </>
+                )}
+              </button>
+            </div>
+            {checkStatus === 'not_found' && (
+              <div className="flex items-center gap-2 text-green-700 dark:text-green-300 text-sm font-medium py-1">
+                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <span>غير موجود - أكمل الإدخال كسجل جديد (تم ملء رقم الحساب تلقائياً)</span>
+              </div>
+            )}
+          </div>
 
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-4">
             <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex items-center">
@@ -392,7 +459,10 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
 
     <ConfirmDialog
       isOpen={!!duplicateRecord}
-      onClose={() => setDuplicateRecord(null)}
+      onClose={() => {
+        setDuplicateRecord(null);
+        setCheckStatus('idle');
+      }}
       onConfirm={() => {
         if (duplicateRecord && onEditExisting) {
           onEditExisting(duplicateRecord);
