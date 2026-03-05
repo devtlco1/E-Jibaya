@@ -518,6 +518,26 @@ export const dbOperations = {
     }
   },
 
+  // العدد الدقيق للصور (عبر RPC يتجاوز RLS - يتطلب تشغيل migration get_photo_count)
+  async getPhotoCount(): Promise<number | null> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return null;
+
+      const { data, error } = await client.rpc('get_photo_count');
+
+      if (error) {
+        console.warn('get_photo_count RPC error:', error);
+        return null;
+      }
+      const count = typeof data === 'number' ? data : (Array.isArray(data) ? data[0] : data);
+      return count != null ? Number(count) : null;
+    } catch (error) {
+      console.warn('getPhotoCount error:', error);
+      return null;
+    }
+  },
+
   // إنشاء سجل من الداشبورد (بدون صور وبدون GPS - المحصل يضيفها لاحقاً)
   async createRecordFromDashboard(data: CreateRecordFromDashboardData): Promise<CollectionRecord | null> {
     try {

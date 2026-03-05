@@ -419,33 +419,39 @@ export function BackupSystem() {
         return { users: 0, records: 0, photos: 0, activityLogs: 0 };
       }
 
-      // محاولة استخدام دالة SQL أولاً
+      // أولاً: محاولة جلب عدد الصور عبر RPC (يتجاوز RLS - العدد الدقيق من قاعدة البيانات)
+      const photoCountFromRpc = await dbOperations.getPhotoCount();
+
+      // محاولة استخدام دالة SQL للباقي
       try {
         const { data: systemStats, error: rpcError } = await client.rpc('get_system_stats');
         
         if (!rpcError && systemStats && systemStats.length > 0) {
           const stats = systemStats[0];
-          // جلب عدد الصور (record_photos + صور المقياس والفاتورة في collection_records)
-          const [recordPhotosCount, meterPhotosCount, invoicePhotosCount, activityLogsCount] = await Promise.all([
-            client.from('record_photos').select('id', { count: 'exact', head: true }),
-            client.from('collection_records').select('id', { count: 'exact', head: true }).not('meter_photo_url', 'is', null),
-            client.from('collection_records').select('id', { count: 'exact', head: true }).not('invoice_photo_url', 'is', null),
-            client.from('activity_logs').select('id', { count: 'exact', head: true })
-          ]);
-          const totalPhotos = (recordPhotosCount.count || 0) + (meterPhotosCount.count || 0) + (invoicePhotosCount.count || 0);
+          const activityLogsRes = await client.from('activity_logs').select('id', { count: 'exact', head: true });
+          
+          let photos = photoCountFromRpc;
+          if (photos == null) {
+            const [rp, mp, ip] = await Promise.all([
+              client.from('record_photos').select('id', { count: 'exact', head: true }),
+              client.from('collection_records').select('id', { count: 'exact', head: true }).not('meter_photo_url', 'is', null),
+              client.from('collection_records').select('id', { count: 'exact', head: true }).not('invoice_photo_url', 'is', null)
+            ]);
+            photos = (rp.count || 0) + (mp.count || 0) + (ip.count || 0);
+          }
           
           return {
             users: Number(stats.total_users) || 0,
             records: Number(stats.total_records) || 0,
-            photos: totalPhotos,
-            activityLogs: activityLogsCount.count || 0
+            photos,
+            activityLogs: activityLogsRes.count || 0
           };
         }
       } catch (rpcError) {
         console.warn('RPC function not available, using count method:', rpcError);
       }
 
-      // استخدام count للحصول على الإحصائيات بدقة (أسرع وأدق)
+      // استخدام count للحصول على الإحصائيات (مع اعطاء الأولوية لـ get_photo_count إن وُجد)
       const [usersCount, recordsCount, recordPhotosCount, meterPhotosCount, invoicePhotosCount, activityLogsCount] = await Promise.all([
         client.from('users').select('id', { count: 'exact', head: true }),
         client.from('collection_records').select('id', { count: 'exact', head: true }),
@@ -454,7 +460,7 @@ export function BackupSystem() {
         client.from('collection_records').select('id', { count: 'exact', head: true }).not('invoice_photo_url', 'is', null),
         client.from('activity_logs').select('id', { count: 'exact', head: true })
       ]);
-      const totalPhotos = (recordPhotosCount.count || 0) + (meterPhotosCount.count || 0) + (invoicePhotosCount.count || 0);
+      const totalPhotos = photoCountFromRpc ?? ((recordPhotosCount.count || 0) + (meterPhotosCount.count || 0) + (invoicePhotosCount.count || 0));
 
       return {
         users: usersCount.count || 0,
