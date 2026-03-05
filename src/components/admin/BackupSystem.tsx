@@ -425,16 +425,19 @@ export function BackupSystem() {
         
         if (!rpcError && systemStats && systemStats.length > 0) {
           const stats = systemStats[0];
-          // جلب عدد الصور وسجل الأنشطة بشكل منفصل
-          const [photosCount, activityLogsCount] = await Promise.all([
+          // جلب عدد الصور (record_photos + صور المقياس والفاتورة في collection_records)
+          const [recordPhotosCount, meterPhotosCount, invoicePhotosCount, activityLogsCount] = await Promise.all([
             client.from('record_photos').select('id', { count: 'exact', head: true }),
+            client.from('collection_records').select('id', { count: 'exact', head: true }).not('meter_photo_url', 'is', null),
+            client.from('collection_records').select('id', { count: 'exact', head: true }).not('invoice_photo_url', 'is', null),
             client.from('activity_logs').select('id', { count: 'exact', head: true })
           ]);
+          const totalPhotos = (recordPhotosCount.count || 0) + (meterPhotosCount.count || 0) + (invoicePhotosCount.count || 0);
           
           return {
             users: Number(stats.total_users) || 0,
             records: Number(stats.total_records) || 0,
-            photos: photosCount.count || 0,
+            photos: totalPhotos,
             activityLogs: activityLogsCount.count || 0
           };
         }
@@ -443,17 +446,20 @@ export function BackupSystem() {
       }
 
       // استخدام count للحصول على الإحصائيات بدقة (أسرع وأدق)
-      const [usersCount, recordsCount, photosCount, activityLogsCount] = await Promise.all([
+      const [usersCount, recordsCount, recordPhotosCount, meterPhotosCount, invoicePhotosCount, activityLogsCount] = await Promise.all([
         client.from('users').select('id', { count: 'exact', head: true }),
         client.from('collection_records').select('id', { count: 'exact', head: true }),
         client.from('record_photos').select('id', { count: 'exact', head: true }),
+        client.from('collection_records').select('id', { count: 'exact', head: true }).not('meter_photo_url', 'is', null),
+        client.from('collection_records').select('id', { count: 'exact', head: true }).not('invoice_photo_url', 'is', null),
         client.from('activity_logs').select('id', { count: 'exact', head: true })
       ]);
+      const totalPhotos = (recordPhotosCount.count || 0) + (meterPhotosCount.count || 0) + (invoicePhotosCount.count || 0);
 
       return {
         users: usersCount.count || 0,
         records: recordsCount.count || 0,
-        photos: photosCount.count || 0,
+        photos: totalPhotos,
         activityLogs: activityLogsCount.count || 0
       };
     } catch (error) {
@@ -462,13 +468,17 @@ export function BackupSystem() {
       try {
         const users = await dbOperations.getAllUsers();
         const records = await dbOperations.getAllRecords();
-        const photos = await dbOperations.getAllRecordPhotos();
+        const recordPhotos = await dbOperations.getAllRecordPhotos();
         const activityLogs = await dbOperations.getAllActivityLogs();
+        // عد الصور: record_photos + صور المقياس والفاتورة المضمنة في السجلات
+        const meterPhotosCount = records.filter((r: any) => r.meter_photo_url).length;
+        const invoicePhotosCount = records.filter((r: any) => r.invoice_photo_url).length;
+        const totalPhotos = recordPhotos.length + meterPhotosCount + invoicePhotosCount;
 
         return {
           users: users.length,
           records: records.length,
-          photos: photos.length,
+          photos: totalPhotos,
           activityLogs: activityLogs.length
         };
       } catch (fallbackError) {
