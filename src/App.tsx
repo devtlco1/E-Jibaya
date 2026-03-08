@@ -18,12 +18,15 @@ function AppFooter() {
         </div>
         {/* المنتصف: الشعار بجانب النص */}
         <div className="flex-1 min-w-0 flex flex-col items-center text-center">
-          <p className="font-medium text-gray-700 dark:text-gray-300">نظام الجباية الإلكتروني</p>
-          <p className="flex flex-wrap items-center justify-center gap-1 mt-0.5">
+          <p className="flex flex-wrap items-center justify-center gap-1">
             جميع الحقوق محفوظة ©
             <img src="/logo-abraj.png" alt="أبراج الأنوار" className="h-6 w-auto object-contain inline-block align-middle" />
             شركة أبراج الأنوار للمقاولات والتجارة العامة والوكالات التجارية 2026
           </p>
+        </div>
+        {/* يمين: نظام الجباية الإلكتروني */}
+        <div className="flex-shrink-0 text-start">
+          <p className="font-medium text-gray-700 dark:text-gray-300">نظام الجباية الإلكتروني</p>
         </div>
       </div>
     </footer>
