@@ -1043,6 +1043,8 @@ export const dbOperations = {
         full_name: row.full_name || '',
         username: row.username || '',
         role: row.role || '',
+        sector: row.sector ?? null,
+        job_title: row.job_title ?? null,
         records_added: Number(row.records_added) || 0,
         records_added_dashboard: Number(row.records_added_dashboard) || 0,
         records_completed: Number(row.records_completed) || 0,

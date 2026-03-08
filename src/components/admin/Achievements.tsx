@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Trophy, Users } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
-import { UserAchievement, SECTORS } from '../../types';
+import { UserAchievement, SECTORS, JOB_TITLES } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { Pagination } from '../common/Pagination';
@@ -9,29 +9,25 @@ import { Pagination } from '../common/Pagination';
 const START_DATE = '2000-01-01';
 const REFRESH_INTERVAL_MS = 60000; // تحديث تلقائي كل دقيقة
 
-const ROLE_FILTER_OPTIONS: { value: string; label: string }[] = [
+const JOB_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: 'الكل' },
-  { value: 'employee', label: 'موظف' },
-  { value: 'branch_manager', label: 'مدير فرع' },
-  { value: 'field_agent', label: 'محصل ميداني' },
-  { value: 'high_loads', label: 'الأحمال العالية' },
-  { value: 'admin', label: 'مدير' }
+  ...JOB_TITLES.map((j) => ({ value: j, label: j }))
 ];
 
 export function Achievements() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
-  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [jobFilter, setJobFilter] = useState<string>('all');
   const [sectorFilter, setSectorFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const { addNotification } = useNotifications();
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const filteredAchievements = achievements.filter(a => {
-    const roleMatch = roleFilter === 'all' || a.role === roleFilter;
+    const jobMatch = jobFilter === 'all' || (a.job_title || '') === jobFilter;
     const sectorMatch = sectorFilter === 'all' || (a.sector || '') === sectorFilter;
-    return roleMatch && sectorMatch;
+    return jobMatch && sectorMatch;
   });
 
   const loadAchievements = async () => {
@@ -62,18 +58,9 @@ export function Achievements() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [roleFilter, sectorFilter]);
+  }, [jobFilter, sectorFilter]);
 
-  const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = {
-      admin: 'مدير',
-      employee: 'موظف',
-      field_agent: 'محصل ميداني',
-      branch_manager: 'مدير فرع',
-      high_loads: 'الأحمال العالية'
-    };
-    return labels[role] || role;
-  };
+  const getJobTitleLabel = (job: string | null | undefined) => job || '-';
 
   const getTotalScore = (a: UserAchievement) =>
     a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated;
@@ -91,13 +78,13 @@ export function Achievements() {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">الانجازات</h2>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">الدور:</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">الوظيفة:</label>
           <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+            value={jobFilter}
+            onChange={(e) => setJobFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-amber-500"
           >
-            {ROLE_FILTER_OPTIONS.map((opt) => (
+            {JOB_FILTER_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -119,9 +106,9 @@ export function Achievements() {
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          {roleFilter === 'all'
+          {jobFilter === 'all'
             ? 'إنجازات جميع الموظفين من بداية النظام حتى الآن — يتحدث تلقائياً'
-            : `إنجازات ${ROLE_FILTER_OPTIONS.find(o => o.value === roleFilter)?.label} فقط — يتحدث تلقائياً`}
+            : `إنجازات ${JOB_FILTER_OPTIONS.find(o => o.value === jobFilter)?.label} فقط — يتحدث تلقائياً`}
         </p>
 
         {filteredAchievements.length > 0 && (
@@ -131,7 +118,7 @@ export function Achievements() {
                 <tr>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">#</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المستخدم</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الدور</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الوظيفة</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">القطاع</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">سجلات ميدانية</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">سجلات من الداشبورد</th>
@@ -161,7 +148,7 @@ export function Achievements() {
                       <span className="block text-xs text-gray-500">{a.username}</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {getRoleLabel(a.role)}
+                      {getJobTitleLabel(a.job_title)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {a.sector || '-'}
@@ -215,7 +202,7 @@ export function Achievements() {
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>
-              {roleFilter === 'all' ? 'لا توجد إنجازات' : `لا توجد إنجازات لـ ${ROLE_FILTER_OPTIONS.find(o => o.value === roleFilter)?.label}`}
+              {jobFilter === 'all' ? 'لا توجد إنجازات' : `لا توجد إنجازات لـ ${JOB_FILTER_OPTIONS.find(o => o.value === jobFilter)?.label}`}
             </p>
           </div>
         )}
