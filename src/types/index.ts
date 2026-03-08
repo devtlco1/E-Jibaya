@@ -1,9 +1,19 @@
+// القطاعات المتاحة
+export const SECTORS = ['الزهراء', 'داموك', 'الخاجية', 'الهورة', 'الكفاءات', 'تموز'] as const;
+export type Sector = (typeof SECTORS)[number];
+
+// الوظائف الأولية (قابلة للتوسيع لاحقاً)
+export const JOB_TITLES = ['مدقق', 'مرحل', 'مدقق ومرحل'] as const;
+export type JobTitle = (typeof JOB_TITLES)[number];
+
 export interface User {
   id: string;
   username: string;
   password_hash: string;
-  role: 'admin' | 'field_agent' | 'employee' | 'branch_manager';
+  role: 'admin' | 'field_agent' | 'employee' | 'branch_manager' | 'high_loads';
   full_name: string;
+  sector?: string | null;
+  job_title?: string | null;
   created_at: string;
   updated_at: string;
   is_active: boolean;
@@ -16,6 +26,7 @@ export interface CollectionRecord {
   gps_longitude: number | null;
   meter_photo_url: string | null;
   invoice_photo_url: string | null;
+  invoice_photo_back_url?: string | null;
   notes: string | null;
   is_refused: boolean;
   subscriber_name: string | null;
@@ -65,6 +76,7 @@ export interface CreateRecordData {
   gps_longitude: number | null;
   meter_photo_url: string | null;
   invoice_photo_url: string | null;
+  invoice_photo_back_url?: string | null;
   notes: string | null;
   is_refused: boolean;
   total_amount: number | null;
@@ -116,6 +128,8 @@ export interface UpdateRecordData {
   land_status?: 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القراءة' | 'إيقاف قراءة' | 'عاطل' | null;
   // تاغات المشاكل
   tags?: string[] | null;
+  // صورة ظهر الفاتورة
+  invoice_photo_back_url?: string | null;
 }
 
 export interface AuthContextType {
@@ -153,6 +167,10 @@ export interface FilterState {
   field_agent_id: string;
   // مدير الفرع
   branch_manager_id: string;
+  // القطاع
+  sector: string;
+  // الوظيفة
+  job_title: string;
 }
 
 export interface UserAchievement {
@@ -160,6 +178,8 @@ export interface UserAchievement {
   full_name: string;
   username: string;
   role: string;
+  sector?: string | null;
+  job_title?: string | null;
   records_added: number;
   records_added_dashboard: number;
   records_completed: number;

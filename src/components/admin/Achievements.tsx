@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Trophy, Users } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
-import { UserAchievement } from '../../types';
+import { UserAchievement, SECTORS } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { Pagination } from '../common/Pagination';
@@ -14,6 +14,7 @@ const ROLE_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: 'employee', label: 'موظف' },
   { value: 'branch_manager', label: 'مدير فرع' },
   { value: 'field_agent', label: 'محصل ميداني' },
+  { value: 'high_loads', label: 'الأحمال العالية' },
   { value: 'admin', label: 'مدير' }
 ];
 
@@ -22,13 +23,16 @@ export function Achievements() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [sectorFilter, setSectorFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const { addNotification } = useNotifications();
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const filteredAchievements = roleFilter === 'all'
-    ? achievements
-    : achievements.filter(a => a.role === roleFilter);
+  const filteredAchievements = achievements.filter(a => {
+    const roleMatch = roleFilter === 'all' || a.role === roleFilter;
+    const sectorMatch = sectorFilter === 'all' || (a.sector || '') === sectorFilter;
+    return roleMatch && sectorMatch;
+  });
 
   const loadAchievements = async () => {
     const endDate = new Date().toISOString().slice(0, 10);
@@ -58,14 +62,15 @@ export function Achievements() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [roleFilter]);
+  }, [roleFilter, sectorFilter]);
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
       admin: 'مدير',
       employee: 'موظف',
       field_agent: 'محصل ميداني',
-      branch_manager: 'مدير فرع'
+      branch_manager: 'مدير فرع',
+      high_loads: 'الأحمال العالية'
     };
     return labels[role] || role;
   };
@@ -85,8 +90,8 @@ export function Achievements() {
           <Trophy className="w-6 h-6 text-amber-500 ml-3" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">الانجازات</h2>
         </div>
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">فلتر حسب الدور:</label>
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">الدور:</label>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
@@ -96,6 +101,17 @@ export function Achievements() {
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
+            ))}
+          </select>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">القطاع:</label>
+          <select
+            value={sectorFilter}
+            onChange={(e) => setSectorFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-amber-500"
+          >
+            <option value="all">الكل</option>
+            {SECTORS.map((s) => (
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </div>
@@ -116,6 +132,7 @@ export function Achievements() {
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">#</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المستخدم</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الدور</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">القطاع</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">سجلات ميدانية</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">سجلات من الداشبورد</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">سجلات مكتملة</th>
@@ -145,6 +162,9 @@ export function Achievements() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {getRoleLabel(a.role)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {a.sector || '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       {a.records_added}

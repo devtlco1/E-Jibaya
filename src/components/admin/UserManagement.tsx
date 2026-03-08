@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { User } from '../../types';
+import { User, SECTORS, JOB_TITLES } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
-import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX, Search } from 'lucide-react';
+import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX, Search, Download } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatter';
 
 interface UserManagementProps {
@@ -22,7 +22,9 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     username: '',
     password: '',
     full_name: '',
-    role: 'field_agent' as 'admin' | 'field_agent' | 'employee' | 'branch_manager'
+    role: 'field_agent' as 'admin' | 'field_agent' | 'employee' | 'branch_manager' | 'high_loads',
+    sector: '' as string,
+    job_title: '' as string
   });
   const [showPassword, setShowPassword] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; userId: string; userName: string }>({
@@ -38,6 +40,8 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   // Filter state
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [sectorFilter, setSectorFilter] = useState('');
+  const [jobTitleFilter, setJobTitleFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Branch Manager Field Agents Management
@@ -202,7 +206,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     }
   };
 
-  // Filter users based on role, status, and search (اسم أو يوزر)
+  // استخراج القطاع من نهاية الاسم (مثل: مصطفى سعدي حسن/معار/الكفاءات)
+  const detectSectorFromName = (name: string): string => {
+    if (!name?.trim()) return '';
+    const parts = name.trim().split('/').map(p => p.trim());
+    const lastPart = parts[parts.length - 1];
+    return SECTORS.includes(lastPart as any) ? lastPart : '';
+  };
+
+  // Filter users based on role, status, sector, job_title, and search
   const filteredUsers = users.filter(user => {
     const roleMatch = !roleFilter || user.role === roleFilter;
     const statusMatch = !statusFilter || (
@@ -210,13 +222,15 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       statusFilter === 'inactive' ? !user.is_active && !user.username.includes('(محذوف)') :
       statusFilter === 'deleted' ? user.username.includes('(محذوف)') : true
     );
+    const sectorMatch = !sectorFilter || (user.sector || '') === sectorFilter;
+    const jobTitleMatch = !jobTitleFilter || (user.job_title || '') === jobTitleFilter;
     const searchMatch = !searchQuery.trim() || (() => {
       const q = searchQuery.trim().toLowerCase();
       const username = (user.username || '').replace(' (محذوف)', '').toLowerCase();
       const fullName = (user.full_name || '').toLowerCase();
       return username.includes(q) || fullName.includes(q);
     })();
-    return roleMatch && statusMatch && searchMatch;
+    return roleMatch && statusMatch && sectorMatch && jobTitleMatch && searchMatch;
   });
 
   // Pagination calculations
@@ -250,6 +264,48 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
+  };
+
+  const handleSectorFilterChange = (sector: string) => {
+    setSectorFilter(sector);
+    setCurrentPage(1);
+  };
+
+  const handleJobTitleFilterChange = (jobTitle: string) => {
+    setJobTitleFilter(jobTitle);
+    setCurrentPage(1);
+  };
+
+  // عند تغيير الاسم الكامل، تحديد القطاع تلقائياً إذا وُجد
+  React.useEffect(() => {
+    if (showCreateForm && newUser.full_name) {
+      const detected = detectSectorFromName(newUser.full_name);
+      if (detected && !newUser.sector) {
+        setNewUser(prev => ({ ...prev, sector: detected }));
+      }
+    }
+  }, [newUser.full_name, showCreateForm]);
+
+  const handleExportUsers = () => {
+    const toExport = filteredUsers.map(u => ({
+      'اسم المستخدم': u.username.replace(' (محذوف)', ''),
+      'الاسم الكامل': u.full_name,
+      'الدور': u.role === 'admin' ? 'مدير' : u.role === 'employee' ? 'موظف' : u.role === 'branch_manager' ? 'مدير فرع' : u.role === 'high_loads' ? 'أحمال عالية' : 'محصل ميداني',
+      'القطاع': u.sector || '-',
+      'الوظيفة': u.job_title || '-',
+      'الحالة': u.username.includes('(محذوف)') ? 'محذوف' : u.is_active ? 'نشط' : 'معطل',
+      'تاريخ الإنشاء': formatDate(u.created_at)
+    }));
+    const headers = Object.keys(toExport[0] || {});
+    const csv = [headers.join(','), ...toExport.map(r => headers.map(h => `"${(r as any)[h]}"`).join(','))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addNotification({ type: 'success', title: 'تم التصدير', message: `تم تصدير ${toExport.length} مستخدم` });
   };
 
   const loadUsers = async () => {
@@ -302,14 +358,16 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         password_hash: newUser.password,
         full_name: newUser.full_name,
         role: newUser.role,
+        sector: newUser.sector?.trim() || null,
+        job_title: newUser.job_title?.trim() || null,
         is_active: true
       };
       
-      const result = await dbOperations.createUser(userData);
+      const result = await dbOperations.createUser(userData as any);
       if (result) {
         // Add new user locally instead of reloading all data
         setUsers(prevUsers => [result, ...prevUsers]);
-        setNewUser({ username: '', password: '', full_name: '', role: 'field_agent' });
+        setNewUser({ username: '', password: '', full_name: '', role: 'field_agent', sector: '', job_title: '' });
         setShowPassword(false);
         setShowCreateForm(false);
         
@@ -388,7 +446,9 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
           username: user.username,
           password: '',
           full_name: user.full_name,
-          role: user.role
+          role: user.role,
+          sector: user.sector || '',
+          job_title: user.job_title || ''
         });
         return;
       }
@@ -408,7 +468,9 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
       username: user.username,
       password: '',
       full_name: user.full_name,
-      role: user.role
+      role: user.role,
+      sector: user.sector || '',
+      job_title: user.job_title || ''
     });
   };
 
@@ -527,7 +589,9 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         const updates: Partial<User> = {
           username: newUser.username,
           full_name: newUser.full_name,
-          role: newUser.role
+          role: newUser.role,
+          sector: newUser.sector?.trim() || null,
+          job_title: newUser.job_title?.trim() || null
         };
         
         // Only update password if provided
@@ -768,25 +832,34 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
           إدارة المستخدمين
         </h2>
-        <button
-          onClick={() => {
-            setNewUser({ username: '', password: '', full_name: '', role: 'field_agent' });
-            setShowCreateForm(true);
-          }}
-          className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-        >
-          <UserPlus className="w-4 h-4 ml-2" />
-          إضافة مستخدم جديد
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportUsers}
+            className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
+          >
+            <Download className="w-4 h-4 ml-2" />
+            تصدير
+          </button>
+          <button
+            onClick={() => {
+              setNewUser({ username: '', password: '', full_name: '', role: 'field_agent', sector: '', job_title: '' });
+              setShowCreateForm(true);
+            }}
+            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+          >
+            <UserPlus className="w-4 h-4 ml-2" />
+            إضافة مستخدم جديد
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -829,6 +902,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
               <option value="employee">موظف</option>
               <option value="branch_manager">مدير فرع</option>
               <option value="field_agent">محصل ميداني</option>
+              <option value="high_loads">الأحمال العالية</option>
             </select>
           </div>
 
@@ -846,6 +920,34 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
               <option value="active">نشط</option>
               <option value="inactive">معطل</option>
               <option value="deleted">محذوف</option>
+            </select>
+          </div>
+          {/* Sector Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              القطاع
+            </label>
+            <select
+              value={sectorFilter}
+              onChange={(e) => { setSectorFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+            >
+              <option value="">جميع القطاعات</option>
+              {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          {/* Job Title Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              الوظيفة
+            </label>
+            <select
+              value={jobTitleFilter}
+              onChange={(e) => { setJobTitleFilter(e.target.value); setCurrentPage(1); }}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+            >
+              <option value="">جميع الوظائف</option>
+              {JOB_TITLES.map(j => <option key={j} value={j}>{j}</option>)}
             </select>
           </div>
         </div>
@@ -901,7 +1003,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       ) : (
                         <Users className="w-3 h-3 ml-1" />
                       )}
-                      {user.role === 'admin' ? 'مدير' : user.role === 'employee' ? 'موظف' : user.role === 'branch_manager' ? 'مدير فرع' : 'محصل ميداني'}
+                      {user.role === 'admin' ? 'مدير' : user.role === 'employee' ? 'موظف' : user.role === 'branch_manager' ? 'مدير فرع' : user.role === 'high_loads' ? 'الأحمال العالية' : 'محصل ميداني'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -1087,7 +1189,36 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     <option value="field_agent">محصل ميداني</option>
                     <option value="employee">موظف</option>
                     <option value="branch_manager">مدير فرع</option>
+                    <option value="high_loads">الأحمال العالية</option>
                     {isMainAdmin && <option value="admin">مدير</option>}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    القطاع
+                  </label>
+                  <select
+                    value={newUser.sector || ''}
+                    onChange={(e) => setNewUser({ ...newUser, sector: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">-- اختر القطاع --</option>
+                    {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    الوظيفة
+                  </label>
+                  <select
+                    value={newUser.job_title || ''}
+                    onChange={(e) => setNewUser({ ...newUser, job_title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">-- اختر الوظيفة --</option>
+                    {JOB_TITLES.map(j => <option key={j} value={j}>{j}</option>)}
                   </select>
                 </div>
 
@@ -1342,7 +1473,36 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                     <option value="field_agent">محصل ميداني</option>
                     <option value="employee">موظف</option>
                     <option value="branch_manager">مدير فرع</option>
+                    <option value="high_loads">الأحمال العالية</option>
                     {isMainAdmin && <option value="admin">مدير</option>}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    القطاع
+                  </label>
+                  <select
+                    value={newUser.sector || ''}
+                    onChange={(e) => setNewUser({ ...newUser, sector: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">-- اختر القطاع --</option>
+                    {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    الوظيفة
+                  </label>
+                  <select
+                    value={newUser.job_title || ''}
+                    onChange={(e) => setNewUser({ ...newUser, job_title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="">-- اختر الوظيفة --</option>
+                    {JOB_TITLES.map(j => <option key={j} value={j}>{j}</option>)}
                   </select>
                 </div>
 

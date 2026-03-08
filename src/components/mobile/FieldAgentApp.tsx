@@ -29,6 +29,7 @@ export function FieldAgentApp() {
   const [gpsLoading, setGpsLoading] = useState(false);
   const [meterPhoto, setMeterPhoto] = useState<string | null>(null);
   const [invoicePhoto, setInvoicePhoto] = useState<string | null>(null);
+  const [invoicePhotoBack, setInvoicePhotoBack] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const [additionalPhotosNotes, setAdditionalPhotosNotes] = useState('');
   const [isRefused, setIsRefused] = useState(false);
@@ -48,6 +49,7 @@ export function FieldAgentApp() {
 
   const meterPhotoRef = useRef<HTMLInputElement>(null);
   const invoicePhotoRef = useRef<HTMLInputElement>(null);
+  const invoicePhotoBackRef = useRef<HTMLInputElement>(null);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -105,14 +107,14 @@ export function FieldAgentApp() {
     );
   };
 
-  const handlePhotoCapture = (type: 'meter' | 'invoice') => {
-    const input = type === 'meter' ? meterPhotoRef.current : invoicePhotoRef.current;
+  const handlePhotoCapture = (type: 'meter' | 'invoice' | 'invoice_back') => {
+    const input = type === 'meter' ? meterPhotoRef.current : type === 'invoice' ? invoicePhotoRef.current : invoicePhotoBackRef.current;
     if (input) {
       input.click();
     }
   };
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'meter' | 'invoice') => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'meter' | 'invoice' | 'invoice_back') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -144,8 +146,10 @@ export function FieldAgentApp() {
         
         if (type === 'meter') {
           setMeterPhoto(result);
-        } else {
+        } else if (type === 'invoice') {
           setInvoicePhoto(result);
+        } else {
+          setInvoicePhotoBack(result);
         }
       };
       reader.readAsDataURL(file);
@@ -278,27 +282,25 @@ export function FieldAgentApp() {
       return false;
     }
 
-    // صورة الفاتورة إجبارية في جميع الحالات
+    // صورة الفاتورة (وجه وظهر) إجبارية في جميع الحالات
     if (!invoicePhoto) {
       addNotification({
         type: 'warning',
         title: 'خطأ في البيانات',
-        message: 'يرجى التقاط صورة الفاتورة'
+        message: 'يرجى التقاط صورة وجه الفاتورة'
+      });
+      return false;
+    }
+    if (!invoicePhotoBack) {
+      addNotification({
+        type: 'warning',
+        title: 'خطأ في البيانات',
+        message: 'يرجى التقاط صورة ظهر الفاتورة'
       });
       return false;
     }
 
-    if (!isRefused) {
-      // الحالة العادية: صورة المقياس إجبارية
-      if (!meterPhoto) {
-        addNotification({
-          type: 'warning',
-          title: 'خطأ في البيانات',
-          message: 'يرجى التقاط صورة المقياس'
-        });
-        return false;
-      }
-    }
+    // صورة المقياس اختيارية للمحصل الميداني (تم إلغاء الإلزام)
     
     return true;
   };
@@ -321,6 +323,7 @@ export function FieldAgentApp() {
 
       let meterPhotoUrl = null;
       let invoicePhotoUrl = null;
+      let invoicePhotoBackUrl = null;
 
       // Try to initialize storage (but don't fail if it doesn't work)
       try {
@@ -347,13 +350,12 @@ export function FieldAgentApp() {
         }
       }
 
-      // Upload invoice photo if exists (required in refused case, optional in normal case)
+      // Upload invoice front photo
       if (invoicePhoto) {
         const imageId = dbOperations.generateImageId();
         const fileName = `I_${imageId}.jpg`;
         const filePath = `invoice_photos/${fileName}`;
         
-        // Convert base64 to file
         const response = await fetch(invoicePhoto);
         const blob = await response.blob();
         const file = new File([blob], fileName, { type: 'image/jpeg' });
@@ -361,7 +363,24 @@ export function FieldAgentApp() {
         invoicePhotoUrl = await dbOperations.uploadPhoto(file, filePath);
         
         if (!invoicePhotoUrl) {
-          throw new Error('فشل في رفع صورة الفاتورة');
+          throw new Error('فشل في رفع صورة وجه الفاتورة');
+        }
+      }
+
+      // Upload invoice back photo
+      if (invoicePhotoBack) {
+        const imageId = dbOperations.generateImageId();
+        const fileName = `IB_${imageId}.jpg`;
+        const filePath = `invoice_photos/${fileName}`;
+        
+        const response = await fetch(invoicePhotoBack);
+        const blob = await response.blob();
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        
+        invoicePhotoBackUrl = await dbOperations.uploadPhoto(file, filePath);
+        
+        if (!invoicePhotoBackUrl) {
+          throw new Error('فشل في رفع صورة ظهر الفاتورة');
         }
       }
 
@@ -371,6 +390,7 @@ export function FieldAgentApp() {
         gps_longitude: gpsData?.lng || null,
         meter_photo_url: meterPhotoUrl,
         invoice_photo_url: invoicePhotoUrl,
+        invoice_photo_back_url: invoicePhotoBackUrl,
         notes: notes || null,
         is_refused: isRefused,
         total_amount: totalAmount ? parseFloat(totalAmount) : null,
@@ -435,6 +455,7 @@ export function FieldAgentApp() {
           setGpsData(null);
           setMeterPhoto(null);
           setInvoicePhoto(null);
+          setInvoicePhotoBack(null);
           setNotes('');
           setAdditionalPhotosNotes('');
           setIsRefused(false);
@@ -501,8 +522,19 @@ export function FieldAgentApp() {
       }
     }
 
+    let invoicePhotoBackUrl = null;
+    if (invoicePhotoBack) {
+      const imageId = dbOperations.generateImageId();
+      const fileName = `IB_${imageId}.jpg`;
+      const filePath = `invoice_photos/${fileName}`;
+      const response = await fetch(invoicePhotoBack);
+      const blob = await response.blob();
+      const file = new File([blob], fileName, { type: 'image/jpeg' });
+      invoicePhotoBackUrl = await dbOperations.uploadPhoto(file, filePath);
+    }
+
     // Update the record with new data
-    const updateData = {
+    const updateData: any = {
       subscriber_name: selectedRecord.subscriber_name,
       account_number: selectedRecord.account_number,
       meter_number: selectedRecord.meter_number,
@@ -821,7 +853,7 @@ export function FieldAgentApp() {
         {/* Meter Photo */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            صورة المقياس {!isRefused && <span className="text-red-500">*</span>}
+            صورة المقياس
           </h3>
           
           {isRefused ? (
@@ -901,6 +933,47 @@ export function FieldAgentApp() {
             accept="image/*"
             capture="environment"
             onChange={(e) => handlePhotoChange(e, 'invoice')}
+            className="hidden"
+          />
+          
+        </div>
+
+        {/* Invoice Back Photo */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            صورة ظهر الفاتورة <span className="text-red-500">*</span>
+          </h3>
+          
+          {invoicePhotoBack ? (
+            <div className="relative">
+              <img 
+                src={invoicePhotoBack} 
+                alt="صورة ظهر الفاتورة" 
+                className="w-full h-48 object-cover rounded-lg"
+              />
+              <button
+                onClick={() => setInvoicePhotoBack(null)}
+                className="absolute top-2 left-2 p-1 bg-red-600 hover:bg-red-700 text-white rounded-full"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => handlePhotoCapture('invoice_back')}
+              className="w-full flex items-center justify-center px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+            >
+              <Camera className="w-5 h-5 ml-2" />
+              التقاط صورة ظهر الفاتورة
+            </button>
+          )}
+          
+          <input
+            ref={invoicePhotoBackRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => handlePhotoChange(e, 'invoice_back')}
             className="hidden"
           />
           

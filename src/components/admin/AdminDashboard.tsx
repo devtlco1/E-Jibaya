@@ -4,6 +4,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { DataTable } from './DataTable';
 import { AddRecordModal } from './AddRecordModal';
 import { Achievements } from './Achievements';
+import { Sectors } from './Sectors';
 import { UserManagement } from './UserManagement';
 import { Reports } from './Reports';
 import { ActivityLogs } from './ActivityLogs';
@@ -25,7 +26,8 @@ import {
   HardDrive,
   Lock,
   Plus,
-  Trophy
+  Trophy,
+  Layers
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -33,7 +35,7 @@ export function AdminDashboard() {
   const { isDark, toggleTheme } = useTheme();
   const { addNotification } = useNotifications();
   
-  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities' | 'backup' | 'achievements'>('records');
+  const [activeTab, setActiveTab] = useState<'records' | 'users' | 'reports' | 'activities' | 'backup' | 'achievements' | 'sectors'>('records');
 
   // الموظف ومدير الفرع: لا يريان صفحة المستخدمين أصلاً
   useEffect(() => {
@@ -47,6 +49,9 @@ export function AdminDashboard() {
       setActiveTab('records');
     }
     if (user?.role !== 'admin' && activeTab === 'achievements') {
+      setActiveTab('records');
+    }
+    if (user?.role !== 'admin' && activeTab === 'sectors') {
       setActiveTab('records');
     }
   }, [user?.role, activeTab]);
@@ -833,6 +838,22 @@ export function AdminDashboard() {
             </button>
             {user?.role === 'admin' && (
               <button
+                onClick={() => setActiveTab('sectors')}
+                className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                  activeTab === 'sectors'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center">
+                  <Layers className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                  <span className="hidden sm:inline">القطاعات</span>
+                  <span className="sm:hidden">القطاعات</span>
+                </div>
+              </button>
+            )}
+            {user?.role === 'admin' && (
+              <button
                 onClick={() => setActiveTab('achievements')}
                 className={`py-2 sm:py-4 px-2 sm:px-3 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                   activeTab === 'achievements'
@@ -919,6 +940,9 @@ export function AdminDashboard() {
           )}
           {activeTab === 'reports' && (
             <Reports key="reports-tab" />
+          )}
+          {activeTab === 'sectors' && (
+            <Sectors key="sectors-tab" />
           )}
           {activeTab === 'achievements' && (
             <Achievements key="achievements-tab" />

@@ -31,14 +31,37 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// --dry-run: يعرض فقط ما سيُحذف دون تنفيذ
+const DRY_RUN = process.argv.includes('--dry-run');
+
 /**
- * البحث عن السجلات المكررة (نفس رقم الحساب ورقم المقياس)
+ * تحقق هل السجل "مليان" (يحتوي على بيانات ذات معنى) أم "فارغ" (فقط رقم حساب)
+ */
+function isRecordFull(record) {
+  const hasValue = (v) => v != null && String(v).trim() !== '';
+  return (
+    hasValue(record.subscriber_name) ||
+    hasValue(record.meter_photo_url) ||
+    hasValue(record.invoice_photo_url) ||
+    hasValue(record.region) ||
+    hasValue(record.district) ||
+    record.category != null ||
+    hasValue(record.last_reading) ||
+    (record.total_amount != null && record.total_amount !== 0) ||
+    (record.current_amount != null && record.current_amount !== 0)
+  );
+}
+
+/**
+ * البحث عن السجلات المكررة (نفس رقم الحساب فقط)
+ * المنطق:
+ * - إذا وُجد سجل مليان وآخر فارغ: نبقى المليان ونحذف الفارغ
+ * - إذا الكل فارغين: نبقى واحد ونحذف الباقي
  */
 async function findDuplicateRecords() {
-  console.log('🔍 البحث عن السجلات المكررة...\n');
+  console.log('🔍 البحث عن السجلات المكررة (حسب رقم الحساب)...\n');
   
   try {
-    // جلب جميع السجلات مع رقم الحساب ورقم المقياس (بدون limit)
     let allRecords = [];
     let from = 0;
     const limit = 1000;
@@ -50,9 +73,8 @@ async function findDuplicateRecords() {
       const to = from + limit - 1;
       const { data: records, error } = await supabase
         .from('collection_records')
-        .select('id, account_number, meter_number, submitted_at, created_at')
+        .select('id, account_number, meter_number, subscriber_name, region, district, last_reading, category, meter_photo_url, invoice_photo_url, total_amount, current_amount, submitted_at, created_at')
         .not('account_number', 'is', null)
-        .not('meter_number', 'is', null)
         .range(from, to)
         .order('submitted_at', { ascending: false });
 
@@ -85,54 +107,73 @@ async function findDuplicateRecords() {
 
     console.log(`📊 إجمالي السجلات: ${records.length}`);
 
-    // تجميع السجلات حسب رقم الحساب ورقم المقياس
+    // تجميع حسب رقم الحساب فقط
     const recordsMap = new Map();
-    const duplicates = [];
-
     for (const record of records) {
-      const key = `${record.account_number}_${record.meter_number}`;
-      
-      if (!recordsMap.has(key)) {
-        recordsMap.set(key, []);
-      }
-      
-      recordsMap.get(key).push(record);
+      const acc = (record.account_number || '').trim();
+      if (!acc) continue;
+      if (!recordsMap.has(acc)) recordsMap.set(acc, []);
+      recordsMap.get(acc).push(record);
     }
 
-    // البحث عن المكررات (أكثر من سجل واحد لكل مفتاح)
-    for (const [key, recordsList] of recordsMap.entries()) {
-      if (recordsList.length > 1) {
-        // ترتيب حسب التاريخ (الأحدث أولاً)
+    const duplicates = [];
+    for (const [accountNumber, recordsList] of recordsMap.entries()) {
+      if (recordsList.length <= 1) continue;
+
+      const fullRecords = recordsList.filter(r => isRecordFull(r));
+      const emptyRecords = recordsList.filter(r => !isRecordFull(r));
+
+      let toKeep;
+      let toDelete;
+
+      if (fullRecords.length >= 1) {
+        // يوجد مليان: نبقى المليان (الأكثر اكتمالاً أو الأحدث)
+        fullRecords.sort((a, b) => {
+          const scoreA = [
+            a.subscriber_name, a.meter_photo_url, a.invoice_photo_url,
+            a.region, a.category
+          ].filter(Boolean).length;
+          const scoreB = [
+            b.subscriber_name, b.meter_photo_url, b.invoice_photo_url,
+            b.region, b.category
+          ].filter(Boolean).length;
+          if (scoreB !== scoreA) return scoreB - scoreA;
+          const dateA = new Date(a.submitted_at || a.created_at);
+          const dateB = new Date(b.submitted_at || b.created_at);
+          return dateB - dateA;
+        });
+        toKeep = fullRecords[0];
+        toDelete = [...fullRecords.slice(1), ...emptyRecords];
+      } else {
+        // الكل فارغين: نبقى الأحدث ونحذف الباقي
         recordsList.sort((a, b) => {
           const dateA = new Date(a.submitted_at || a.created_at);
           const dateB = new Date(b.submitted_at || b.created_at);
           return dateB - dateA;
         });
-
-        // الاحتفاظ بالأحدث، والباقي للحذف
-        const toKeep = recordsList[0];
-        const toDelete = recordsList.slice(1);
-
-        duplicates.push({
-          key,
-          accountNumber: toKeep.account_number,
-          meterNumber: toKeep.meter_number,
-          keep: toKeep,
-          delete: toDelete,
-          count: recordsList.length
-        });
+        toKeep = recordsList[0];
+        toDelete = recordsList.slice(1);
       }
+
+      duplicates.push({
+        key: accountNumber,
+        accountNumber,
+        keep: toKeep,
+        delete: toDelete,
+        count: recordsList.length,
+        hadFull: fullRecords.length >= 1,
+        emptyCount: emptyRecords.length
+      });
     }
 
-    console.log(`\n📋 تم العثور على ${duplicates.length} مجموعة مكررة`);
-    
-    let totalDuplicates = 0;
+    console.log(`\n📋 تم العثور على ${duplicates.length} مجموعة مكررة (نفس رقم الحساب)`);
+    let totalToDelete = 0;
     duplicates.forEach(dup => {
-      totalDuplicates += dup.delete.length;
-      console.log(`   - ${dup.accountNumber} / ${dup.meterNumber}: ${dup.count} سجل (سيتم حذف ${dup.delete.length})`);
+      totalToDelete += dup.delete.length;
+      const status = dup.hadFull ? 'مليان+فارغ' : 'كلها فارغة';
+      console.log(`   - ${dup.accountNumber}: ${dup.count} سجل (${status}) → حذف ${dup.delete.length}`);
     });
-
-    console.log(`\n📊 إجمالي السجلات المكررة للحذف: ${totalDuplicates}\n`);
+    console.log(`\n📊 إجمالي السجلات للحذف: ${totalToDelete}\n`);
 
     return duplicates;
   } catch (error) {
@@ -147,7 +188,14 @@ async function findDuplicateRecords() {
 async function deleteDuplicateRecords(duplicates) {
   if (duplicates.length === 0) {
     console.log('✅ لا توجد سجلات مكررة للحذف');
-    return;
+    return { deletedCount: 0, errorCount: 0, deletedIds: [] };
+  }
+
+  if (DRY_RUN) {
+    console.log('🔍 وضع المعاينة (--dry-run): لن يتم حذف أي سجل\n');
+    const total = duplicates.reduce((sum, dup) => sum + dup.delete.length, 0);
+    console.log(`   كان سيُحذف ${total} سجل من ${duplicates.length} مجموعة مكررة`);
+    return { deletedCount: 0, errorCount: 0, deletedIds: [] };
   }
 
   console.log('🗑️  بدء حذف السجلات المكررة...\n');
@@ -160,8 +208,8 @@ async function deleteDuplicateRecords(duplicates) {
     const duplicate = duplicates[i];
     const idsToDelete = duplicate.delete.map(r => r.id);
 
-    console.log(`\n[${i + 1}/${duplicates.length}] معالجة: ${duplicate.accountNumber} / ${duplicate.meterNumber}`);
-    console.log(`   📌 الاحتفاظ بـ: ${duplicate.keep.id} (${new Date(duplicate.keep.submitted_at || duplicate.keep.created_at).toLocaleDateString('ar')})`);
+    console.log(`\n[${i + 1}/${duplicates.length}] معالجة: ${duplicate.accountNumber}`);
+    console.log(`   📌 الاحتفاظ بـ: ${duplicate.keep.id} (${new Date(duplicate.keep.submitted_at || duplicate.keep.created_at).toLocaleDateString('ar')}) ${duplicate.hadFull ? '[مليان]' : '[فارغ - الأحدث]'}`);
     console.log(`   🗑️  حذف ${idsToDelete.length} سجل...`);
 
     for (const id of idsToDelete) {
@@ -236,7 +284,7 @@ async function main() {
     // عرض ملخص قبل الحذف
     const totalToDelete = duplicates.reduce((sum, dup) => sum + dup.delete.length, 0);
     console.log(`\n⚠️  تحذير: سيتم حذف ${totalToDelete} سجل مكرر`);
-    console.log(`   سيتم الاحتفاظ بـ ${duplicates.length} سجل (الأحدث من كل مجموعة)\n`);
+    console.log(`   المنطق: المليان يبقى والفارغ يُحذف، أو إذا الكل فارغين يبقى واحد\n`);
 
     // حذف السجلات المكررة
     const result = await deleteDuplicateRecords(duplicates);
