@@ -16,11 +16,14 @@ interface SectorStats {
   percentageOfTotal: number;
 }
 
+type SortOrder = 'asc' | 'desc';
+
 export function Sectors() {
   const [stats, setStats] = useState<SectorStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const { addNotification } = useNotifications();
 
   useEffect(() => {
@@ -97,10 +100,21 @@ export function Sectors() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center">
           <PieChart className="w-6 h-6 text-indigo-500 ml-3" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">القطاعات</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">ترتيب نسبة الإنجاز:</label>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="desc">من الأعلى إلى الأقل</option>
+            <option value="asc">من الأقل إلى الأعلى</option>
+          </select>
         </div>
       </div>
 
@@ -109,7 +123,13 @@ export function Sectors() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stats.map((s, i) => (
+        {[...stats]
+          .sort((a, b) =>
+            sortOrder === 'desc'
+              ? b.percentageOfTotal - a.percentageOfTotal
+              : a.percentageOfTotal - b.percentageOfTotal
+          )
+          .map((s, i) => (
           <div
             key={s.sector}
             className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
