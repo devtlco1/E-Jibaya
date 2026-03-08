@@ -11,20 +11,17 @@ const FieldAgentApp = lazy(() => import('./components/mobile/FieldAgentApp').the
 function AppFooter() {
   return (
     <footer className="mt-auto py-3 px-4 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
-      {/* شاشات صغيرة: الشعار فقط */}
-      <div className="flex justify-center md:hidden">
-        <img src="/logo-etlco.png" alt="ETLCO" className="h-8 w-auto object-contain dark:invert" />
-      </div>
-      {/* شاشات متوسطة فأكبر: النص الكامل مع الشعار */}
-      <div className="hidden md:flex flex-wrap items-center justify-between gap-3 max-w-6xl mx-auto">
+      <div className="flex flex-wrap items-center justify-between gap-3 max-w-6xl mx-auto">
+        {/* يسار: نسخة النظام */}
         <div className="flex-shrink-0 text-end">
           <p>نسخة النظام 1.26.4</p>
         </div>
+        {/* المنتصف: الشعار بجانب النص */}
         <div className="flex-1 min-w-0 flex flex-col items-center text-center">
           <p className="font-medium text-gray-700 dark:text-gray-300">نظام الجباية الإلكتروني</p>
           <p className="flex flex-wrap items-center justify-center gap-1 mt-0.5">
             جميع الحقوق محفوظة ©
-            <img src="/logo-etlco.png" alt="ETLCO" className="h-6 w-auto object-contain inline-block align-middle dark:invert" />
+            <img src="/logo-abraj.png" alt="أبراج الأنوار" className="h-6 w-auto object-contain inline-block align-middle" />
             شركة أبراج الأنوار للمقاولات والتجارة العامة والوكالات التجارية 2026
           </p>
         </div>
