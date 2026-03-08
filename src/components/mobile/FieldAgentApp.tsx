@@ -533,7 +533,7 @@ export function FieldAgentApp() {
       invoicePhotoBackUrl = await dbOperations.uploadPhoto(file, filePath);
     }
 
-    // Update the record with new data
+    // Update the record with new data (including photo URLs for main record display)
     const updateData: any = {
       subscriber_name: selectedRecord.subscriber_name,
       account_number: selectedRecord.account_number,
@@ -554,6 +554,17 @@ export function FieldAgentApp() {
       total_amount: totalAmount ? parseFloat(totalAmount) : selectedRecord.total_amount,
       current_amount: currentAmount ? parseFloat(currentAmount) : selectedRecord.current_amount
     };
+
+    // تحديث صور الفاتورة الرئيسية (وجه وظهر) على السجل
+    if (invoicePhotoUrl) {
+      updateData.invoice_photo_url = invoicePhotoUrl;
+    }
+    if (invoicePhotoBackUrl) {
+      updateData.invoice_photo_back_url = invoicePhotoBackUrl;
+    }
+    if (meterPhotoUrl) {
+      updateData.meter_photo_url = meterPhotoUrl;
+    }
 
     const success = await dbOperations.updateRecord(selectedRecord.id, updateData);
 

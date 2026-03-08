@@ -8,6 +8,19 @@ import { LoginForm } from './components/LoginForm';
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const FieldAgentApp = lazy(() => import('./components/mobile/FieldAgentApp').then(module => ({ default: module.FieldAgentApp })));
 
+function AppFooter() {
+  return (
+    <footer className="mt-auto py-3 px-4 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-600 dark:text-gray-400">
+      <div className="flex justify-center mb-2">
+        <img src="/logo-abraj.png" alt="أبراج الأنوار" className="h-8 object-contain" />
+      </div>
+      <p className="font-medium text-gray-700 dark:text-gray-300">بي نظام الجباية الاكتروني</p>
+      <p>جميع الحقوق محفوظة شركة ابراج الانوار للمقاولات و التجارة العامة و الوكالات التاجرية ٢٠٢٦</p>
+      <p>نسخة النظام ١،٢٦،٤</p>
+    </footer>
+  );
+}
+
 function AppContent() {
   const { user, loading } = useAuth();
   
@@ -15,17 +28,27 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">جاري التحميل...</p>
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">جاري التحميل...</p>
+          </div>
         </div>
+        <AppFooter />
       </div>
     );
   }
 
   if (!user) {
-    return <LoginForm />;
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 flex items-center justify-center">
+          <LoginForm />
+        </div>
+        <AppFooter />
+      </div>
+    );
   }
 
   // Loading component للمكونات المحملة بشكل كسول
@@ -39,26 +62,34 @@ function AppContent() {
   );
 
   return (
-    <Suspense fallback={<LoadingSpinner />}>
-      {user.role === 'field_agent' ? <FieldAgentApp /> : <AdminDashboard />}
-    </Suspense>
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 min-h-0">
+        <Suspense fallback={<LoadingSpinner />}>
+          {user.role === 'field_agent' ? <FieldAgentApp /> : <AdminDashboard />}
+        </Suspense>
+      </div>
+      <AppFooter />
+    </div>
   );
   } catch (error) {
     console.error('Error in AppContent:', error);
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 dark:text-red-400 mb-4">
-            <h2 className="text-xl font-bold">خطأ في التطبيق</h2>
-            <p className="text-sm">حدث خطأ غير متوقع. يرجى إعادة تحميل الصفحة.</p>
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-600 dark:text-red-400 mb-4">
+              <h2 className="text-xl font-bold">خطأ في التطبيق</h2>
+              <p className="text-sm">حدث خطأ غير متوقع. يرجى إعادة تحميل الصفحة.</p>
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              إعادة تحميل الصفحة
+            </button>
           </div>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            إعادة تحميل الصفحة
-          </button>
         </div>
+        <AppFooter />
       </div>
     );
   }

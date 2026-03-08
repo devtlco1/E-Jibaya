@@ -22,7 +22,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialPosition: { x: 0, y: 0 } });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [originalPhotos, setOriginalPhotos] = useState<{ meter: any; invoice: any }>({ meter: null, invoice: null });
+  const [originalPhotos, setOriginalPhotos] = useState<{ meter: any; invoice: any; invoice_back?: any }>({ meter: null, invoice: null, invoice_back: null });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
@@ -92,6 +92,17 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
             created_at: recordData.submitted_at,
             notes: null,
             verified: recordData.invoice_photo_verified || false
+          } : null,
+          invoice_back: recordData.invoice_photo_back_url ? {
+            id: 'invoice-back-original',
+            record_id: recordData.id,
+            photo_type: 'invoice',
+            photo_url: recordData.invoice_photo_back_url,
+            photo_date: recordData.submitted_at,
+            created_by: recordData.field_agent_id,
+            created_at: recordData.submitted_at,
+            notes: null,
+            verified: recordData.invoice_photo_verified || false
           } : null
         });
       }
@@ -139,6 +150,17 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
             created_at: recordData.submitted_at,
             notes: null,
             verified: recordData.invoice_photo_verified || false
+          } : null,
+          invoice_back: recordData.invoice_photo_back_url ? {
+            id: 'invoice-back-original',
+            record_id: recordData.id,
+            photo_type: 'invoice',
+            photo_url: recordData.invoice_photo_back_url,
+            photo_date: recordData.submitted_at,
+            created_by: recordData.field_agent_id,
+            created_at: recordData.submitted_at,
+            notes: null,
+            verified: recordData.invoice_photo_verified || false
           } : null
         });
       }
@@ -161,7 +183,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   // Update original photos when record changes
   useEffect(() => {
     if (!record) {
-      setOriginalPhotos({ meter: null, invoice: null });
+      setOriginalPhotos({ meter: null, invoice: null, invoice_back: null });
       return;
     }
     
@@ -179,6 +201,16 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       invoice: record.invoice_photo_url ? {
         id: 'original-invoice',
         photo_url: record.invoice_photo_url,
+        photo_type: 'invoice' as const,
+        photo_date: record.submitted_at,
+        created_by: record.field_agent_id,
+        created_at: record.submitted_at,
+        notes: null,
+        verified: record.invoice_photo_verified || false
+      } : null,
+      invoice_back: record.invoice_photo_back_url ? {
+        id: 'invoice-back-original',
+        photo_url: record.invoice_photo_back_url,
         photo_type: 'invoice' as const,
         photo_date: record.submitted_at,
         created_by: record.field_agent_id,
@@ -569,7 +601,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
             </h3>
             <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
               {(() => {
-                const allPhotos = [...(originalPhotos.meter ? [originalPhotos.meter] : []), ...(originalPhotos.invoice ? [originalPhotos.invoice] : []), ...photos];
+                const allPhotos = [...(originalPhotos.meter ? [originalPhotos.meter] : []), ...(originalPhotos.invoice ? [originalPhotos.invoice] : []), ...(originalPhotos.invoice_back ? [originalPhotos.invoice_back] : []), ...photos];
                 const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
                 return `${currentIndex + 1} من ${allPhotos.length}`;
               })()}
@@ -793,6 +825,74 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                                 <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
                               )}
                             </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {originalPhotos.invoice_back && (
+                      <div
+                        onClick={() => {
+                          setSelectedPhotoType('invoice');
+                          setSelectedPhoto(originalPhotos.invoice_back ? {
+                            ...originalPhotos.invoice_back,
+                            record_id: recordId,
+                            created_at: originalPhotos.invoice_back.photo_date,
+                            notes: null,
+                            verified: false
+                          } : null);
+                        }}
+                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                          selectedPhoto?.id === 'invoice-back-original'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                صورة الفاتورة (ظهر)
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {formatDate(originalPhotos.invoice_back.photo_date)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {originalPhotos.invoice_back && (
+                      <div
+                        onClick={() => {
+                          setSelectedPhotoType('invoice');
+                          setSelectedPhoto(originalPhotos.invoice_back ? {
+                            ...originalPhotos.invoice_back,
+                            record_id: recordId,
+                            created_at: originalPhotos.invoice_back.photo_date,
+                            notes: null,
+                            verified: false
+                          } : null);
+                        }}
+                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                          selectedPhoto?.id === 'invoice-back-original'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                صورة الفاتورة (ظهر)
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {formatDate(originalPhotos.invoice_back.photo_date)}
+                            </div>
                           </div>
                         </div>
                       </div>

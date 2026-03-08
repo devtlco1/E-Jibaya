@@ -414,7 +414,7 @@ export function Reports({}: ReportsProps) {
                     <th>المبلغ المستلم</th>
                     <th>حالة الارض</th>
                     <th>الحالة</th>
-                    ${filters.includeImages ? '<th>مقياس</th><th>فاتورة</th>' : ''}
+                    ${filters.includeImages ? '<th>مقياس</th><th>فاتورة وجه</th><th>فاتورة ظهر</th>' : ''}
                 </tr>
             </thead>
             <tbody>
@@ -441,6 +441,7 @@ export function Reports({}: ReportsProps) {
                     ${filters.includeImages ? `
                     <td>${record.meter_photo_url ? `<span class="image-ref">${extractImageId(record.meter_photo_url)}</span>` : '-'}</td>
                     <td>${record.invoice_photo_url ? `<span class="image-ref">${extractImageId(record.invoice_photo_url)}</span>` : '-'}</td>
+                    <td>${record.invoice_photo_back_url ? `<span class="image-ref">${extractImageId(record.invoice_photo_back_url)}</span>` : '-'}</td>
                     ` : ''}
                 </tr>
                 `).join('')}
@@ -1177,7 +1178,8 @@ export function Reports({}: ReportsProps) {
                             {filters.includeImages && (
                               <>
                                 <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">صورة المقياس</th>
-                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">صورة الفاتورة</th>
+                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">صورة الفاتورة (وجه)</th>
+                                <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">صورة الفاتورة (ظهر)</th>
                               </>
                             )}
                           </>
@@ -1241,6 +1243,15 @@ export function Reports({}: ReportsProps) {
                                     {record.invoice_photo_url ? (
                                       <span className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs font-mono">
                                         {extractImageId(record.invoice_photo_url)}
+                                      </span>
+                                    ) : (
+                                      'لا توجد'
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                    {record.invoice_photo_back_url ? (
+                                      <span className="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs font-mono">
+                                        {extractImageId(record.invoice_photo_back_url)}
                                       </span>
                                     ) : (
                                       'لا توجد'

@@ -653,7 +653,7 @@ export function DataTable({
             </div>
             
             <!-- الصور -->
-            ${(record.meter_photo_url || record.invoice_photo_url) ? `
+            ${(record.meter_photo_url || record.invoice_photo_url || record.invoice_photo_back_url) ? `
             <div class="photos-section">
                 <div class="photos-grid">
                     ${record.meter_photo_url ? `
@@ -664,8 +664,14 @@ export function DataTable({
                     ` : ''}
                     ${record.invoice_photo_url ? `
                     <div class="photo-item">
-                        <div class="photo-header">صورة الفاتورة</div>
-                        <img src="${record.invoice_photo_url}" alt="صورة الفاتورة" class="photo-image" />
+                        <div class="photo-header">صورة الفاتورة (وجه)</div>
+                        <img src="${record.invoice_photo_url}" alt="صورة الفاتورة وجه" class="photo-image" />
+                    </div>
+                    ` : ''}
+                    ${record.invoice_photo_back_url ? `
+                    <div class="photo-item">
+                        <div class="photo-header">صورة الفاتورة (ظهر)</div>
+                        <img src="${record.invoice_photo_back_url}" alt="صورة الفاتورة ظهر" class="photo-image" />
                     </div>
                     ` : ''}
                 </div>
@@ -1521,17 +1527,40 @@ export function DataTable({
                     className="px-3 sm:px-6 py-4 whitespace-nowrap cursor-pointer hidden lg:table-cell"
                     onClick={() => handleEdit(record)}
                   >
-                    {record.invoice_photo_url ? (
-                      <div className="relative group">
-                        <img 
-                          src={record.invoice_photo_url} 
-                          alt="صورة الفاتورة" 
-                          className="w-12 h-12 object-cover rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleView(record);
-                          }}
-                        />
+                    {(record.invoice_photo_url || record.invoice_photo_back_url) ? (
+                      <div className="flex items-center gap-1">
+                        {record.invoice_photo_url && (
+                          <div className="relative group">
+                            <img 
+                              src={record.invoice_photo_url} 
+                              alt="صورة الفاتورة وجه" 
+                              className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleView(record);
+                              }}
+                            />
+                            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              وجه
+                            </div>
+                          </div>
+                        )}
+                        {record.invoice_photo_back_url && (
+                          <div className="relative group">
+                            <img 
+                              src={record.invoice_photo_back_url} 
+                              alt="صورة الفاتورة ظهر" 
+                              className="w-10 h-10 object-cover rounded border border-gray-200 dark:border-gray-600 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleView(record);
+                              }}
+                            />
+                            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              ظهر
+                            </div>
+                          </div>
+                        )}
                         <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                           انقر للعرض
                         </div>
@@ -2019,7 +2048,7 @@ export function DataTable({
                 )}
 
                 {/* الصور المرفقة */}
-                {(viewingRecord.meter_photo_url || viewingRecord.invoice_photo_url) && (
+                {(viewingRecord.meter_photo_url || viewingRecord.invoice_photo_url || viewingRecord.invoice_photo_back_url) && (
                   <div className="bg-gradient-to-l from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-5 border border-purple-200 dark:border-purple-700">
                     <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
                       <Camera className="w-5 h-5 text-purple-600 dark:text-purple-400 ml-2" />
@@ -2060,7 +2089,7 @@ export function DataTable({
                           <div className="flex items-center justify-between mb-3">
                             <h5 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
                               <FileText className="w-4 h-4 text-green-600 ml-2" />
-                              صورة الفاتورة
+                              صورة الفاتورة (وجه)
                             </h5>
                             {viewingRecord.invoice_photo_verified && (
                               <span className="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded text-xs font-semibold">
@@ -2076,9 +2105,26 @@ export function DataTable({
                           </div>
                           <img 
                             src={viewingRecord.invoice_photo_url} 
-                            alt="صورة الفاتورة" 
+                            alt="صورة الفاتورة وجه" 
                             className="w-full h-56 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-gray-200 dark:border-gray-600"
-                            onClick={() => handleImageClick(viewingRecord.invoice_photo_url!, 'صورة الفاتورة')}
+                            onClick={() => handleImageClick(viewingRecord.invoice_photo_url!, 'صورة الفاتورة - وجه')}
+                          />
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">انقر للتكبير</p>
+                        </div>
+                      )}
+                      {viewingRecord.invoice_photo_back_url && (
+                        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
+                              <FileText className="w-4 h-4 text-green-600 ml-2" />
+                              صورة الفاتورة (ظهر)
+                            </h5>
+                          </div>
+                          <img 
+                            src={viewingRecord.invoice_photo_back_url} 
+                            alt="صورة الفاتورة ظهر" 
+                            className="w-full h-56 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity border border-gray-200 dark:border-gray-600"
+                            onClick={() => handleImageClick(viewingRecord.invoice_photo_back_url!, 'صورة الفاتورة - ظهر')}
                           />
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">انقر للتكبير</p>
                         </div>
@@ -2616,7 +2662,7 @@ export function DataTable({
                   <div className="mb-6">
                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
                       <FileText className="w-4 h-4 ml-2 text-green-600" />
-                      صورة الفاتورة
+                      صورة الفاتورة (وجه)
                     </h5>
                     <div className="relative bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
                       <div
@@ -2655,6 +2701,24 @@ export function DataTable({
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
                       📄 اسم المشترك • رقم الحساب • المنطقة • الترميز الجديد
                     </p>
+                  </div>
+                )}
+
+                {editingRecord.invoice_photo_back_url && (
+                  <div className="mb-6">
+                    <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <FileText className="w-4 h-4 ml-2 text-green-600" />
+                      صورة الفاتورة (ظهر)
+                    </h5>
+                    <div className="relative bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+                      <div className="w-full h-80 flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={editingRecord.invoice_photo_back_url} 
+                          alt="صورة الفاتورة ظهر" 
+                          className="max-w-full max-h-full object-contain select-none"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -2704,7 +2768,7 @@ export function DataTable({
                   </div>
                 )}
                 
-                {!editingRecord.meter_photo_url && !editingRecord.invoice_photo_url && (
+                {!editingRecord.meter_photo_url && !editingRecord.invoice_photo_url && !editingRecord.invoice_photo_back_url && (
                   <div className="text-center py-12">
                     <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 dark:text-gray-400">لا توجد صور مرفقة</p>
