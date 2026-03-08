@@ -8,15 +8,24 @@ import { LoginForm } from './components/LoginForm';
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const FieldAgentApp = lazy(() => import('./components/mobile/FieldAgentApp').then(module => ({ default: module.FieldAgentApp })));
 
-function AppFooter() {
+function AppFooter({ variant = 'default' }: { variant?: 'default' | 'login' }) {
+  if (variant === 'login') {
+    return (
+      <footer className="mt-auto py-3 px-4 text-center text-[11px] text-gray-500 dark:text-gray-500/90">
+        <p className="flex flex-wrap items-center justify-center gap-1">
+          جميع الحقوق محفوظة ©
+          <img src="/logo-abraj.png" alt="أبراج الأنوار" className="h-4 w-auto object-contain inline-block align-middle opacity-90" />
+          شركة أبراج الأنوار للمقاولات والتجارة العامة والوكالات التجارية 2026 · نسخة 1.26.4
+        </p>
+      </footer>
+    );
+  }
   return (
     <footer className="mt-auto py-3 px-4 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
       <div className="flex flex-wrap items-center justify-between gap-3 max-w-6xl mx-auto">
-        {/* يسار: نسخة النظام */}
         <div className="flex-shrink-0 text-end">
           <p>نسخة النظام 1.26.4</p>
         </div>
-        {/* المنتصف: الشعار بجانب النص */}
         <div className="flex-1 min-w-0 flex flex-col items-center text-center">
           <p className="flex flex-wrap items-center justify-center gap-1">
             جميع الحقوق محفوظة ©
@@ -24,7 +33,6 @@ function AppFooter() {
             شركة أبراج الأنوار للمقاولات والتجارة العامة والوكالات التجارية 2026
           </p>
         </div>
-        {/* يمين: نظام الجباية الإلكتروني */}
         <div className="flex-shrink-0 text-start">
           <p className="font-medium text-gray-700 dark:text-gray-300">نظام الجباية الإلكتروني</p>
         </div>
@@ -54,11 +62,11 @@ function AppContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-        <div className="flex-1 flex items-center justify-center">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50 dark:from-gray-900 dark:via-blue-950/20 dark:to-slate-900">
+        <div className="flex-1 flex items-center justify-center px-4 py-8">
           <LoginForm />
         </div>
-        <AppFooter />
+        <AppFooter variant="login" />
       </div>
     );
   }

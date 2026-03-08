@@ -58,25 +58,24 @@ export function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900 flex items-center justify-center p-4 transition-colors duration-300">
-      <div className="w-full max-w-md">
-        {/* Theme Toggle */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-200 border border-gray-200 dark:border-gray-700"
-            aria-label={isDark ? 'تبديل إلى الوضع النهاري' : 'تبديل إلى الوضع الليلي'}
-          >
-            {isDark ? (
-              <Sun className="w-5 h-5 text-yellow-500" />
-            ) : (
-              <Moon className="w-5 h-5 text-gray-600" />
-            )}
-          </button>
-        </div>
+    <div className="w-full max-w-md">
+      {/* Theme Toggle */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={toggleTheme}
+          className="p-2.5 rounded-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-gray-200/80 dark:border-gray-600/50 shadow-sm hover:shadow-md transition-all duration-200"
+          aria-label={isDark ? 'تبديل إلى الوضع النهاري' : 'تبديل إلى الوضع الليلي'}
+        >
+          {isDark ? (
+            <Sun className="w-5 h-5 text-yellow-500" />
+          ) : (
+            <Moon className="w-5 h-5 text-gray-600" />
+          )}
+        </button>
+      </div>
 
-        {/* Login Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 transition-colors duration-300" dir="rtl">
+      {/* Login Card */}
+      <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-2xl shadow-xl shadow-blue-900/5 dark:shadow-black/20 border border-gray-200/50 dark:border-gray-700/50 p-8 transition-colors duration-300" dir="rtl">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
@@ -151,9 +150,8 @@ export function LoginForm() {
                   <span>تسجيل الدخول</span>
                 </>
               )}
-            </button>
-          </form>
-        </div>
+          </button>
+        </form>
       </div>
     </div>
   );
