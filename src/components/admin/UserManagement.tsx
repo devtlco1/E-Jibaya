@@ -969,6 +969,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                   الدور
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  الوظيفة
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  القطاع
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   الحالة
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -1005,6 +1011,12 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
                       )}
                       {user.role === 'admin' ? 'مدير' : user.role === 'employee' ? 'موظف' : user.role === 'branch_manager' ? 'مدير فرع' : user.role === 'high_loads' ? 'الأحمال العالية' : 'محصل ميداني'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {user.job_title || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                    {user.sector || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {user.username.includes('(محذوف)') ? (
