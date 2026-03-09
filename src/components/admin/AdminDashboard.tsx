@@ -20,14 +20,18 @@ import {
   Sun, 
   BarChart3,
   FileText,
-  Camera,
   FileBarChart,
-  UserCheck,
   HardDrive,
   Lock,
   Plus,
   Trophy,
-  Layers
+  Layers,
+  ClipboardList,
+  Clock,
+  CheckCircle2,
+  Ban,
+  LockKeyhole,
+  UsersRound
 } from 'lucide-react';
 
 export function AdminDashboard() {
@@ -756,76 +760,76 @@ export function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg ml-2 sm:ml-3">
-                <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-blue-100 dark:bg-blue-900/50 rounded-xl">
+                <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" strokeWidth={2} />
               </div>
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">المجموع</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.total}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg ml-2 sm:ml-3">
-                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600 dark:text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">قيد المراجعة</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.pending}</p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">المجموع</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.total?.toLocaleString?.() ?? allRecordsStats.total}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg ml-2 sm:ml-3">
-                <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-100 dark:bg-amber-900/50 rounded-xl">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 dark:text-amber-400" strokeWidth={2} />
               </div>
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">مكتملة</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.completed}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg ml-2 sm:ml-3">
-                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">امتناع</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.refused}</p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">قيد المراجعة</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.pending?.toLocaleString?.() ?? allRecordsStats.pending}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg ml-2 sm:ml-3">
-                <Lock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" />
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/50 rounded-xl">
+                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400" strokeWidth={2} />
               </div>
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">مقفلة</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{allRecordsStats.locked}</p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">مكتملة</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.completed?.toLocaleString?.() ?? allRecordsStats.completed}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg ml-2 sm:ml-3">
-                <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-red-100 dark:bg-red-900/50 rounded-xl">
+                <Ban className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 dark:text-red-400" strokeWidth={2} />
               </div>
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">امتناع</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.refused?.toLocaleString?.() ?? allRecordsStats.refused}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-orange-100 dark:bg-orange-900/50 rounded-xl">
+                <LockKeyhole className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">مقفلة</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.locked?.toLocaleString?.() ?? allRecordsStats.locked}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-violet-100 dark:bg-violet-900/50 rounded-xl">
+                <UsersRound className="w-5 h-5 sm:w-6 sm:h-6 text-violet-600 dark:text-violet-400" strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   {user?.role === 'branch_manager' ? 'فريقك' : 'المستخدمين'}
                 </p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">{fieldAgentsCount}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{fieldAgentsCount?.toLocaleString?.() ?? fieldAgentsCount}</p>
               </div>
             </div>
           </div>
