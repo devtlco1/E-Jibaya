@@ -320,10 +320,7 @@ export function FieldAgentApp() {
 
   const handleEditSubmit = async () => {
     if (!editRecord || !user?.id) return;
-    if (!editInvoicePhoto) {
-      addNotification({ type: 'warning', title: 'بيانات ناقصة', message: 'صورة وجه الفاتورة مطلوبة' });
-      return;
-    }
+    // عند التعديل لا يُشترط رفع صورة؛ نحدّث الموجود فقط (صورة الفاتورة تُستخدم الحالية إن وُجدت)
     setIsEditSubmitting(true);
     try {
       try {

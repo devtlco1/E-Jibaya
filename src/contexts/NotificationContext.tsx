@@ -96,7 +96,11 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 function ToastContainer({ toasts, onRemove }: { toasts: Notification[]; onRemove: (id: string) => void }) {
   if (toasts.length === 0) return null;
   return (
-    <div className="fixed top-4 right-4 z-[200] space-y-2 w-[min(90vw,22rem)]" dir="rtl" aria-label="إشعارات">
+    <div
+      className="fixed z-[200] space-y-2 inset-x-3 top-3 max-w-[calc(100vw-1.5rem)] sm:inset-x-auto sm:right-4 sm:left-auto sm:top-4 sm:w-[min(90vw,22rem)]"
+      dir="rtl"
+      aria-label="إشعارات"
+    >
       {toasts.map(n => (
         <ToastItem key={n.id} notification={n} onRemove={() => onRemove(n.id)} />
       ))}
@@ -122,14 +126,21 @@ function ToastItem({ notification, onRemove }: { notification: Notification; onR
     }
   };
   return (
-    <div className={`${getBg()} border rounded-lg shadow-lg p-4 flex items-start gap-3`}>
-      <div className="flex-shrink-0">{getIcon()}</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">{notification.title}</p>
-        {notification.message && <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{notification.message}</p>}
+    <div className={`${getBg()} border rounded-xl shadow-lg p-3 sm:p-4 flex items-start gap-2 sm:gap-3 min-w-0`}>
+      <div className="flex-shrink-0 mt-0.5">{getIcon()}</div>
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <p className="text-sm sm:text-base font-medium text-gray-900 dark:text-white break-words">{notification.title}</p>
+        {notification.message && (
+          <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300 break-words line-clamp-4">{notification.message}</p>
+        )}
       </div>
-      <button type="button" onClick={onRemove} className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="إغلاق">
-        <X className="w-4 h-4" />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="flex-shrink-0 p-2 -m-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-manipulation"
+        aria-label="إغلاق"
+      >
+        <X className="w-5 h-5 sm:w-4 sm:h-4" />
       </button>
     </div>
   );
@@ -167,16 +178,16 @@ export function NotificationBell({ badgeStyle = 'number' }: { badgeStyle?: Notif
       <button
         type="button"
         onClick={handleToggle}
-        className="relative flex items-center justify-center p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="relative flex items-center justify-center p-2.5 sm:p-2 rounded-lg sm:rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors touch-manipulation min-h-[44px] min-w-[44px]"
         aria-label="الإشعارات"
         title="الإشعارات"
       >
-        <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+        <Bell className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-300" />
         {unseenCount > 0 && (
           badgeStyle === 'dot' ? (
-            <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800" aria-label={`${unseenCount} إشعار جديد`} />
+            <span className="absolute top-0.5 right-0.5 sm:top-0 sm:right-0 block h-2.5 w-2.5 sm:h-2 sm:w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800" aria-label={`${unseenCount} إشعار جديد`} />
           ) : (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white px-1">
+            <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-[1.25rem] sm:h-4 sm:min-w-[1rem] items-center justify-center rounded-full bg-red-500 text-[10px] sm:text-[10px] font-bold text-white px-1">
               {unseenCount > 99 ? '99+' : unseenCount}
             </span>
           )
@@ -184,18 +195,18 @@ export function NotificationBell({ badgeStyle = 'number' }: { badgeStyle?: Notif
       </button>
 
       {open && (
-        <div className="absolute top-full mt-1 left-0 w-[min(90vw,22rem)] max-h-[70vh] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl z-[300] flex flex-col">
-          <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-600">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">الإشعارات</h3>
+        <div className="fixed left-2 right-2 top-14 sm:absolute sm:left-0 sm:right-auto sm:top-full sm:mt-1 sm:w-[min(90vw,22rem)] w-auto max-h-[min(70vh,24rem)] sm:max-h-[70vh] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl z-[300] flex flex-col">
+          <div className="flex items-center justify-between p-3 sm:p-3 border-b border-gray-200 dark:border-gray-600">
+            <h3 className="text-sm sm:text-sm font-semibold text-gray-900 dark:text-white">الإشعارات</h3>
             {notifications.length > 0 && (
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {notifications.length} إشعار
               </span>
             )}
           </div>
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-y-auto flex-1 overscroll-contain">
             {notifications.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
+              <div className="p-4 sm:p-6 text-center text-gray-500 dark:text-gray-400 text-sm">
                 لا توجد إشعارات
               </div>
             ) : (
@@ -250,21 +261,21 @@ function NotificationListItem({
   };
 
   return (
-    <li className={`px-3 py-2.5 ${getBg()} flex items-start gap-2`}>
-      <div className="mt-0.5">{getIcon()}</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 dark:text-white">{notification.title}</p>
+    <li className={`px-3 py-3 sm:py-2.5 ${getBg()} flex items-start gap-2 min-w-0`}>
+      <div className="mt-0.5 flex-shrink-0">{getIcon()}</div>
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <p className="text-sm font-medium text-gray-900 dark:text-white break-words">{notification.title}</p>
         {notification.message && (
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{notification.message}</p>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 break-words line-clamp-3">{notification.message}</p>
         )}
       </div>
       <button
         type="button"
         onClick={onRemove}
-        className="flex-shrink-0 p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        className="flex-shrink-0 p-2 -m-1 rounded hover:bg-black/5 dark:hover:bg-white/5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
         aria-label="إغلاق"
       >
-        <X className="w-3.5 h-3.5" />
+        <X className="w-4 h-4" />
       </button>
     </li>
   );
