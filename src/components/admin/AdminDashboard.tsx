@@ -10,7 +10,7 @@ import { Reports } from './Reports';
 import { ActivityLogs } from './ActivityLogs';
 import { BackupSystem } from './BackupSystem';
 import { CollectionRecord, FilterState } from '../../types';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useNotifications, NotificationBell } from '../../contexts/NotificationContext';
 import { dbOperations } from '../../lib/supabase';
 import { 
   Users, 
@@ -73,6 +73,7 @@ export function AdminDashboard() {
   const [filters, setFilters] = useState<FilterState>({
     subscriber_name: '',
     account_number: '',
+    record_number: '',
     meter_number: '',
     region: '',
     district: '',
@@ -107,6 +108,7 @@ export function AdminDashboard() {
   const filtersRef = useRef<FilterState>({
     subscriber_name: '',
     account_number: '',
+    record_number: '',
     meter_number: '',
     region: '',
     district: '',
@@ -125,6 +127,14 @@ export function AdminDashboard() {
   useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
+
+  // الاحتفاظ بآخر رقم صفحة وعناصر الصفحة لاستخدامها عند استدعاء loadRecords من realtime/polling (لتجنب العودة لصفحة 1)
+  const currentPageRef = useRef(currentPage);
+  const itemsPerPageRef = useRef(itemsPerPage);
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+    itemsPerPageRef.current = itemsPerPage;
+  }, [currentPage, itemsPerPage]);
 
   const userRef = useRef(user);
   useEffect(() => {
@@ -181,16 +191,23 @@ export function AdminDashboard() {
   const loadRecords = async () => {
     setLoading(true);
     try {
+      // استخدام القيم من الـ ref لضمان الحفاظ على رقم الصفحة عند الاستدعاء من realtime/polling
+      const page = currentPageRef.current;
+      const perPage = itemsPerPageRef.current;
+      const filtersToUse = filtersRef.current;
+      const userToUse = userRef.current;
       // Load only paginated records and stats (not all records)
       // تمرير user لفلترة السجلات حسب صلاحيات مدير الفرع
       const [recordsResult, statsResult] = await Promise.all([
-        dbOperations.getRecordsWithPagination(currentPage, itemsPerPage, filters, user),
-        dbOperations.getRecordsStats(user)
+        dbOperations.getRecordsWithPagination(page, perPage, filtersToUse, userToUse),
+        dbOperations.getRecordsStats(userToUse)
       ]);
       
       setRecords(recordsResult.data);
       setTotalRecords(recordsResult.total);
       setTotalPages(recordsResult.totalPages);
+      // الحفاظ على رقم الصفحة الحالي في الـ ref (قد يكون المستخدم غيّر الصفحة أثناء التحميل)
+      currentPageRef.current = page;
       
       // استخدام locked من statsResult
       setAllRecordsStats({
@@ -461,6 +478,11 @@ export function AdminDashboard() {
       return false;
     }
 
+    if (currentFilters.record_number && 
+        !record.record_number?.includes(currentFilters.record_number)) {
+      return false;
+    }
+
     if (currentFilters.meter_number && 
         !record.meter_number?.includes(currentFilters.meter_number)) {
       return false;
@@ -554,6 +576,21 @@ export function AdminDashboard() {
               new_status: updates.status || originalRecord.status
             }
           });
+          // تسجيل إنجاز التدقيق عند جعل السجل مدقق (من الداشبورد/جدول البيانات)
+          if (updates.verification_status === 'مدقق' && originalRecord.verification_status !== 'مدقق') {
+            try {
+              await dbOperations.createActivityLog({
+                user_id: user.id,
+                action: 'verify_record',
+                target_type: 'record',
+                target_id: id,
+                target_name: originalRecord.subscriber_name || originalRecord.account_number || 'سجل مدقق',
+                details: { verification_status: 'مدقق' }
+              });
+            } catch (e) {
+              console.warn('Failed to log verify_record activity:', e);
+            }
+          }
         }
         
         // Update records locally instead of reloading all data
@@ -675,6 +712,12 @@ export function AdminDashboard() {
               >
                 <div className={`w-3 h-3 rounded-full ${isRealtimeConnected ? 'bg-green-500' : 'bg-yellow-500'} ${isRealtimeConnected ? 'animate-pulse' : ''}`}></div>
               </button>
+              
+              {/* Divider */}
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+              
+              {/* Notifications */}
+              <NotificationBell />
               
               {/* Divider */}
               <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>

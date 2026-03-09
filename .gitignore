@@ -27,3 +27,6 @@ env.production
 
 # Data files
 DATA/
+
+# Backup (نسخ احتياطي محلي)
+backup/

@@ -14,7 +14,7 @@ import {
   Eye,
   Image as ImageIcon
 } from 'lucide-react';
-import { formatDate, formatDateTimeForFilename } from '../../utils/dateFormatter';
+import { formatDate, formatDateTime, formatDateTimeForFilename } from '../../utils/dateFormatter';
 
 interface ReportsProps {
   // لا نحتاج records بعد الآن - سيتم جلبها عند الحاجة
@@ -27,6 +27,7 @@ interface ReportFilters {
   fieldAgent: string;
   branchManager: string;
   includeImages: boolean;
+  record_number: string;
   // الترميز الجديد
   new_zone: string;
   new_block: string;
@@ -48,6 +49,7 @@ export function Reports({}: ReportsProps) {
     fieldAgent: '',
     branchManager: '',
     includeImages: true,
+    record_number: '',
     // الترميز الجديد
     new_zone: '',
     new_block: '',
@@ -245,7 +247,7 @@ export function Reports({}: ReportsProps) {
       }
       
       // تمرير reportType و userForFilter لتحسين الأداء
-      const records = await dbOperations.getFilteredRecordsForReport(filters, reportType, userForFilter);
+      let records = await dbOperations.getFilteredRecordsForReport(filters, reportType, userForFilter);
       
       if (records.length === 0) {
         addNotification({
@@ -256,6 +258,9 @@ export function Reports({}: ReportsProps) {
         setGenerating(false);
         return;
       }
+
+      // ترتيب السجلات من الأعلى إلى الأقل حسب المبلغ المستلم (للتقرير والطباعة)
+      records = [...records].sort((a, b) => (Number(b.current_amount) || 0) - (Number(a.current_amount) || 0));
 
       setFilteredRecords(records);
 
@@ -305,7 +310,9 @@ export function Reports({}: ReportsProps) {
   };
 
   const generateReportHTML = (records: CollectionRecord[]) => {
-    const currentDate = formatDate(new Date());
+    const now = new Date();
+    const currentDate = formatDate(now);
+    const exportDateTime = formatDateTime(now);
 
     const stats = {
       total: records.length,
@@ -357,6 +364,7 @@ export function Reports({}: ReportsProps) {
         <div class="header">
             <h1>تقرير سجلات المشتركين</h1>
             <p>تاريخ إنشاء التقرير: ${currentDate}</p>
+            <p><strong>تاريخ التصدير:</strong> ${exportDateTime}</p>
         </div>
 
         <div class="stats">
@@ -403,6 +411,7 @@ export function Reports({}: ReportsProps) {
                     <th>المحصل</th>
                     <th>المشترك</th>
                     <th>الحساب</th>
+                    <th>رقم السجل</th>
                     <th>المقياس</th>
                     <th>المنطقة</th>
                     <th>المقاطعة</th>
@@ -425,6 +434,7 @@ export function Reports({}: ReportsProps) {
                     <td>${getUserName(record.field_agent_id)}</td>
                     <td>${record.subscriber_name || '-'}</td>
                     <td>${record.account_number || '-'}</td>
+                    <td>${record.record_number || '-'}</td>
                     <td>${record.meter_number || '-'}</td>
                     <td>${record.region || '-'}</td>
                     <td>${record.district || '-'}</td>
@@ -459,7 +469,9 @@ export function Reports({}: ReportsProps) {
   };
 
   const generateDeliveryReportHTML = (records: CollectionRecord[]) => {
-    const currentDate = formatDate(new Date());
+    const now = new Date();
+    const currentDate = formatDate(now);
+    const exportDateTime = formatDateTime(now);
     
     // السجلات تم فلترتها بالفعل في قاعدة البيانات (current_amount > 0)
     // لا حاجة لتصفية إضافية هنا
@@ -536,6 +548,7 @@ export function Reports({}: ReportsProps) {
         <div class="header">
             <h1>تقرير الارسالية</h1>
             <p>تاريخ إنشاء التقرير: ${currentDate}</p>
+            <p><strong>تاريخ التصدير:</strong> ${exportDateTime}</p>
         </div>
 
         ${filters.startDate || filters.endDate || filters.category || filters.land_status ? `
@@ -646,7 +659,7 @@ export function Reports({}: ReportsProps) {
     try {
       // جلب السجلات المفلترة مباشرة من قاعدة البيانات
       // تمرير reportType و currentUser لتحسين الأداء - لتقرير الارسالية يفلتر في قاعدة البيانات مباشرة
-      const records = await dbOperations.getFilteredRecordsForReport(filters, reportType, currentUser);
+      let records = await dbOperations.getFilteredRecordsForReport(filters, reportType, currentUser);
       
       if (records.length === 0) {
         addNotification({
@@ -657,6 +670,9 @@ export function Reports({}: ReportsProps) {
         setGenerating(false);
         return;
       }
+
+      // ترتيب السجلات من الأعلى إلى الأقل حسب المبلغ المستلم (للمعاينة والطباعة)
+      records = [...records].sort((a, b) => (Number(b.current_amount) || 0) - (Number(a.current_amount) || 0));
 
       setFilteredRecords(records);
       setShowPreview(true);
@@ -772,8 +788,20 @@ export function Reports({}: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الثالث: المنطقة والزون والبلوك */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* الصف: رقم السجل، المنطقة، الزون، البلوك */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                رقم السجل
+              </label>
+              <input
+                type="text"
+                value={filters.record_number}
+                onChange={(e) => setFilters({ ...filters, record_number: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="البحث..."
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 المنطقة
@@ -1173,6 +1201,7 @@ export function Reports({}: ReportsProps) {
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">#</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">المشترك</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الحساب</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">رقم السجل</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">حالة الارض</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الحالة</th>
                             {filters.includeImages && (
@@ -1219,6 +1248,9 @@ export function Reports({}: ReportsProps) {
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
                                 {record.account_number || 'غير محدد'}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
+                                {record.record_number || '—'}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
                                 {record.land_status || '—'}

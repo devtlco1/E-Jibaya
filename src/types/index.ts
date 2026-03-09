@@ -31,6 +31,8 @@ export interface CollectionRecord {
   is_refused: boolean;
   subscriber_name: string | null;
   account_number: string | null;
+  /** رقم السجل (من B_SECT في الإكسل) */
+  record_number?: string | null;
   meter_number: string | null;
   region: string | null;
   district: string | null;
@@ -88,6 +90,7 @@ export interface CreateRecordData {
 export interface CreateRecordFromDashboardData {
   subscriber_name: string;
   account_number: string;
+  record_number?: string | null;
   field_agent_id?: string | null; // من أضاف السجل (محصل/موظف) - لربطه بمدير الفرع
   meter_number: string;
   region: string;
@@ -108,6 +111,7 @@ export interface CreateRecordFromDashboardData {
 export interface UpdateRecordData {
   subscriber_name: string;
   account_number: string;
+  record_number?: string | null;
   meter_number: string;
   region: string;
   district: string;
@@ -147,6 +151,7 @@ export interface ThemeContextType {
 export interface FilterState {
   subscriber_name: string;
   account_number: string;
+  record_number: string;
   meter_number: string;
   region: string;
   district: string;
@@ -185,6 +190,7 @@ export interface UserAchievement {
   records_completed: number;
   records_refused: number;
   records_updated: number;
+  records_verified: number;
   total_actions: number;
   last_activity: string | null;
 }

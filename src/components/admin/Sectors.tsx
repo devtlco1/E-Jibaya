@@ -55,7 +55,7 @@ export function Sectors() {
     if (!users.length && !achievements.length) return;
 
     const totalActionsAll = achievements.reduce(
-      (sum, a) => sum + a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated,
+      (sum, a) => sum + a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated + (a.records_verified || 0),
       0
     );
 
@@ -71,7 +71,8 @@ export function Sectors() {
       const recordsCompleted = sectorAchievements.reduce((s, a) => s + a.records_completed, 0);
       const recordsRefused = sectorAchievements.reduce((s, a) => s + a.records_refused, 0);
       const recordsUpdated = sectorAchievements.reduce((s, a) => s + a.records_updated, 0);
-      const totalActions = recordsAdded + recordsAddedDashboard + recordsCompleted + recordsUpdated;
+      const recordsVerified = sectorAchievements.reduce((s, a) => s + (a.records_verified || 0), 0);
+      const totalActions = recordsAdded + recordsAddedDashboard + recordsCompleted + recordsUpdated + recordsVerified;
 
       const percentageOfTotal = totalActionsAll > 0 ? (totalActions / totalActionsAll) * 100 : 0;
 

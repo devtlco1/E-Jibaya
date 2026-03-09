@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save, XCircle, Ban } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { dbOperations } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { CollectionRecord, RecordPhoto } from '../../types';
 
 interface PhotoComparisonProps {
@@ -11,6 +12,8 @@ interface PhotoComparisonProps {
 }
 
 export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComparisonProps) {
+  const { user } = useAuth();
+  const initialVerificationStatusRef = useRef<string | null>(null);
   const [record, setRecord] = useState<CollectionRecord | null>(null);
   const [photos, setPhotos] = useState<RecordPhoto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +70,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       const { record: recordData, photos: photosData } = await dbOperations.getRecordWithPhotos(recordId);
       setRecord(recordData);
       setPhotos(photosData);
+      initialVerificationStatusRef.current = recordData?.verification_status ?? null;
       
       // Update original photos with verification status
       if (recordData) {
@@ -450,6 +454,23 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       const result = await dbOperations.updateRecord(record.id, updates);
       console.log('Database update result:', result);
       
+      // تسجيل إنجاز التدقيق عند جعل السجل مدقق لأول مرة
+      if (result && calculatedStatus === 'مدقق' && initialVerificationStatusRef.current !== 'مدقق' && user?.id) {
+        try {
+          await dbOperations.createActivityLog({
+            user_id: user.id,
+            action: 'verify_record',
+            target_type: 'record',
+            target_id: record.id,
+            target_name: record.subscriber_name || record.account_number || 'سجل مدقق',
+            details: { verification_status: 'مدقق' }
+          });
+        } catch (e) {
+          console.warn('Failed to log verify_record activity:', e);
+        }
+        initialVerificationStatusRef.current = 'مدقق';
+      }
+      
       // Mark as saved
       setHasUnsavedChanges(false);
       
@@ -598,6 +619,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
           <div className="flex items-center space-x-4 space-x-reverse">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               مقارنة الصور - {record.subscriber_name || 'غير محدد'}
+              {record.record_number && ` (رقم السجل: ${record.record_number})`}
             </h3>
             <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
               {(() => {

@@ -13,7 +13,11 @@
     "test-import": "node scripts/test-import-10-rows.js",
     "import-all": "node scripts/import-all-records-direct.js",
     "migrate:land-status": "node scripts/run-land-status-migration.js",
-    "migrate:branch-employees": "node scripts/run-branch-manager-employees-migration.js"
+    "migrate:branch-employees": "node scripts/run-branch-manager-employees-migration.js",
+    "backup-database": "node scripts/backup-database.js",
+    "delete-before-feb17": "node scripts/delete-data-before-feb17.js",
+    "trim-activity-logs": "node scripts/trim-activity-logs.js",
+    "import-invest-excel": "node scripts/import-invest-excel.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

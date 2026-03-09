@@ -63,7 +63,7 @@ export function Achievements() {
   const getJobTitleLabel = (job: string | null | undefined) => job || '-';
 
   const getTotalScore = (a: UserAchievement) =>
-    a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated;
+    a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated + (a.records_verified || 0);
 
   const totalItems = filteredAchievements.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -125,6 +125,7 @@ export function Achievements() {
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">سجلات مكتملة</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">سجلات امتناع</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">تحديثات</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">تدقيق</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">الإجمالي</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">آخر نشاط</th>
                 </tr>
@@ -167,6 +168,9 @@ export function Achievements() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       {a.records_updated}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      {a.records_verified ?? 0}
                     </td>
                     <td className="px-4 py-3 text-sm font-bold text-amber-600 dark:text-amber-400">
                       {getTotalScore(a)}

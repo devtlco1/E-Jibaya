@@ -395,7 +395,7 @@ export const dbOperations = {
             }
           } else if (['new_zone','new_block','category','phase','region','district','field_agent_id','land_status'].includes(key)) {
             query = query.eq(key, value);
-          } else if (['subscriber_name','account_number','meter_number'].includes(key)) {
+          } else if (['subscriber_name','account_number','record_number','meter_number'].includes(key)) {
             query = query.ilike(key, `%${value}%`);
           }
         }
@@ -549,6 +549,7 @@ export const dbOperations = {
       const recordData: any = {
         subscriber_name: data.subscriber_name || null,
         account_number: data.account_number || null,
+        record_number: data.record_number ?? null,
         meter_number: data.meter_number || null,
         region: data.region || null,
         district: data.district || null,
@@ -745,6 +746,32 @@ export const dbOperations = {
     }
   },
 
+  /** البحث برقم الحساب أو رقم السجل أو اسم المشترك (للمحصل الميداني) */
+  async searchRecordsForFieldAgent(searchText: string, limit: number = 50): Promise<CollectionRecord[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return [];
+      const q = (searchText || '').trim();
+      if (!q) return [];
+
+      const { data, error } = await client
+        .from('collection_records')
+        .select('*')
+        .or(`account_number.ilike.%${q}%,record_number.ilike.%${q}%,subscriber_name.ilike.%${q}%`)
+        .order('submitted_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Search records for field agent error:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Search records for field agent error:', error);
+      return [];
+    }
+  },
+
   // جلب السجلات المفلترة للتقرير مباشرة من قاعدة البيانات (بدون تحميل جميع السجلات)
   async getFilteredRecordsForReport(filters: any, reportType?: 'standard' | 'delivery', currentUser?: User | null): Promise<CollectionRecord[]> {
     try {
@@ -820,6 +847,10 @@ export const dbOperations = {
         query = query.eq('region', filters.region);
       }
 
+      if (filters.record_number) {
+        query = query.ilike('record_number', `%${filters.record_number}%`);
+      }
+
       if (filters.verification_status) {
         query = query.eq('verification_status', filters.verification_status);
       }
@@ -878,6 +909,24 @@ export const dbOperations = {
     } catch (error) {
       console.error('Get filtered records error:', error);
       return [];
+    }
+  },
+
+  /** جلب سجل واحد بالمعرف (للمحصل الميداني - تعديل) */
+  async getRecordById(id: string): Promise<CollectionRecord | null> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return null;
+      const { data, error } = await client
+        .from('collection_records')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error || !data) return null;
+      return data;
+    } catch (error) {
+      console.error('Get record by id error:', error);
+      return null;
     }
   },
 
@@ -1050,6 +1099,7 @@ export const dbOperations = {
         records_completed: Number(row.records_completed) || 0,
         records_refused: Number(row.records_refused) || 0,
         records_updated: Number(row.records_updated) || 0,
+        records_verified: Number(row.records_verified) || 0,
         total_actions: Number(row.total_actions) || 0,
         last_activity: row.last_activity || null
       }));

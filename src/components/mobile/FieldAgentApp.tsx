@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { useNotifications, NotificationBell } from '../../contexts/NotificationContext';
 import { 
   MapPin, 
   Camera, 
@@ -13,7 +13,9 @@ import {
   CheckCircle,
   AlertCircle,
   Search,
-  History
+  History,
+  Edit3,
+  RefreshCw
 } from 'lucide-react';
 import { CreateRecordData } from '../../types';
 import { dbOperations } from '../../lib/supabase';
@@ -46,6 +48,18 @@ export function FieldAgentApp() {
   const [existingRecords, setExistingRecords] = useState<any[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  // بوب أب اختيار تحديث أو تعديل
+  const [recordForAction, setRecordForAction] = useState<any>(null);
+  // وضع التعديل
+  const [editRecord, setEditRecord] = useState<any>(null);
+  const [editForm, setEditForm] = useState<any>({});
+  const [editMeterPhoto, setEditMeterPhoto] = useState<string | null>(null);
+  const [editInvoicePhoto, setEditInvoicePhoto] = useState<string | null>(null);
+  const [editInvoicePhotoBack, setEditInvoicePhotoBack] = useState<string | null>(null);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const editMeterRef = useRef<HTMLInputElement>(null);
+  const editInvoiceRef = useRef<HTMLInputElement>(null);
+  const editInvoiceBackRef = useRef<HTMLInputElement>(null);
 
   const meterPhotoRef = useRef<HTMLInputElement>(null);
   const invoicePhotoRef = useRef<HTMLInputElement>(null);
@@ -191,46 +205,26 @@ export function FieldAgentApp() {
   };
 
   const handleSearch = async () => {
-    if (!searchAccount.trim()) {
+    const q = searchAccount.trim();
+    if (!q) {
       addNotification({
         type: 'warning',
         title: 'خطأ في البحث',
-        message: 'يرجى إدخال رقم الحساب'
-      });
-      return;
-    }
-
-    // التحقق من صحة رقم الحساب
-    if (searchAccount.length < 1 || searchAccount.length > 12) {
-      addNotification({
-        type: 'error',
-        title: 'رقم حساب غير صحيح',
-        message: 'رقم الحساب يجب أن يكون بين 1 و 12 رقم'
-      });
-      return;
-    }
-
-    // التحقق من أن جميع الأحرف أرقام
-    if (!/^\d+$/.test(searchAccount)) {
-      addNotification({
-        type: 'error',
-        title: 'رقم حساب غير صحيح',
-        message: 'رقم الحساب يجب أن يحتوي على أرقام فقط'
+        message: 'يرجى إدخال رقم الحساب أو رقم السجل أو اسم المشترك'
       });
       return;
     }
 
     setIsSearching(true);
     try {
-      // استخدام دالة البحث المحسّنة بدلاً من جلب جميع السجلات
-      const records = await dbOperations.searchRecordsByAccountNumber(searchAccount.trim(), 50);
+      const records = await dbOperations.searchRecordsForFieldAgent(q, 50);
       setExistingRecords(records);
       
       if (records.length === 0) {
         addNotification({
           type: 'info',
           title: 'لا توجد سجلات',
-          message: 'لم يتم العثور على سجلات لهذا رقم الحساب'
+          message: 'لم يتم العثور على سجلات مطابقة'
         });
       }
     } catch (error) {
@@ -247,6 +241,7 @@ export function FieldAgentApp() {
 
   const handleSelectRecord = (record: any) => {
     setSelectedRecord(record);
+    setRecordForAction(null);
     setSearchAccount('');
     setExistingRecords([]);
     addNotification({
@@ -254,6 +249,160 @@ export function FieldAgentApp() {
       title: 'تم اختيار السجل',
       message: `تم اختيار سجل ${record.subscriber_name || record.account_number}`
     });
+  };
+
+  const handleRecordClick = (record: any) => {
+    setRecordForAction(record);
+  };
+
+  const handleActionUpdate = () => {
+    if (recordForAction) {
+      handleSelectRecord(recordForAction);
+    }
+  };
+
+  const handleActionEdit = async () => {
+    if (!recordForAction) return;
+    try {
+      const full = await dbOperations.getRecordById(recordForAction.id);
+      if (!full) {
+        addNotification({ type: 'error', title: 'خطأ', message: 'لم يتم العثور على السجل' });
+        return;
+      }
+      setEditRecord(full);
+      setEditForm({
+        subscriber_name: full.subscriber_name ?? '',
+        account_number: full.account_number ?? '',
+        record_number: full.record_number ?? '',
+        meter_number: full.meter_number ?? '',
+        region: full.region ?? '',
+        district: full.district ?? '',
+        last_reading: full.last_reading ?? '',
+        total_amount: full.total_amount ?? '',
+        current_amount: full.current_amount ?? '',
+        land_status: full.land_status ?? '',
+        category: full.category ?? 'منزلي',
+        phase: full.phase ?? '',
+        notes: full.notes ?? '',
+      });
+      setEditMeterPhoto(full.meter_photo_url ?? null);
+      setEditInvoicePhoto(full.invoice_photo_url ?? null);
+      setEditInvoicePhotoBack(full.invoice_photo_back_url ?? null);
+      setRecordForAction(null);
+      setExistingRecords([]);
+      setSearchAccount('');
+    } catch (e) {
+      console.error(e);
+      addNotification({ type: 'error', title: 'خطأ', message: 'فشل في جلب بيانات السجل' });
+    }
+  };
+
+  const handleEditPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'meter' | 'invoice' | 'invoice_back') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!validateImageType(file)) {
+      addNotification({ type: 'error', title: 'نوع ملف غير صحيح', message: 'يرجى اختيار صورة صحيحة' });
+      return;
+    }
+    if (!validateImageSize(file, 5)) {
+      addNotification({ type: 'error', title: 'حجم ملف كبير', message: 'يرجى اختيار صورة أصغر من 5 ميجابايت' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      if (type === 'meter') setEditMeterPhoto(result);
+      else if (type === 'invoice') setEditInvoicePhoto(result);
+      else setEditInvoicePhotoBack(result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editRecord || !user?.id) return;
+    if (!editInvoicePhoto) {
+      addNotification({ type: 'warning', title: 'بيانات ناقصة', message: 'صورة وجه الفاتورة مطلوبة' });
+      return;
+    }
+    setIsEditSubmitting(true);
+    try {
+      await dbOperations.initializeStorage();
+    } catch (_) {}
+
+    let meterUrl = editRecord.meter_photo_url;
+    let invoiceUrl = editRecord.invoice_photo_url;
+    let invoiceBackUrl = editRecord.invoice_photo_back_url;
+
+    if (editMeterPhoto && editMeterPhoto.startsWith('data:')) {
+      const imageId = dbOperations.generateImageId();
+      const filePath = `meter_photos/M_${imageId}.jpg`;
+      const res = await fetch(editMeterPhoto);
+      const blob = await res.blob();
+      const file = new File([blob], `M_${imageId}.jpg`, { type: 'image/jpeg' });
+      meterUrl = await dbOperations.uploadPhoto(file, filePath) ?? meterUrl;
+    }
+    if (editInvoicePhoto && editInvoicePhoto.startsWith('data:')) {
+      const imageId = dbOperations.generateImageId();
+      const filePath = `invoice_photos/I_${imageId}.jpg`;
+      const res = await fetch(editInvoicePhoto);
+      const blob = await res.blob();
+      const file = new File([blob], `I_${imageId}.jpg`, { type: 'image/jpeg' });
+      invoiceUrl = await dbOperations.uploadPhoto(file, filePath) ?? invoiceUrl;
+    }
+    if (editInvoicePhotoBack && editInvoicePhotoBack.startsWith('data:')) {
+      const imageId = dbOperations.generateImageId();
+      const filePath = `invoice_photos/IB_${imageId}.jpg`;
+      const res = await fetch(editInvoicePhotoBack);
+      const blob = await res.blob();
+      const file = new File([blob], `IB_${imageId}.jpg`, { type: 'image/jpeg' });
+      invoiceBackUrl = await dbOperations.uploadPhoto(file, filePath) ?? invoiceBackUrl;
+    }
+
+    const updateData: any = {
+      subscriber_name: editForm.subscriber_name || editRecord.subscriber_name,
+      account_number: editForm.account_number || editRecord.account_number,
+      record_number: editForm.record_number || editRecord.record_number || null,
+      meter_number: editForm.meter_number || editRecord.meter_number,
+      region: editForm.region || editRecord.region,
+      district: editForm.district || editRecord.district,
+      last_reading: editForm.last_reading || editRecord.last_reading,
+      status: editRecord.status,
+      new_zone: editRecord.new_zone,
+      new_block: editRecord.new_block,
+      new_home: editRecord.new_home,
+      total_amount: editForm.total_amount ? parseFloat(String(editForm.total_amount)) : editRecord.total_amount,
+      current_amount: editForm.current_amount ? parseFloat(String(editForm.current_amount)) : editRecord.current_amount,
+      land_status: editForm.land_status || editRecord.land_status || null,
+      notes: editForm.notes ?? editRecord.notes,
+      meter_photo_url: meterUrl,
+      invoice_photo_url: invoiceUrl,
+      invoice_photo_back_url: invoiceBackUrl,
+    };
+
+    const recordId = editRecord.id;
+    const recordName = editRecord.subscriber_name || editRecord.account_number;
+    const ok = await dbOperations.updateRecord(editRecord.id, updateData);
+    if (ok) {
+      addNotification({ type: 'success', title: 'تم التعديل', message: 'تم حفظ التعديلات بنجاح' });
+      setEditRecord(null);
+      setEditForm({});
+      setEditMeterPhoto(null);
+      setEditInvoicePhoto(null);
+      setEditInvoicePhotoBack(null);
+      try {
+        await dbOperations.createActivityLog({
+          user_id: user.id,
+          action: 'edit_record',
+          target_type: 'record',
+          target_id: recordId,
+          target_name: recordName,
+          details: { source: 'field_agent' },
+        });
+      } catch (_) {}
+    } else {
+      addNotification({ type: 'error', title: 'فشل', message: 'لم يتم حفظ التعديلات' });
+    }
+    setIsEditSubmitting(false);
   };
 
   const handleClearSelection = () => {
@@ -282,7 +431,7 @@ export function FieldAgentApp() {
       return false;
     }
 
-    // صورة الفاتورة (وجه وظهر) إجبارية في جميع الحالات
+    // صورة الفاتورة (وجه) إجبارية — صورة الظهر اختيارية
     if (!invoicePhoto) {
       addNotification({
         type: 'warning',
@@ -291,16 +440,8 @@ export function FieldAgentApp() {
       });
       return false;
     }
-    if (!invoicePhotoBack) {
-      addNotification({
-        type: 'warning',
-        title: 'خطأ في البيانات',
-        message: 'يرجى التقاط صورة ظهر الفاتورة'
-      });
-      return false;
-    }
 
-    // صورة المقياس اختيارية للمحصل الميداني (تم إلغاء الإلزام)
+    // صورة المقياس وصورة ظهر الفاتورة اختيارية للمحصل الميداني
     
     return true;
   };
@@ -711,6 +852,7 @@ export function FieldAgentApp() {
               </p>
             </div>
             <div className="flex items-center space-x-2 space-x-reverse">
+              <NotificationBell />
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"
@@ -748,17 +890,8 @@ export function FieldAgentApp() {
                 <input
                   type="text"
                   value={searchAccount}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // السماح فقط بالأرقام
-                    if (/^\d*$/.test(value)) {
-                      // الحد الأقصى 12 رقم
-                      if (value.length <= 12) {
-                        setSearchAccount(value);
-                      }
-                    }
-                  }}
-                  placeholder="أدخل رقم الحساب للبحث (1-12 رقم)..."
+                  onChange={(e) => setSearchAccount(e.target.value)}
+                  placeholder="رقم الحساب أو رقم السجل أو اسم المشترك..."
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 />
                 <button
@@ -780,7 +913,7 @@ export function FieldAgentApp() {
                     <div
                       key={record.id}
                       className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-                      onClick={() => handleSelectRecord(record)}
+                      onClick={() => handleRecordClick(record)}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -789,6 +922,7 @@ export function FieldAgentApp() {
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             رقم الحساب: {record.account_number}
+                            {record.record_number && ` • رقم السجل: ${record.record_number}`}
                           </p>
                           {record.meter_number && (
                             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -815,6 +949,7 @@ export function FieldAgentApp() {
                   </p>
                   <p className="text-sm text-blue-700 dark:text-blue-300">
                     رقم الحساب: {selectedRecord.account_number}
+                    {selectedRecord.record_number && ` • رقم السجل: ${selectedRecord.record_number}`}
                   </p>
                 </div>
                 <button
@@ -827,6 +962,241 @@ export function FieldAgentApp() {
             </div>
           )}
         </div>
+
+        {/* بوب أب اختيار تحديث أو تعديل */}
+        {recordForAction && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" dir="rtl">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                ماذا تريد أن تفعل؟
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                {recordForAction.subscriber_name || 'غير محدد'} — {recordForAction.account_number}
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleActionUpdate}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  تحديث (إضافة صور وموقع)
+                </button>
+                <button
+                  onClick={handleActionEdit}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <Edit3 className="w-5 h-5" />
+                  تعديل (تغيير بيانات السجل)
+                </button>
+                <button
+                  onClick={() => setRecordForAction(null)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* مودال تعديل السجل */}
+        {editRecord && (
+          <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900 overflow-y-auto" dir="rtl">
+            <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">تعديل السجل</h2>
+              <button
+                onClick={() => {
+                  setEditRecord(null);
+                  setEditForm({});
+                  setEditMeterPhoto(null);
+                  setEditInvoicePhoto(null);
+                  setEditInvoicePhotoBack(null);
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-6 pb-24">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">اسم المشترك</label>
+                  <input
+                    type="text"
+                    value={editForm.subscriber_name ?? ''}
+                    onChange={(e) => setEditForm((f: any) => ({ ...f, subscriber_name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">رقم الحساب</label>
+                  <input
+                    type="text"
+                    value={editForm.account_number ?? ''}
+                    onChange={(e) => setEditForm((f: any) => ({ ...f, account_number: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">رقم السجل</label>
+                  <input
+                    type="text"
+                    value={editForm.record_number ?? ''}
+                    onChange={(e) => setEditForm((f: any) => ({ ...f, record_number: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">رقم المقياس</label>
+                  <input
+                    type="text"
+                    value={editForm.meter_number ?? ''}
+                    onChange={(e) => setEditForm((f: any) => ({ ...f, meter_number: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">المنطقة</label>
+                  <input
+                    type="text"
+                    value={editForm.region ?? ''}
+                    onChange={(e) => setEditForm((f: any) => ({ ...f, region: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">المحافظة</label>
+                  <input
+                    type="text"
+                    value={editForm.district ?? ''}
+                    onChange={(e) => setEditForm((f: any) => ({ ...f, district: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">آخر قراءة</label>
+                  <input
+                    type="text"
+                    value={editForm.last_reading ?? ''}
+                    onChange={(e) => setEditForm((f: any) => ({ ...f, last_reading: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">المجموع المطلوب</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={editForm.total_amount ?? ''}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === '' || /^\d*\.?\d*$/.test(v)) setEditForm((f: any) => ({ ...f, total_amount: v }));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">المبلغ المستلم</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={editForm.current_amount ?? ''}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === '' || /^\d*\.?\d*$/.test(v)) setEditForm((f: any) => ({ ...f, current_amount: v }));
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">الملاحظات</label>
+                <textarea
+                  value={editForm.notes ?? ''}
+                  onChange={(e) => setEditForm((f: any) => ({ ...f, notes: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">صورة المقياس</label>
+                  {editMeterPhoto ? (
+                    <div className="relative">
+                      <img src={editMeterPhoto} alt="مقياس" className="w-full h-40 object-cover rounded-lg" />
+                      <button
+                        onClick={() => setEditMeterPhoto(null)}
+                        className="absolute top-2 left-2 p-1 bg-red-600 text-white rounded-full"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <button
+                    onClick={() => editMeterRef.current?.click()}
+                    className="mt-2 w-full py-2 border border-dashed border-gray-400 rounded-lg text-gray-600 dark:text-gray-400"
+                  >
+                    {editMeterPhoto ? 'تغيير الصورة' : 'إضافة صورة المقياس'}
+                  </button>
+                  <input ref={editMeterRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleEditPhotoChange(e, 'meter')} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">صورة الفاتورة (وجه) <span className="text-red-500">*</span></label>
+                  {editInvoicePhoto ? (
+                    <div className="relative">
+                      <img src={editInvoicePhoto} alt="فاتورة" className="w-full h-40 object-cover rounded-lg" />
+                      <button
+                        onClick={() => setEditInvoicePhoto(null)}
+                        className="absolute top-2 left-2 p-1 bg-red-600 text-white rounded-full"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <button
+                    onClick={() => editInvoiceRef.current?.click()}
+                    className="mt-2 w-full py-2 border border-dashed border-gray-400 rounded-lg text-gray-600 dark:text-gray-400"
+                  >
+                    {editInvoicePhoto ? 'تغيير الصورة' : 'إضافة صورة الفاتورة'}
+                  </button>
+                  <input ref={editInvoiceRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleEditPhotoChange(e, 'invoice')} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">صورة الفاتورة (ظهر) <span className="text-gray-400 text-xs">(اختياري)</span></label>
+                  {editInvoicePhotoBack ? (
+                    <div className="relative">
+                      <img src={editInvoicePhotoBack} alt="ظهر الفاتورة" className="w-full h-40 object-cover rounded-lg" />
+                      <button
+                        onClick={() => setEditInvoicePhotoBack(null)}
+                        className="absolute top-2 left-2 p-1 bg-red-600 text-white rounded-full"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <button
+                    onClick={() => editInvoiceBackRef.current?.click()}
+                    className="mt-2 w-full py-2 border border-dashed border-gray-400 rounded-lg text-gray-600 dark:text-gray-400"
+                  >
+                    {editInvoicePhotoBack ? 'تغيير الصورة' : 'إضافة صورة ظهر الفاتورة'}
+                  </button>
+                  <input ref={editInvoiceBackRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleEditPhotoChange(e, 'invoice_back')} />
+                </div>
+              </div>
+
+              <button
+                onClick={handleEditSubmit}
+                disabled={isEditSubmitting}
+                className="fixed bottom-4 left-4 right-4 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-semibold flex items-center justify-center gap-2"
+              >
+                {isEditSubmitting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send className="w-5 h-5" />}
+                {isEditSubmitting ? 'جاري الحفظ...' : 'إرسال التعديلات'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* GPS Location */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
@@ -952,7 +1322,7 @@ export function FieldAgentApp() {
         {/* Invoice Back Photo */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            صورة ظهر الفاتورة <span className="text-red-500">*</span>
+            صورة ظهر الفاتورة <span className="text-gray-400 text-sm">(اختياري)</span>
           </h3>
           
           {invoicePhotoBack ? (

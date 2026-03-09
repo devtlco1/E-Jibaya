@@ -50,6 +50,7 @@ export function DataTable({
   const [editForm, setEditForm] = useState({
     subscriber_name: '',
     account_number: '',
+    record_number: '',
     meter_number: '',
     region: '',
     district: '',
@@ -543,6 +544,10 @@ export function DataTable({
                         <td class="value">${record.account_number || 'غير محدد'}</td>
                     </tr>
                     <tr>
+                        <td class="label">رقم السجل</td>
+                        <td class="value">${record.record_number || '-'}</td>
+                    </tr>
+                    <tr>
                         <td class="label">رقم المقياس</td>
                         <td class="value">${record.meter_number || 'غير محدد'}</td>
                     </tr>
@@ -746,6 +751,7 @@ export function DataTable({
       setEditForm({
         subscriber_name: record.subscriber_name || '',
         account_number: record.account_number || '',
+        record_number: record.record_number || '',
         meter_number: record.meter_number || '',
         region: (record.region && record.region !== 'غير محدد') ? record.region : '',
         district: (record.district && record.district !== 'غير محدد') ? record.district : '',
@@ -1095,6 +1101,19 @@ export function DataTable({
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  رقم السجل
+                </label>
+                <input
+                  type="text"
+                  value={filters.record_number}
+                  onChange={(e) => onFiltersChange({ ...filters, record_number: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                  placeholder="البحث..."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   رقم المقياس
                 </label>
                 <input
@@ -1339,6 +1358,9 @@ export function DataTable({
                   رقم الحساب
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
+                  رقم السجل
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                   رقم المقياس
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
@@ -1420,7 +1442,7 @@ export function DataTable({
                 ))
               ) : records.length === 0 ? (
                 <tr>
-                  <td colSpan={15} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={16} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     لا توجد سجلات تطابق الفلاتر المحددة
                   </td>
                 </tr>
@@ -1446,6 +1468,14 @@ export function DataTable({
                   >
                     {record.account_number || (
                       <span className="text-gray-400 italic">غير محدد</span>
+                    )}
+                  </td>
+                  <td 
+                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden md:table-cell"
+                    onClick={() => handleEdit(record)}
+                  >
+                    {record.record_number || (
+                      <span className="text-gray-400 italic">-</span>
                     )}
                   </td>
                   <td 
@@ -1815,6 +1845,12 @@ export function DataTable({
                       <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">رقم الحساب</span>
                       <p className="text-gray-900 dark:text-white font-semibold">
                         {viewingRecord.account_number || 'غير محدد'}
+                      </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
+                      <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">رقم السجل</span>
+                      <p className="text-gray-900 dark:text-white font-semibold">
+                        {viewingRecord.record_number || '-'}
                       </p>
                     </div>
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
@@ -2341,6 +2377,19 @@ export function DataTable({
                             الحد الأقصى لرقم الحساب هو 12 رقم
                           </p>
                         )}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          رقم السجل
+                        </label>
+                        <input
+                          type="text"
+                          value={editForm.record_number}
+                          onChange={(e) => setEditForm({ ...editForm, record_number: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="رقم السجل"
+                        />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

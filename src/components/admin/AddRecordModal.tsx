@@ -15,6 +15,7 @@ interface AddRecordModalProps {
 const initialForm = {
   subscriber_name: '',
   account_number: '',
+  record_number: '',
   meter_number: '',
   region: '',
   district: '',
@@ -103,6 +104,7 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
       const data: CreateRecordFromDashboardData = {
         subscriber_name: form.subscriber_name.trim(),
         account_number: form.account_number.trim(),
+        record_number: form.record_number.trim() || null,
         meter_number: form.meter_number.trim(),
         region: form.region.trim() || '',
         district: form.district.trim() || '',
@@ -234,6 +236,16 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
                   maxLength={12}
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">رقم السجل</label>
+                <input
+                  type="text"
+                  value={form.record_number}
+                  onChange={(e) => setForm({ ...form, record_number: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                  placeholder="اختياري"
                 />
               </div>
               <div>
