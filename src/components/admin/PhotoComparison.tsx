@@ -8,7 +8,7 @@ import { CollectionRecord, RecordPhoto } from '../../types';
 interface PhotoComparisonProps {
   recordId: string;
   onClose: () => void;
-  onRecordUpdate?: (recordId: string, updates: Partial<CollectionRecord>) => void;
+  onRecordUpdate?: (recordId: string, updates: Partial<CollectionRecord>, options?: { skipVerifyLog?: boolean }) => void;
 }
 
 export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComparisonProps) {
@@ -474,9 +474,9 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       // Mark as saved
       setHasUnsavedChanges(false);
       
-      // Show success notification
+      // إبلاغ الجدول بتحديث السجل دون تسجيل verify_record مرة ثانية (تم التسجيل أعلاه)
       if (onRecordUpdate) {
-        onRecordUpdate(record.id, updates);
+        onRecordUpdate(record.id, updates, { skipVerifyLog: true });
       }
       
       console.log('Photo verification saved to database successfully');
@@ -814,7 +814,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                             <div className="flex items-center mb-2">
                               <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
                               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                الصورة الأصلية
+                                صورة الفاتورة (وجه)
                               </span>
                             </div>
                             <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -847,40 +847,6 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                                 <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
                               )}
                             </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {originalPhotos.invoice_back && (
-                      <div
-                        onClick={() => {
-                          setSelectedPhotoType('invoice');
-                          setSelectedPhoto(originalPhotos.invoice_back ? {
-                            ...originalPhotos.invoice_back,
-                            record_id: recordId,
-                            created_at: originalPhotos.invoice_back.photo_date,
-                            notes: null,
-                            verified: false
-                          } : null);
-                        }}
-                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                          selectedPhoto?.id === 'invoice-back-original'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                صورة الفاتورة (ظهر)
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              {formatDate(originalPhotos.invoice_back.photo_date)}
-                            </div>
                           </div>
                         </div>
                       </div>

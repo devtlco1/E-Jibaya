@@ -22,7 +22,7 @@ interface DataTableProps {
   onItemsPerPageChange: (itemsPerPage: number) => void;
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
-  onUpdateRecord: (id: string, updates: Partial<CollectionRecord>) => void;
+  onUpdateRecord: (id: string, updates: Partial<CollectionRecord>, options?: { skipVerifyLog?: boolean }) => void;
   onDeleteRecord: (id: string) => void;
   recordToEdit?: CollectionRecord | null;
   onRecordToEditConsumed?: () => void;
@@ -939,8 +939,8 @@ export function DataTable({
     setShowPhotoComparison(true);
   };
 
-  const handleRecordUpdate = (recordId: string, updates: Partial<CollectionRecord>) => {
-    onUpdateRecord(recordId, updates);
+  const handleRecordUpdate = (recordId: string, updates: Partial<CollectionRecord>, options?: { skipVerifyLog?: boolean }) => {
+    onUpdateRecord(recordId, updates, options);
   };
 
   const handleLocationView = (record: CollectionRecord) => {

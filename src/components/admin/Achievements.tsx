@@ -14,20 +14,44 @@ const JOB_FILTER_OPTIONS: { value: string; label: string }[] = [
   ...JOB_TITLES.map((j) => ({ value: j, label: j }))
 ];
 
+const TYPE_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: 'all', label: 'الكل' },
+  { value: 'records_added', label: 'سجلات ميدانية' },
+  { value: 'records_added_dashboard', label: 'سجلات من الداشبورد' },
+  { value: 'records_completed', label: 'سجلات مكتملة' },
+  { value: 'records_refused', label: 'سجلات امتناع' },
+  { value: 'records_updated', label: 'تحديثات' },
+  { value: 'records_verified', label: 'تدقيق' },
+  { value: 'total', label: 'الإجمالي' }
+];
+
 export function Achievements() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [jobFilter, setJobFilter] = useState<string>('all');
   const [sectorFilter, setSectorFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const { addNotification } = useNotifications();
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const getTotalScore = (a: UserAchievement) =>
+    a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated + (a.records_verified || 0);
+
   const filteredAchievements = achievements.filter(a => {
     const jobMatch = jobFilter === 'all' || (a.job_title || '') === jobFilter;
     const sectorMatch = sectorFilter === 'all' || (a.sector || '') === sectorFilter;
-    return jobMatch && sectorMatch;
+    const typeMatch =
+      typeFilter === 'all' ||
+      (typeFilter === 'records_added' && (a.records_added || 0) > 0) ||
+      (typeFilter === 'records_added_dashboard' && (a.records_added_dashboard || 0) > 0) ||
+      (typeFilter === 'records_completed' && (a.records_completed || 0) > 0) ||
+      (typeFilter === 'records_refused' && (a.records_refused || 0) > 0) ||
+      (typeFilter === 'records_updated' && (a.records_updated || 0) > 0) ||
+      (typeFilter === 'records_verified' && (a.records_verified || 0) > 0) ||
+      (typeFilter === 'total' && getTotalScore(a) > 0);
+    return jobMatch && sectorMatch && typeMatch;
   });
 
   const loadAchievements = async () => {
@@ -58,12 +82,9 @@ export function Achievements() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [jobFilter, sectorFilter]);
+  }, [jobFilter, sectorFilter, typeFilter]);
 
   const getJobTitleLabel = (job: string | null | undefined) => job || '-';
-
-  const getTotalScore = (a: UserAchievement) =>
-    a.records_added + a.records_added_dashboard + a.records_completed + a.records_updated + (a.records_verified || 0);
 
   const totalItems = filteredAchievements.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
@@ -101,14 +122,29 @@ export function Achievements() {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">حسب النوع:</label>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-amber-500"
+            title="عرض من لديهم إنجاز في هذا النوع فقط"
+          >
+            {TYPE_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          {jobFilter === 'all'
+          {jobFilter === 'all' && typeFilter === 'all'
             ? 'إنجازات جميع الموظفين من بداية النظام حتى الآن — يتحدث تلقائياً'
-            : `إنجازات ${JOB_FILTER_OPTIONS.find(o => o.value === jobFilter)?.label} فقط — يتحدث تلقائياً`}
+            : typeFilter === 'all'
+              ? `إنجازات ${JOB_FILTER_OPTIONS.find(o => o.value === jobFilter)?.label} فقط — يتحدث تلقائياً`
+              : `عرض من لديهم إنجاز في: ${TYPE_FILTER_OPTIONS.find(o => o.value === typeFilter)?.label}${jobFilter !== 'all' ? ` (وظيفة: ${JOB_FILTER_OPTIONS.find(o => o.value === jobFilter)?.label})` : ''} — يتحدث تلقائياً`}
         </p>
 
         {filteredAchievements.length > 0 && (
@@ -206,7 +242,9 @@ export function Achievements() {
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>
-              {jobFilter === 'all' ? 'لا توجد إنجازات' : `لا توجد إنجازات لـ ${JOB_FILTER_OPTIONS.find(o => o.value === jobFilter)?.label}`}
+              {typeFilter === 'all'
+                ? (jobFilter === 'all' ? 'لا توجد إنجازات' : `لا توجد إنجازات لـ ${JOB_FILTER_OPTIONS.find(o => o.value === jobFilter)?.label}`)
+                : `لا يوجد من لديه إنجاز في "${TYPE_FILTER_OPTIONS.find(o => o.value === typeFilter)?.label}"${jobFilter !== 'all' ? ` لـ ${JOB_FILTER_OPTIONS.find(o => o.value === jobFilter)?.label}` : ''}`}
             </p>
           </div>
         )}

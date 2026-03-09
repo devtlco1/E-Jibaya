@@ -538,7 +538,7 @@ export function AdminDashboard() {
     setCurrentPage(1); // Reset to first page when filters change
   };
 
-  const handleUpdateRecord = async (id: string, updates: Partial<CollectionRecord>) => {
+  const handleUpdateRecord = async (id: string, updates: Partial<CollectionRecord>, options?: { skipVerifyLog?: boolean }) => {
     try {
       // Get original record for logging
       const originalRecord = records.find(record => record.id === id);
@@ -576,8 +576,8 @@ export function AdminDashboard() {
               new_status: updates.status || originalRecord.status
             }
           });
-          // تسجيل إنجاز التدقيق عند جعل السجل مدقق (من الداشبورد/جدول البيانات)
-          if (updates.verification_status === 'مدقق' && originalRecord.verification_status !== 'مدقق') {
+          // تسجيل إنجاز التدقيق عند جعل السجل مدقق (من الداشبورد/جدول فقط — لا من تدقيق الصور لأنه يسجّل هناك)
+          if (!options?.skipVerifyLog && updates.verification_status === 'مدقق' && originalRecord.verification_status !== 'مدقق') {
             try {
               await dbOperations.createActivityLog({
                 user_id: user.id,

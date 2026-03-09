@@ -323,9 +323,15 @@ export function FieldAgentApp() {
     // عند التعديل لا يُشترط رفع صورة؛ نحدّث الموجود فقط (صورة الفاتورة تُستخدم الحالية إن وُجدت)
     setIsEditSubmitting(true);
     try {
-      try {
-        await dbOperations.initializeStorage();
-      } catch (_) {}
+      const hasNewPhotos =
+        (editMeterPhoto && editMeterPhoto.startsWith('data:')) ||
+        (editInvoicePhoto && editInvoicePhoto.startsWith('data:')) ||
+        (editInvoicePhotoBack && editInvoicePhotoBack.startsWith('data:'));
+      if (hasNewPhotos) {
+        try {
+          await dbOperations.initializeStorage();
+        } catch (_) {}
+      }
 
       let meterUrl = editRecord.meter_photo_url ?? null;
       let invoiceUrl = editRecord.invoice_photo_url ?? null;
@@ -400,6 +406,7 @@ export function FieldAgentApp() {
             details: { source: 'field_agent' },
           });
         } catch (_) {}
+        console.info('النظام: تم الحفظ بالكامل — السجل + سجل النشاط');
       } else {
         addNotification({ type: 'error', title: 'فشل في الحفظ', message: 'لم يتم حفظ التعديلات. جرّب مرة أخرى.' });
       }
