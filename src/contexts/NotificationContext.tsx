@@ -10,10 +10,15 @@ export interface Notification {
   createdAt: number;
 }
 
+export interface AddNotificationOptions {
+  /** إظهار الإشعار كـ toast عائم (مثل صفحة تسجيل الدخول) */
+  showAsToast?: boolean;
+}
+
 interface NotificationContextType {
   notifications: Notification[];
   unseenCount: number;
-  addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'createdAt'>, options?: AddNotificationOptions) => void;
   removeNotification: (id: string) => void;
   markAllAsSeen: () => void;
 }
@@ -34,11 +39,14 @@ interface NotificationProviderProps {
   children: React.ReactNode;
 }
 
+const TOAST_DURATION = 5000;
+
 export function NotificationProvider({ children }: NotificationProviderProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unseenCount, setUnseenCount] = useState(0);
+  const [toastNotifications, setToastNotifications] = useState<Notification[]>([]);
 
-  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'createdAt'>) => {
+  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'createdAt'>, options?: AddNotificationOptions) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newNotification: Notification = {
       ...notification,
@@ -51,6 +59,14 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       return next;
     });
     setUnseenCount(c => c + 1);
+
+    if (options?.showAsToast) {
+      setToastNotifications(prev => [...prev, newNotification]);
+      const duration = notification.duration ?? TOAST_DURATION;
+      setTimeout(() => {
+        setToastNotifications(prev => prev.filter(n => n.id !== id));
+      }, duration);
+    }
   }, []);
 
   const removeNotification = useCallback((id: string) => {
@@ -72,7 +88,50 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       }}
     >
       {children}
+      <ToastContainer toasts={toastNotifications} onRemove={id => setToastNotifications(prev => prev.filter(n => n.id !== id))} />
     </NotificationContext.Provider>
+  );
+}
+
+function ToastContainer({ toasts, onRemove }: { toasts: Notification[]; onRemove: (id: string) => void }) {
+  if (toasts.length === 0) return null;
+  return (
+    <div className="fixed top-4 right-4 z-[200] space-y-2 w-[min(90vw,22rem)]" dir="rtl" aria-label="إشعارات">
+      {toasts.map(n => (
+        <ToastItem key={n.id} notification={n} onRemove={() => onRemove(n.id)} />
+      ))}
+    </div>
+  );
+}
+
+function ToastItem({ notification, onRemove }: { notification: Notification; onRemove: () => void }) {
+  const getIcon = () => {
+    switch (notification.type) {
+      case 'success': return <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />;
+      case 'error': return <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />;
+      case 'warning': return <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0" />;
+      case 'info': return <AlertCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />;
+    }
+  };
+  const getBg = () => {
+    switch (notification.type) {
+      case 'success': return 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700';
+      case 'error': return 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700';
+      case 'warning': return 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-700';
+      case 'info': return 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700';
+    }
+  };
+  return (
+    <div className={`${getBg()} border rounded-lg shadow-lg p-4 flex items-start gap-3`}>
+      <div className="flex-shrink-0">{getIcon()}</div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-900 dark:text-white">{notification.title}</p>
+        {notification.message && <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{notification.message}</p>}
+      </div>
+      <button type="button" onClick={onRemove} className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="إغلاق">
+        <X className="w-4 h-4" />
+      </button>
+    </div>
   );
 }
 
@@ -125,7 +184,7 @@ export function NotificationBell({ badgeStyle = 'number' }: { badgeStyle?: Notif
       </button>
 
       {open && (
-        <div className="absolute top-full mt-1 right-0 w-[min(90vw,22rem)] max-h-[70vh] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl z-[300] flex flex-col">
+        <div className="absolute top-full mt-1 left-0 w-[min(90vw,22rem)] max-h-[70vh] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl z-[300] flex flex-col">
           <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-600">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">الإشعارات</h3>
             {notifications.length > 0 && (

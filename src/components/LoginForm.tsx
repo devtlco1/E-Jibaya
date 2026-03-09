@@ -19,20 +19,18 @@ export function LoginForm() {
     
     // Basic validation
     if (!username.trim()) {
-      addNotification({
-        type: 'warning',
-        title: 'حقل مطلوب',
-        message: 'يرجى إدخال اسم المستخدم'
-      });
+      addNotification(
+        { type: 'warning', title: 'حقل مطلوب', message: 'يرجى إدخال اسم المستخدم' },
+        { showAsToast: true }
+      );
       return;
     }
 
     if (!password.trim()) {
-      addNotification({
-        type: 'warning',
-        title: 'حقل مطلوب',
-        message: 'يرجى إدخال كلمة المرور'
-      });
+      addNotification(
+        { type: 'warning', title: 'حقل مطلوب', message: 'يرجى إدخال كلمة المرور' },
+        { showAsToast: true }
+      );
       return;
     }
 
@@ -41,18 +39,15 @@ export function LoginForm() {
     const success = await login(username, password);
     
     if (success) {
-      addNotification({
-        type: 'success',
-        title: 'تم تسجيل الدخول بنجاح',
-        message: 'مرحباً بك في النظام',
-        duration: 3000
-      });
+      addNotification(
+        { type: 'success', title: 'تم تسجيل الدخول بنجاح', message: 'مرحباً بك في النظام', duration: 3000 },
+        { showAsToast: true }
+      );
     } else {
-      addNotification({
-        type: 'error',
-        title: 'فشل في تسجيل الدخول',
-        message: 'تأكد من اسم المستخدم وكلمة المرور'
-      });
+      addNotification(
+        { type: 'error', title: 'فشل في تسجيل الدخول', message: 'تأكد من اسم المستخدم وكلمة المرور' },
+        { showAsToast: true }
+      );
       setLoading(false);
     }
   };
