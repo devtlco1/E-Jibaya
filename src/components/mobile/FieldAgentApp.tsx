@@ -326,83 +326,93 @@ export function FieldAgentApp() {
     }
     setIsEditSubmitting(true);
     try {
-      await dbOperations.initializeStorage();
-    } catch (_) {}
-
-    let meterUrl = editRecord.meter_photo_url;
-    let invoiceUrl = editRecord.invoice_photo_url;
-    let invoiceBackUrl = editRecord.invoice_photo_back_url;
-
-    if (editMeterPhoto && editMeterPhoto.startsWith('data:')) {
-      const imageId = dbOperations.generateImageId();
-      const filePath = `meter_photos/M_${imageId}.jpg`;
-      const res = await fetch(editMeterPhoto);
-      const blob = await res.blob();
-      const file = new File([blob], `M_${imageId}.jpg`, { type: 'image/jpeg' });
-      meterUrl = await dbOperations.uploadPhoto(file, filePath) ?? meterUrl;
-    }
-    if (editInvoicePhoto && editInvoicePhoto.startsWith('data:')) {
-      const imageId = dbOperations.generateImageId();
-      const filePath = `invoice_photos/I_${imageId}.jpg`;
-      const res = await fetch(editInvoicePhoto);
-      const blob = await res.blob();
-      const file = new File([blob], `I_${imageId}.jpg`, { type: 'image/jpeg' });
-      invoiceUrl = await dbOperations.uploadPhoto(file, filePath) ?? invoiceUrl;
-    }
-    if (editInvoicePhotoBack && editInvoicePhotoBack.startsWith('data:')) {
-      const imageId = dbOperations.generateImageId();
-      const filePath = `invoice_photos/IB_${imageId}.jpg`;
-      const res = await fetch(editInvoicePhotoBack);
-      const blob = await res.blob();
-      const file = new File([blob], `IB_${imageId}.jpg`, { type: 'image/jpeg' });
-      invoiceBackUrl = await dbOperations.uploadPhoto(file, filePath) ?? invoiceBackUrl;
-    }
-
-    const updateData: any = {
-      subscriber_name: editForm.subscriber_name || editRecord.subscriber_name,
-      account_number: editForm.account_number || editRecord.account_number,
-      record_number: editForm.record_number || editRecord.record_number || null,
-      meter_number: editForm.meter_number || editRecord.meter_number,
-      region: editForm.region || editRecord.region,
-      district: editForm.district || editRecord.district,
-      last_reading: editForm.last_reading || editRecord.last_reading,
-      status: editRecord.status,
-      new_zone: editRecord.new_zone,
-      new_block: editRecord.new_block,
-      new_home: editRecord.new_home,
-      total_amount: editForm.total_amount ? parseFloat(String(editForm.total_amount)) : editRecord.total_amount,
-      current_amount: editForm.current_amount ? parseFloat(String(editForm.current_amount)) : editRecord.current_amount,
-      land_status: editForm.land_status || editRecord.land_status || null,
-      notes: editForm.notes ?? editRecord.notes,
-      meter_photo_url: meterUrl,
-      invoice_photo_url: invoiceUrl,
-      invoice_photo_back_url: invoiceBackUrl,
-    };
-
-    const recordId = editRecord.id;
-    const recordName = editRecord.subscriber_name || editRecord.account_number;
-    const ok = await dbOperations.updateRecord(editRecord.id, updateData);
-    if (ok) {
-      addNotification({ type: 'success', title: 'تم التعديل', message: 'تم حفظ التعديلات بنجاح' });
-      setEditRecord(null);
-      setEditForm({});
-      setEditMeterPhoto(null);
-      setEditInvoicePhoto(null);
-      setEditInvoicePhotoBack(null);
       try {
-        await dbOperations.createActivityLog({
-          user_id: user.id,
-          action: 'edit_record',
-          target_type: 'record',
-          target_id: recordId,
-          target_name: recordName,
-          details: { source: 'field_agent' },
-        });
+        await dbOperations.initializeStorage();
       } catch (_) {}
-    } else {
-      addNotification({ type: 'error', title: 'فشل', message: 'لم يتم حفظ التعديلات' });
+
+      let meterUrl = editRecord.meter_photo_url ?? null;
+      let invoiceUrl = editRecord.invoice_photo_url ?? null;
+      let invoiceBackUrl = editRecord.invoice_photo_back_url ?? null;
+
+      if (editMeterPhoto && editMeterPhoto.startsWith('data:')) {
+        const imageId = dbOperations.generateImageId();
+        const filePath = `meter_photos/M_${imageId}.jpg`;
+        const res = await fetch(editMeterPhoto);
+        const blob = await res.blob();
+        const file = new File([blob], `M_${imageId}.jpg`, { type: 'image/jpeg' });
+        const uploaded = await dbOperations.uploadPhoto(file, filePath);
+        if (uploaded) meterUrl = uploaded;
+      }
+      if (editInvoicePhoto && editInvoicePhoto.startsWith('data:')) {
+        const imageId = dbOperations.generateImageId();
+        const filePath = `invoice_photos/I_${imageId}.jpg`;
+        const res = await fetch(editInvoicePhoto);
+        const blob = await res.blob();
+        const file = new File([blob], `I_${imageId}.jpg`, { type: 'image/jpeg' });
+        const uploaded = await dbOperations.uploadPhoto(file, filePath);
+        if (uploaded) invoiceUrl = uploaded;
+      }
+      if (editInvoicePhotoBack && editInvoicePhotoBack.startsWith('data:')) {
+        const imageId = dbOperations.generateImageId();
+        const filePath = `invoice_photos/IB_${imageId}.jpg`;
+        const res = await fetch(editInvoicePhotoBack);
+        const blob = await res.blob();
+        const file = new File([blob], `IB_${imageId}.jpg`, { type: 'image/jpeg' });
+        const uploaded = await dbOperations.uploadPhoto(file, filePath);
+        if (uploaded) invoiceBackUrl = uploaded;
+      }
+
+      const updateData: any = {
+        subscriber_name: editForm.subscriber_name || editRecord.subscriber_name,
+        account_number: editForm.account_number || editRecord.account_number,
+        record_number: editForm.record_number || editRecord.record_number || null,
+        meter_number: editForm.meter_number || editRecord.meter_number,
+        region: editForm.region || editRecord.region,
+        district: editForm.district || editRecord.district,
+        last_reading: editForm.last_reading || editRecord.last_reading,
+        status: editRecord.status,
+        new_zone: editRecord.new_zone ?? null,
+        new_block: editRecord.new_block ?? null,
+        new_home: editRecord.new_home ?? null,
+        total_amount: editForm.total_amount !== '' && editForm.total_amount != null ? parseFloat(String(editForm.total_amount)) : (editRecord.total_amount ?? null),
+        current_amount: editForm.current_amount !== '' && editForm.current_amount != null ? parseFloat(String(editForm.current_amount)) : (editRecord.current_amount ?? null),
+        land_status: editForm.land_status || editRecord.land_status || null,
+        notes: editForm.notes ?? editRecord.notes ?? null,
+        meter_photo_url: meterUrl ?? null,
+        invoice_photo_url: invoiceUrl ?? null,
+        invoice_photo_back_url: invoiceBackUrl ?? null,
+      };
+
+      const recordId = editRecord.id;
+      const recordName = editRecord.subscriber_name || editRecord.account_number;
+      const ok = await dbOperations.updateRecord(editRecord.id, updateData);
+      if (ok) {
+        addNotification({ type: 'success', title: 'تم التعديل', message: 'تم حفظ التعديلات بنجاح' });
+        setEditRecord(null);
+        setEditForm({});
+        setEditMeterPhoto(null);
+        setEditInvoicePhoto(null);
+        setEditInvoicePhotoBack(null);
+        try {
+          await dbOperations.createActivityLog({
+            user_id: user.id,
+            action: 'edit_record',
+            target_type: 'record',
+            target_id: recordId,
+            target_name: recordName,
+            details: { source: 'field_agent' },
+          });
+        } catch (_) {}
+      } else {
+        addNotification({ type: 'error', title: 'فشل في الحفظ', message: 'لم يتم حفظ التعديلات. جرّب مرة أخرى.' });
+      }
+    } catch (err) {
+      console.error('Edit record error:', err);
+      const message = err instanceof Error ? err.message : 'حدث خطأ أثناء حفظ التعديلات';
+      addNotification({ type: 'error', title: 'خطأ', message: message.includes('فشل') ? message : `فشل في حفظ التعديلات: ${message}` });
+    } finally {
+      setIsEditSubmitting(false);
     }
-    setIsEditSubmitting(false);
   };
 
   const handleClearSelection = () => {

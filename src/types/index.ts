@@ -132,7 +132,11 @@ export interface UpdateRecordData {
   land_status?: 'متروك' | 'مهدوم' | 'لم اعثر عليه' | 'ممتنع' | 'تجاوز' | 'قيد الانشاء' | 'مبدل' | 'مغلق' | 'لايوجد مقياس' | 'فحص مقياس' | 'فارغ' | 'خطاء في القراءة' | 'إيقاف قراءة' | 'عاطل' | null;
   // تاغات المشاكل
   tags?: string[] | null;
-  // صورة ظهر الفاتورة
+  // ملاحظات
+  notes?: string | null;
+  // روابط الصور (للتحديث من المحصل الميداني)
+  meter_photo_url?: string | null;
+  invoice_photo_url?: string | null;
   invoice_photo_back_url?: string | null;
 }
 
