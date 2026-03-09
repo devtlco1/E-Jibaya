@@ -1343,14 +1343,21 @@ export const dbOperations = {
         return baseQuery;
       };
       
-      // استخدام count للحصول على الإحصائيات بدقة
+      // عدّ المقفلة: فقط من لديهم قفل فعّال (لم تنتهِ صلاحيته) — lock_expires_at IS NULL أو lock_expires_at > now
+      const nowIso = new Date().toISOString();
+      const lockedQuery = client
+        .from('collection_records')
+        .select('id', { count: 'exact', head: true })
+        .not('locked_by', 'is', null)
+        .or(`lock_expires_at.is.null,lock_expires_at.gt.${nowIso}`);
+
       const [totalResult, pendingResult, completedResult, verifiedResult, refusedResult, lockedResult] = await Promise.all([
         buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true })),
         buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).eq('status', 'pending').eq('is_refused', false)),
         buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).eq('status', 'completed').eq('is_refused', false)),
         buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).eq('verification_status', 'مدقق')),
         buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).eq('is_refused', true)),
-        buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true }).not('locked_by', 'is', null))
+        buildQuery(lockedQuery)
       ]);
 
       return {
