@@ -102,7 +102,7 @@ export function BackupSystem() {
           total_records: 0,
           total_photos: 0,
           total_users: 0,
-          version: '1.0.0'
+          version: '1.1.0'
         }
       };
 
