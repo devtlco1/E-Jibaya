@@ -1315,6 +1315,41 @@ export const dbOperations = {
     }
   },
 
+  /** قائمة السجلات المرتبطة بإنجاز مستخدم (للنقر على الرقم في الإنجازات) */
+  async getAchievementRecords(
+    userId: string,
+    type: 'records_added' | 'records_added_dashboard' | 'records_completed' | 'records_refused' | 'records_updated' | 'records_verified',
+    startDate: string,
+    endDate: string
+  ): Promise<{ record_id: string; account_number: string | null; subscriber_name: string | null; action_at: string }[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return [];
+
+      const { data, error } = await client.rpc('get_achievement_records', {
+        p_user_id: userId,
+        p_type: type,
+        p_start_date: startDate,
+        p_end_date: endDate
+      });
+
+      if (error) {
+        console.error('Get achievement records RPC error:', error);
+        return [];
+      }
+
+      return (data || []).map((row: any) => ({
+        record_id: row.record_id,
+        account_number: row.account_number ?? null,
+        subscriber_name: row.subscriber_name ?? null,
+        action_at: row.action_at || ''
+      }));
+    } catch (error) {
+      console.error('Get achievement records error:', error);
+      return [];
+    }
+  },
+
   // User Management - مع تخزين مؤقت (60 ثانية) لتقليل الطلبات في بيئات متقطعة (مثل Bolt)
   async getUsers(bypassCache = false): Promise<User[]> {
     const CACHE_KEY = 'all_users';

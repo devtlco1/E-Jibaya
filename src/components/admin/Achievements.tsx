@@ -1,10 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trophy, Users, Download } from 'lucide-react';
+import { Trophy, Users, Download, X, FileText } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { UserAchievement, SECTORS, JOB_TITLES } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { Pagination } from '../common/Pagination';
+
+export type AchievementRecordType = 'records_added' | 'records_added_dashboard' | 'records_completed' | 'records_refused' | 'records_updated' | 'records_verified';
+
+const ACHIEVEMENT_TYPE_LABELS: Record<AchievementRecordType, string> = {
+  records_added: 'سجلات ميدانية',
+  records_added_dashboard: 'سجلات من الداشبورد',
+  records_completed: 'سجلات مكتملة',
+  records_refused: 'سجلات امتناع',
+  records_updated: 'تحديثات',
+  records_verified: 'تدقيق'
+};
 
 function escapeCsvCell(v: string | number | null | undefined): string {
   const s = String(v ?? '');
@@ -31,6 +42,20 @@ const TYPE_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: 'total', label: 'الإجمالي' }
 ];
 
+function CountCell({ count, onClick }: { count: number; onClick: () => void }) {
+  if (count === 0) return <span>0</span>;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="underline decoration-dotted hover:decoration-solid focus:outline-none focus:ring-2 focus:ring-amber-400 rounded px-0.5"
+      title="عرض قائمة السجلات"
+    >
+      {count}
+    </button>
+  );
+}
+
 export function Achievements() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -39,6 +64,16 @@ export function Achievements() {
   const [sectorFilter, setSectorFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [loading, setLoading] = useState(false);
+  const [recordsModal, setRecordsModal] = useState<{
+    open: boolean;
+    userName: string;
+    type: AchievementRecordType;
+    typeLabel: string;
+    count: number;
+    userId: string;
+  } | null>(null);
+  const [recordsList, setRecordsList] = useState<{ record_id: string; account_number: string | null; subscriber_name: string | null; action_at: string }[]>([]);
+  const [recordsListLoading, setRecordsListLoading] = useState(false);
   const { addNotification } = useNotifications();
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -89,6 +124,30 @@ export function Achievements() {
   useEffect(() => {
     setCurrentPage(1);
   }, [jobFilter, sectorFilter, typeFilter]);
+
+  const endDate = new Date().toISOString().slice(0, 10);
+
+  const openRecordsModal = async (a: UserAchievement, type: AchievementRecordType, count: number) => {
+    if (count === 0) return;
+    setRecordsModal({
+      open: true,
+      userName: a.full_name || a.username || '—',
+      type,
+      typeLabel: ACHIEVEMENT_TYPE_LABELS[type],
+      count,
+      userId: a.user_id
+    });
+    setRecordsList([]);
+    setRecordsListLoading(true);
+    try {
+      const list = await dbOperations.getAchievementRecords(a.user_id, type, START_DATE, endDate);
+      setRecordsList(list);
+    } catch (e) {
+      addNotification({ type: 'error', title: 'خطأ', message: 'فشل في جلب قائمة السجلات' });
+    } finally {
+      setRecordsListLoading(false);
+    }
+  };
 
   const getJobTitleLabel = (job: string | null | undefined) => job || '-';
 
@@ -245,22 +304,22 @@ export function Achievements() {
                       {a.sector || '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                      {a.records_added}
+                      <CountCell count={a.records_added} onClick={() => openRecordsModal(a, 'records_added', a.records_added)} />
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                      {a.records_added_dashboard}
+                      <CountCell count={a.records_added_dashboard} onClick={() => openRecordsModal(a, 'records_added_dashboard', a.records_added_dashboard)} />
                     </td>
                     <td className="px-4 py-3 text-sm text-green-600 dark:text-green-400 font-medium">
-                      {a.records_completed}
+                      <CountCell count={a.records_completed} onClick={() => openRecordsModal(a, 'records_completed', a.records_completed)} />
                     </td>
                     <td className="px-4 py-3 text-sm text-red-600 dark:text-red-400">
-                      {a.records_refused}
+                      <CountCell count={a.records_refused} onClick={() => openRecordsModal(a, 'records_refused', a.records_refused)} />
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                      {a.records_updated}
+                      <CountCell count={a.records_updated} onClick={() => openRecordsModal(a, 'records_updated', a.records_updated)} />
                     </td>
                     <td className="px-4 py-3 text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      {a.records_verified ?? 0}
+                      <CountCell count={a.records_verified ?? 0} onClick={() => openRecordsModal(a, 'records_verified', a.records_verified ?? 0)} />
                     </td>
                     <td className="px-4 py-3 text-sm font-bold text-amber-600 dark:text-amber-400">
                       {getTotalScore(a)}
@@ -303,6 +362,49 @@ export function Achievements() {
           </div>
         )}
       </div>
+
+      {/* مودال قائمة السجلات عند النقر على الرقم */}
+      {recordsModal?.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setRecordsModal(null)}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-amber-500" />
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  {recordsModal.typeLabel} — {recordsModal.userName}
+                </h3>
+              </div>
+              <button type="button" onClick={() => setRecordsModal(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-auto flex-1">
+              {recordsListLoading ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">جاري تحميل السجلات...</p>
+              ) : recordsList.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">لا توجد سجلات.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {recordsList.map((r, i) => (
+                    <li key={r.record_id || i} className="flex items-center justify-between gap-4 py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm">
+                      <div className="min-w-0">
+                        <span className="font-medium text-gray-900 dark:text-white block truncate">{r.subscriber_name || '—'}</span>
+                        <span className="text-gray-500 dark:text-gray-400">رقم الحساب: {r.account_number || '—'}</span>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                        {r.action_at ? formatDateTime(r.action_at) : '—'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
+              عدد السجلات: {recordsList.length}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
