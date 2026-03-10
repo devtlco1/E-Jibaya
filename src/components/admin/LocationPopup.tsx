@@ -173,9 +173,10 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
   const initializeMap = (location: LocationData) => {
     if (!mapRef.current || mapInstance.current || !window.mapboxgl) return;
 
-    // Set access token from env (VITE_MAPBOX_ACCESS_TOKEN)
-    const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ?? '';
-    if (!token) return;
+    // Set access token: من env إن وُجد وإلا المفتاح الافتراضي
+    const token =
+      import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ??
+      'pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ';
     window.mapboxgl.accessToken = token;
 
     // Create map
