@@ -2228,6 +2228,88 @@ export const dbOperations = {
     }
   },
 
+  async getAllCollectionPayments(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      let all: any[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const to = from + limit - 1;
+        const { data, error } = await supabase
+          .from('collection_payments')
+          .select('*')
+          .order('collected_at', { ascending: false })
+          .range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        from += limit;
+        if (data.length < limit) hasMore = false;
+      }
+      return all;
+    } catch (error) {
+      console.error('Error fetching all collection payments:', error);
+      throw error;
+    }
+  },
+
+  async getAllRecordLocations(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      let all: any[] = [];
+      let from = 0;
+      const limit = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const to = from + limit - 1;
+        const { data, error } = await supabase
+          .from('record_locations')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        from += limit;
+        if (data.length < limit) hasMore = false;
+      }
+      return all;
+    } catch (error) {
+      console.error('Error fetching all record locations:', error);
+      throw error;
+    }
+  },
+
+  async getAllBranchManagerEmployees(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      const { data, error } = await supabase
+        .from('branch_manager_employees')
+        .select('*');
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching branch manager employees:', error);
+      throw error;
+    }
+  },
+
+  async getAllBranchManagerFieldAgents(): Promise<any[]> {
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      const { data, error } = await supabase
+        .from('branch_manager_field_agents')
+        .select('*');
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching branch manager field agents:', error);
+      throw error;
+    }
+  },
+
   // ==============================================
   // Backup Info Functions
   // ==============================================
@@ -2316,7 +2398,11 @@ export const dbOperations = {
         records: 0,
         photos: 0,
         activityLogs: 0,
-        sessions: 0
+        sessions: 0,
+        collection_payments: 0,
+        record_locations: 0,
+        branch_manager_employees: 0,
+        branch_manager_field_agents: 0
       };
 
       // مسح جميع البيانات الموجودة لتجنب التضارب
@@ -2343,11 +2429,35 @@ export const dbOperations = {
         console.warn('Could not clear record_photos:', error);
       }
       
+      // مسح الدفعات والمواقع (تعتمد على السجلات)
+      try {
+        await supabase.from('collection_payments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear collection_payments:', error);
+      }
+      try {
+        await supabase.from('record_locations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear record_locations:', error);
+      }
+      
       // مسح السجلات (لأنها تعتمد على المستخدمين)
       try {
         await supabase.from('collection_records').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       } catch (error) {
         console.warn('Could not clear collection_records:', error);
+      }
+      
+      // مسح علاقات مدير الفرع (تعتمد على المستخدمين)
+      try {
+        await supabase.from('branch_manager_employees').delete().neq('branch_manager_id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear branch_manager_employees:', error);
+      }
+      try {
+        await supabase.from('branch_manager_field_agents').delete().neq('branch_manager_id', '00000000-0000-0000-0000-000000000000');
+      } catch (error) {
+        console.warn('Could not clear branch_manager_field_agents:', error);
       }
       
       // مسح المستخدمين (بعد مسح جميع الجداول التي تعتمد عليهم)
@@ -2442,7 +2552,57 @@ export const dbOperations = {
         }
       }
 
-      // 5. استعادة الجلسات
+      // 5. استعادة دفعات التحصيل
+      if (backupData.collection_payments && backupData.collection_payments.length > 0) {
+        try {
+          const { error: paymentsError } = await supabase
+            .from('collection_payments')
+            .upsert(backupData.collection_payments, { onConflict: 'id', ignoreDuplicates: false });
+          if (paymentsError) throw paymentsError;
+          restoredCounts.collection_payments = backupData.collection_payments.length;
+        } catch (error) {
+          console.error('Failed to restore collection_payments:', error);
+        }
+      }
+
+      // 6. استعادة مواقع السجلات
+      if (backupData.record_locations && backupData.record_locations.length > 0) {
+        try {
+          const { error: locError } = await supabase
+            .from('record_locations')
+            .upsert(backupData.record_locations, { onConflict: 'id', ignoreDuplicates: false });
+          if (locError) throw locError;
+          restoredCounts.record_locations = backupData.record_locations.length;
+        } catch (error) {
+          console.error('Failed to restore record_locations:', error);
+        }
+      }
+
+      // 7. استعادة علاقات مدير الفرع
+      if (backupData.branch_manager_employees && backupData.branch_manager_employees.length > 0) {
+        try {
+          const { error: bmeError } = await supabase
+            .from('branch_manager_employees')
+            .upsert(backupData.branch_manager_employees, { onConflict: 'id', ignoreDuplicates: false });
+          if (bmeError) throw bmeError;
+          restoredCounts.branch_manager_employees = backupData.branch_manager_employees.length;
+        } catch (error) {
+          console.error('Failed to restore branch_manager_employees:', error);
+        }
+      }
+      if (backupData.branch_manager_field_agents && backupData.branch_manager_field_agents.length > 0) {
+        try {
+          const { error: bmfaError } = await supabase
+            .from('branch_manager_field_agents')
+            .upsert(backupData.branch_manager_field_agents, { onConflict: 'id', ignoreDuplicates: false });
+          if (bmfaError) throw bmfaError;
+          restoredCounts.branch_manager_field_agents = backupData.branch_manager_field_agents.length;
+        } catch (error) {
+          console.error('Failed to restore branch_manager_field_agents:', error);
+        }
+      }
+
+      // 8. استعادة الجلسات
       if (backupData.user_sessions && backupData.user_sessions.length > 0) {
         try {
           const { error: sessionsError } = await supabase

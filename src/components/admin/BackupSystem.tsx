@@ -17,6 +17,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import JSZip from 'jszip';
 import { formatDateTime, formatDateTimeForFilename } from '../../utils/dateFormatter';
+import { formatNumberEn } from '../../utils/numberFormatter';
 
 interface BackupData {
   users: any[];
@@ -24,6 +25,10 @@ interface BackupData {
   activity_logs: any[];
   record_photos: any[];
   user_sessions: any[];
+  collection_payments: any[];
+  record_locations: any[];
+  branch_manager_employees: any[];
+  branch_manager_field_agents: any[];
   photos: any[];
   metadata: {
     backup_date: string;
@@ -87,6 +92,10 @@ export function BackupSystem() {
         activity_logs: [],
         record_photos: [],
         user_sessions: [],
+        collection_payments: [],
+        record_locations: [],
+        branch_manager_employees: [],
+        branch_manager_field_agents: [],
         photos: [],
         metadata: {
           backup_date: new Date().toISOString(),
@@ -130,7 +139,15 @@ export function BackupSystem() {
       const sessions = await dbOperations.getAllUserSessions();
       backupData.user_sessions = sessions;
 
-      // 6. إنشاء ملف ZIP
+      // 6. نسخ دفعات التحصيل ومواقع السجلات وعلاقات مدير الفرع
+      setBackupStatus('جاري نسخ الدفعات والمواقع وفرق المديرين...');
+      setBackupProgress(52);
+      backupData.collection_payments = await dbOperations.getAllCollectionPayments();
+      backupData.record_locations = await dbOperations.getAllRecordLocations();
+      backupData.branch_manager_employees = await dbOperations.getAllBranchManagerEmployees();
+      backupData.branch_manager_field_agents = await dbOperations.getAllBranchManagerFieldAgents();
+
+      // 7. إنشاء ملف ZIP
       setBackupStatus('جاري إنشاء ملف ZIP...');
       setBackupProgress(60);
       
@@ -140,7 +157,7 @@ export function BackupSystem() {
       const backupJson = JSON.stringify(backupData, null, 2);
       zip.file('backup_data.json', backupJson);
 
-      // 7. تحميل الصور كملفات عادية
+      // 8. تحميل الصور كملفات عادية
       setBackupStatus('جاري تحميل الصور...');
       setBackupProgress(70);
       
@@ -227,7 +244,7 @@ export function BackupSystem() {
         }
       }
 
-      // 8. إنشاء ملف ZIP النهائي
+      // 9. إنشاء ملف ZIP النهائي
       setBackupStatus('جاري ضغط الملفات...');
       setBackupProgress(90);
       
@@ -441,7 +458,7 @@ export function BackupSystem() {
           }
           
           return {
-            users: Number(stats.total_users) || 0,
+            users: Number(stats.total_users ?? stats.active_users) || 0,
             records: Number(stats.total_records) || 0,
             photos,
             activityLogs: activityLogsRes.count || 0
@@ -518,8 +535,8 @@ export function BackupSystem() {
             <Users className="w-8 h-8 text-blue-600 dark:text-blue-400 ml-3" />
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">المستخدمين</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {systemStats.users}
+              <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                {formatNumberEn(systemStats.users)}
               </p>
             </div>
           </div>
@@ -530,8 +547,8 @@ export function BackupSystem() {
             <FileText className="w-8 h-8 text-green-600 dark:text-green-400 ml-3" />
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">السجلات</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {systemStats.records}
+              <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                {formatNumberEn(systemStats.records)}
               </p>
             </div>
           </div>
@@ -542,8 +559,8 @@ export function BackupSystem() {
             <Image className="w-8 h-8 text-purple-600 dark:text-purple-400 ml-3" />
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">الصور</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {systemStats.photos}
+              <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                {formatNumberEn(systemStats.photos)}
               </p>
             </div>
           </div>
@@ -554,8 +571,8 @@ export function BackupSystem() {
             <Activity className="w-8 h-8 text-orange-600 dark:text-orange-400 ml-3" />
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">سجل الأنشطة</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {systemStats.activityLogs}
+              <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+                {formatNumberEn(systemStats.activityLogs)}
               </p>
             </div>
           </div>
