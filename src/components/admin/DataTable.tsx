@@ -2008,9 +2008,22 @@ export function DataTable({
                   {viewingPaymentsLoading ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">جاري تحميل سجل الدفعات...</p>
                   ) : viewingPayments.length === 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      لا توجد دفعات مسجلة لهذا السجل بعد.
-                    </p>
+                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                      <p>
+                        لا توجد صفوف في سجل الدفعات (الدفعات المسجلة لاحقاً ستظهر هنا).
+                      </p>
+                      {(viewingRecord.current_amount != null && viewingRecord.current_amount > 0) || (viewingRecord.total_amount != null && viewingRecord.total_amount > 0) ? (
+                        <div className="mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                          <p className="font-medium text-gray-900 dark:text-white mb-1">المبالغ المسجلة على السجل:</p>
+                          {viewingRecord.total_amount != null && viewingRecord.total_amount > 0 && (
+                            <p>المجموع المطلوب: {Number(viewingRecord.total_amount).toLocaleString('ar-IQ')} دينار</p>
+                          )}
+                          {viewingRecord.current_amount != null && viewingRecord.current_amount > 0 && (
+                            <p>المبلغ المستلم: {Number(viewingRecord.current_amount).toLocaleString('ar-IQ')} دينار</p>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {viewingPayments.map((p) => (
