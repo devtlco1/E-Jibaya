@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { User, CollectionRecord, CreateRecordData, CreateRecordFromDashboardData, UpdateRecordData, UserAchievement, ActivityLog, CreateActivityLogData, RecordPhoto } from '../types';
+import { User, CollectionRecord, CreateRecordData, CreateRecordFromDashboardData, UpdateRecordData, UserAchievement, ActivityLog, CreateActivityLogData, RecordPhoto, CollectionPayment } from '../types';
 import { hashPassword, verifyPassword } from '../utils/hash';
 import { rateLimiter } from '../utils/rateLimiter';
 import { cacheService } from '../utils/cache';
@@ -742,6 +742,224 @@ export const dbOperations = {
       return data || [];
     } catch (error) {
       console.error('Search records by account number error:', error);
+      return [];
+    }
+  },
+
+  // إنشاء سجل جديد مع أول دفعة في عملية واحدة (للواجهة الميدانية)
+  async createRecordWithFirstPayment(params: {
+    account_number: string;
+    subscriber_name?: string;
+    meter_number?: string;
+    region?: string;
+    district?: string;
+    record_number?: string;
+    category?: CollectionRecord['category'];
+    phase?: CollectionRecord['phase'];
+    total_amount?: number | null;
+    first_payment_amount: number;
+    field_agent_id?: string | null;
+    land_status?: CollectionRecord['land_status'];
+  }): Promise<{ record: CollectionRecord; payment: CollectionPayment } | null> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      const {
+        account_number,
+        subscriber_name,
+        meter_number,
+        region,
+        district,
+        record_number,
+        category,
+        phase,
+        total_amount,
+        first_payment_amount,
+        field_agent_id,
+        land_status
+      } = params;
+
+      if (!account_number || !account_number.trim()) {
+        throw new Error('رقم الحساب مطلوب لإنشاء السجل');
+      }
+      if (!first_payment_amount || Number.isNaN(first_payment_amount) || first_payment_amount <= 0) {
+        throw new Error('مبلغ الدفعة الأولى غير صالح');
+      }
+
+      // إنشاء السجل الرئيسي
+      const recordData: any = {
+        subscriber_name: subscriber_name || null,
+        account_number: account_number.trim(),
+        record_number: record_number ?? null,
+        meter_number: meter_number || null,
+        region: region || null,
+        district: district || null,
+        last_reading: null,
+        new_zone: null,
+        new_block: null,
+        new_home: null,
+        category: category ?? null,
+        phase: phase ?? null,
+        multiplier: null,
+        total_amount: total_amount ?? null,
+        current_amount: first_payment_amount,
+        land_status: land_status ?? null,
+        status: 'pending',
+        field_agent_id: field_agent_id ?? null,
+        gps_latitude: null,
+        gps_longitude: null,
+        meter_photo_url: null,
+        invoice_photo_url: null,
+        is_refused: false,
+        meter_photo_verified: false,
+        invoice_photo_verified: false,
+        verification_status: 'غير مدقق'
+      };
+
+      const { data: record, error: createRecordError } = await client
+        .from('collection_records')
+        .insert(recordData)
+        .select()
+        .single();
+
+      if (createRecordError || !record) {
+        console.error('Create record with first payment - record error:', createRecordError);
+        throw new Error(`فشل في إنشاء السجل: ${createRecordError?.message || 'خطأ غير معروف'}`);
+      }
+
+      // إنشاء صف الدفعة الأولى
+      const paymentData: any = {
+        record_id: record.id,
+        account_number: record.account_number,
+        amount: first_payment_amount,
+        collector_id: field_agent_id ?? null,
+        notes: null,
+        gps_latitude: null,
+        gps_longitude: null,
+        attachments: null
+      };
+
+      const { data: payment, error: createPaymentError } = await client
+        .from('collection_payments')
+        .insert(paymentData)
+        .select()
+        .single();
+
+      if (createPaymentError || !payment) {
+        console.error('Create record with first payment - payment error, rolling back logically:', createPaymentError);
+        // لا يوجد transaction هنا، لكن على الأقل نخبر عن الخطأ
+        throw new Error(`تم إنشاء السجل لكن فشل في إنشاء الدفعة الأولى: ${createPaymentError?.message || 'خطأ غير معروف'}`);
+      }
+
+      cacheService.clearRecordsCache();
+      cacheService.clearUsersCache();
+      localStorage.removeItem('ejibaya_cache');
+
+      return { record, payment };
+    } catch (error) {
+      console.error('Create record with first payment error:', error);
+      throw error;
+    }
+  },
+
+  // إضافة دفعة جديدة لسجل موجود
+  async addPaymentToRecord(recordId: string, params: {
+    amount: number;
+    collector_id?: string | null;
+    notes?: string;
+  }): Promise<CollectionPayment | null> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) {
+        throw new Error('فشل في الاتصال بقاعدة البيانات');
+      }
+
+      const { amount, collector_id, notes } = params;
+      if (!amount || Number.isNaN(amount) || amount <= 0) {
+        throw new Error('مبلغ الدفعة غير صالح');
+      }
+
+      // جلب السجل للحصول على رقم الحساب والمبلغ الحالي
+      const { data: record, error: recordError } = await client
+        .from('collection_records')
+        .select('id, account_number, current_amount')
+        .eq('id', recordId)
+        .single();
+
+      if (recordError || !record) {
+        console.error('Add payment - record not found:', recordError);
+        throw new Error('السجل غير موجود أو حدث خطأ أثناء جلبه');
+      }
+
+      const paymentData: any = {
+        record_id: recordId,
+        account_number: record.account_number,
+        amount,
+        collector_id: collector_id ?? null,
+        notes: notes || null,
+        gps_latitude: null,
+        gps_longitude: null,
+        attachments: null
+      };
+
+      const { data: payment, error: paymentError } = await client
+        .from('collection_payments')
+        .insert(paymentData)
+        .select()
+        .single();
+
+      if (paymentError || !payment) {
+        console.error('Add payment - insert error:', paymentError);
+        throw new Error(`فشل في تسجيل الدفعة: ${paymentError?.message || 'خطأ غير معروف'}`);
+      }
+
+      // تحديث المبلغ الحالي في السجل الرئيسي (تراكمي)
+      const previous = typeof record.current_amount === 'number' ? record.current_amount : 0;
+      const newCurrent = previous + amount;
+
+      const { error: updateError } = await client
+        .from('collection_records')
+        .update({ current_amount: newCurrent })
+        .eq('id', recordId);
+
+      if (updateError) {
+        console.error('Add payment - update record current_amount error (payment still created):', updateError);
+      }
+
+      cacheService.clearRecordsCache();
+      cacheService.clearUsersCache();
+      localStorage.removeItem('ejibaya_cache');
+
+      return payment as CollectionPayment;
+    } catch (error) {
+      console.error('Add payment error:', error);
+      throw error;
+    }
+  },
+
+  // جلب جميع الدفعات لسجل واحد (مرتبة من الأحدث)
+  async getPaymentsForRecord(recordId: string): Promise<CollectionPayment[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return [];
+
+      const { data, error } = await client
+        .from('collection_payments')
+        .select('*')
+        .eq('record_id', recordId)
+        .order('collected_at', { ascending: false });
+
+      if (error) {
+        console.error('Get payments for record error:', error);
+        return [];
+      }
+
+      return (data || []) as CollectionPayment[];
+    } catch (error) {
+      console.error('Get payments for record error:', error);
       return [];
     }
   },

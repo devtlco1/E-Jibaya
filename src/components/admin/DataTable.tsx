@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CollectionRecord, FilterState } from '../../types';
+import { CollectionRecord, CollectionPayment, FilterState } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { dbOperations } from '../../lib/supabase';
@@ -46,6 +46,8 @@ export function DataTable({
   onRecordToEditConsumed
 }: DataTableProps) {
   const [viewingRecord, setViewingRecord] = useState<CollectionRecord | null>(null);
+  const [viewingPayments, setViewingPayments] = useState<CollectionPayment[]>([]);
+  const [viewingPaymentsLoading, setViewingPaymentsLoading] = useState(false);
   const [editingRecord, setEditingRecord] = useState<CollectionRecord | null>(null);
   const [editForm, setEditForm] = useState({
     subscriber_name: '',
@@ -163,6 +165,26 @@ export function DataTable({
       onRecordToEditConsumed?.();
     }
   }, [recordToEdit?.id]);
+
+  // جلب سجل الدفعات عند فتح نافذة العرض
+  useEffect(() => {
+    const loadPayments = async () => {
+      if (!viewingRecord) {
+        setViewingPayments([]);
+        return;
+      }
+      try {
+        setViewingPaymentsLoading(true);
+        const payments = await dbOperations.getPaymentsForRecord(viewingRecord.id);
+        setViewingPayments(payments);
+      } catch (error) {
+        console.error('Error loading payments for record:', error);
+      } finally {
+        setViewingPaymentsLoading(false);
+      }
+    };
+    loadPayments();
+  }, [viewingRecord?.id]);
 
   // Load users for displaying names
   React.useEffect(() => {
@@ -1975,6 +1997,46 @@ export function DataTable({
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* سجل الدفعات */}
+                <div className="bg-gradient-to-l from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl p-5 border border-yellow-200 dark:border-yellow-700">
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center text-base">
+                    <DollarSign className="w-5 h-5 text-yellow-600 dark:text-yellow-400 ml-2" />
+                    سجل الدفعات
+                  </h4>
+                  {viewingPaymentsLoading ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">جاري تحميل سجل الدفعات...</p>
+                  ) : viewingPayments.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      لا توجد دفعات مسجلة لهذا السجل بعد.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {viewingPayments.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-yellow-200 dark:border-yellow-700 text-sm"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {p.amount.toLocaleString('ar-IQ')} دينار
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {new Date(p.collected_at).toLocaleString('ar-IQ')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {p.notes && (
+                              <span className="text-xs text-gray-600 dark:text-gray-300 max-w-xs line-clamp-2">
+                                {p.notes}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* حالة التدقيق */}

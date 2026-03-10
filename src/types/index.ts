@@ -231,3 +231,16 @@ export interface RecordPhoto {
   verified: boolean;
   rejected?: boolean;
 }
+
+export interface CollectionPayment {
+  id: string;
+  record_id: string;
+  account_number: string | null;
+  amount: number;
+  collected_at: string;
+  collector_id: string | null;
+  gps_latitude: number | null;
+  gps_longitude: number | null;
+  notes: string | null;
+  attachments: any | null;
+}

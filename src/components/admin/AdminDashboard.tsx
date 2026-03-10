@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { DataTable } from './DataTable';
+import { FieldCollectorView } from './FieldCollectorView';
 import { AddRecordModal } from './AddRecordModal';
 import { Achievements } from './Achievements';
 import { Sectors } from './Sectors';
@@ -953,34 +954,38 @@ export function AdminDashboard() {
         {/* Tab Content */}
         <div className="min-h-[400px]">
           {activeTab === 'records' && (
-            <div className="space-y-4">
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowAddRecordModal(true)}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                  <Plus className="w-4 h-4 ml-2" />
-                  إضافة سجل
-                </button>
+            user?.role === 'field_agent' ? (
+              <FieldCollectorView />
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setShowAddRecordModal(true)}
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    <Plus className="w-4 h-4 ml-2" />
+                    إضافة سجل
+                  </button>
+                </div>
+                <DataTable
+                  records={records}
+                  totalRecords={totalRecords}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  loading={loading}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onUpdateRecord={handleUpdateRecord}
+                  onDeleteRecord={handleDeleteRecord}
+                  onRecordUpdate={updateRecordLockStatus}
+                  recordToEdit={recordToEdit}
+                  onRecordToEditConsumed={() => setRecordToEdit(null)}
+                />
               </div>
-              <DataTable
-              records={records}
-              totalRecords={totalRecords}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              itemsPerPage={itemsPerPage}
-              loading={loading}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onUpdateRecord={handleUpdateRecord}
-              onDeleteRecord={handleDeleteRecord}
-              onRecordUpdate={updateRecordLockStatus}
-              recordToEdit={recordToEdit}
-              onRecordToEditConsumed={() => setRecordToEdit(null)}
-            />
-            </div>
+            )
           )}
           {activeTab === 'users' && (
             <UserManagement key="users-tab" onUserStatusChange={refreshFieldAgentsCount} />
