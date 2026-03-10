@@ -13,9 +13,7 @@ import {
   CheckCircle,
   AlertCircle,
   Search,
-  History,
-  Edit3,
-  RefreshCw
+  History
 } from 'lucide-react';
 import { CreateRecordData } from '../../types';
 import { dbOperations } from '../../lib/supabase';
@@ -50,8 +48,6 @@ export function FieldAgentApp() {
   const [isSearching, setIsSearching] = useState(false);
   const [createNewMode, setCreateNewMode] = useState(false);
   const [accountNumberForNew, setAccountNumberForNew] = useState('');
-  // بوب أب اختيار تحديث أو تعديل
-  const [recordForAction, setRecordForAction] = useState<any>(null);
   // وضع التعديل
   const [editRecord, setEditRecord] = useState<any>(null);
   const [editForm, setEditForm] = useState<any>({});
@@ -267,9 +263,10 @@ export function FieldAgentApp() {
     }
   };
 
-  const handleSelectRecord = (record: any) => {
+  const handleRecordClick = (record: any) => {
     setSelectedRecord(record);
-    setRecordForAction(null);
+    setCreateNewMode(false);
+    setAccountNumberForNew('');
     setSearchAccount('');
     setExistingRecords([]);
     addNotification({
@@ -277,52 +274,6 @@ export function FieldAgentApp() {
       title: 'تم اختيار السجل',
       message: `تم اختيار سجل ${record.subscriber_name || record.account_number}`
     });
-  };
-
-  const handleRecordClick = (record: any) => {
-    setRecordForAction(record);
-  };
-
-  const handleActionUpdate = () => {
-    if (recordForAction) {
-      handleSelectRecord(recordForAction);
-    }
-  };
-
-  const handleActionEdit = async () => {
-    if (!recordForAction) return;
-    try {
-      const full = await dbOperations.getRecordById(recordForAction.id);
-      if (!full) {
-        addNotification({ type: 'error', title: 'خطأ', message: 'لم يتم العثور على السجل' });
-        return;
-      }
-      setEditRecord(full);
-      setEditForm({
-        subscriber_name: full.subscriber_name ?? '',
-        account_number: full.account_number ?? '',
-        record_number: full.record_number ?? '',
-        meter_number: full.meter_number ?? '',
-        region: full.region ?? '',
-        district: full.district ?? '',
-        last_reading: full.last_reading ?? '',
-        total_amount: full.total_amount ?? '',
-        current_amount: full.current_amount ?? '',
-        land_status: full.land_status ?? '',
-        category: full.category ?? 'منزلي',
-        phase: full.phase ?? '',
-        notes: full.notes ?? '',
-      });
-      setEditMeterPhoto(full.meter_photo_url ?? null);
-      setEditInvoicePhoto(full.invoice_photo_url ?? null);
-      setEditInvoicePhotoBack(full.invoice_photo_back_url ?? null);
-      setRecordForAction(null);
-      setExistingRecords([]);
-      setSearchAccount('');
-    } catch (e) {
-      console.error(e);
-      addNotification({ type: 'error', title: 'خطأ', message: 'فشل في جلب بيانات السجل' });
-    }
   };
 
   const handleEditPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'meter' | 'invoice' | 'invoice_back') => {
@@ -576,6 +527,7 @@ export function FieldAgentApp() {
         result = await dbOperations.createRecordFromDashboard({
           subscriber_name: 'غير محدد',
           account_number: accountNumberForNew,
+          record_number: accountNumberForNew,
           meter_number: '',
           region: 'غير محدد',
           district: '',
@@ -590,6 +542,7 @@ export function FieldAgentApp() {
           await dbOperations.updateRecord(result.id, {
             subscriber_name: 'غير محدد',
             account_number: accountNumberForNew,
+            record_number: accountNumberForNew,
             meter_number: '',
             region: 'غير محدد',
             district: '',
@@ -1077,42 +1030,6 @@ export function FieldAgentApp() {
           )}
         </div>
 
-        {/* بوب أب اختيار تحديث أو تعديل */}
-        {recordForAction && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" dir="rtl">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                ماذا تريد أن تفعل؟
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {recordForAction.subscriber_name || 'غير محدد'} — {recordForAction.account_number}
-              </p>
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={handleActionUpdate}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  <RefreshCw className="w-5 h-5" />
-                  تحديث (إضافة صور وموقع)
-                </button>
-                <button
-                  onClick={handleActionEdit}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  <Edit3 className="w-5 h-5" />
-                  تعديل (تغيير بيانات السجل)
-                </button>
-                <button
-                  onClick={() => setRecordForAction(null)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* مودال تعديل السجل */}
         {editRecord && (
           <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900 overflow-y-auto" dir="rtl">
@@ -1309,6 +1226,25 @@ export function FieldAgentApp() {
                 {isEditSubmitting ? 'جاري الحفظ...' : 'إرسال التعديلات'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* حقل رقم السجل عند إنشاء سجل جديد بعد البحث */}
+        {createNewMode && accountNumberForNew && !selectedRecord && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              رقم السجل
+            </label>
+            <input
+              type="text"
+              value={accountNumberForNew}
+              readOnly
+              disabled
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+            />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              تم تعبئة رقم السجل تلقائياً من رقم الحساب الذي بحثت عنه.
+            </p>
           </div>
         )}
 
