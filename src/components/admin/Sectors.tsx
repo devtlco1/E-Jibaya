@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PieChart, Users, TrendingUp, Activity } from 'lucide-react';
+import { PieChart, Users, TrendingUp, Activity, Download } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { SECTORS } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -9,11 +9,20 @@ interface SectorStats {
   sector: string;
   employeeCount: number;
   recordsAdded: number;
+  recordsAddedField: number;
+  recordsAddedDashboard: number;
   recordsCompleted: number;
   recordsRefused: number;
   recordsUpdated: number;
+  recordsVerified: number;
   totalActions: number;
   percentageOfTotal: number;
+}
+
+function escapeCsvCell(v: string | number | null | undefined): string {
+  const s = String(v ?? '');
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
 
 type SortOrder = 'asc' | 'desc';
@@ -66,23 +75,26 @@ export function Sectors() {
 
       const sectorAchievements = achievements.filter(a => sectorUserIds.includes(a.user_id));
 
-      const recordsAdded = sectorAchievements.reduce((s, a) => s + a.records_added, 0);
+      const recordsAddedField = sectorAchievements.reduce((s, a) => s + a.records_added, 0);
       const recordsAddedDashboard = sectorAchievements.reduce((s, a) => s + a.records_added_dashboard, 0);
       const recordsCompleted = sectorAchievements.reduce((s, a) => s + a.records_completed, 0);
       const recordsRefused = sectorAchievements.reduce((s, a) => s + a.records_refused, 0);
       const recordsUpdated = sectorAchievements.reduce((s, a) => s + a.records_updated, 0);
       const recordsVerified = sectorAchievements.reduce((s, a) => s + (a.records_verified || 0), 0);
-      const totalActions = recordsAdded + recordsAddedDashboard + recordsCompleted + recordsUpdated + recordsVerified;
+      const totalActions = recordsAddedField + recordsAddedDashboard + recordsCompleted + recordsUpdated + recordsVerified;
 
       const percentageOfTotal = totalActionsAll > 0 ? (totalActions / totalActionsAll) * 100 : 0;
 
       return {
         sector,
         employeeCount: sectorUserIds.length,
-        recordsAdded: recordsAdded + recordsAddedDashboard,
+        recordsAdded: recordsAddedField + recordsAddedDashboard,
+        recordsAddedField,
+        recordsAddedDashboard,
         recordsCompleted,
         recordsRefused,
         recordsUpdated,
+        recordsVerified,
         totalActions,
         percentageOfTotal
       };
@@ -90,6 +102,44 @@ export function Sectors() {
 
     setStats(sectorStatsList);
   }, [users, achievements]);
+
+  const exportSectorsToCsv = () => {
+    const headers = ['القطاع', 'عدد الموظفين', 'سجلات ميدانية', 'سجلات من الداشبورد', 'سجلات مكتملة', 'سجلات امتناع', 'تحديثات', 'تدقيق', 'الإجمالي', 'نسبة الإنجاز %'];
+    const rows: string[][] = [headers.map(escapeCsvCell)];
+    const sorted = [...stats].sort((a, b) => sortOrder === 'desc' ? b.percentageOfTotal - a.percentageOfTotal : a.percentageOfTotal - b.percentageOfTotal);
+    sorted.forEach(s => {
+      rows.push([
+        s.sector,
+        String(s.employeeCount),
+        String(s.recordsAddedField),
+        String(s.recordsAddedDashboard),
+        String(s.recordsCompleted),
+        String(s.recordsRefused),
+        String(s.recordsUpdated),
+        String(s.recordsVerified),
+        String(s.totalActions),
+        s.percentageOfTotal.toFixed(1)
+      ].map(escapeCsvCell));
+    });
+    const sumEmp = sorted.reduce((s, x) => s + x.employeeCount, 0);
+    const sumField = sorted.reduce((s, x) => s + x.recordsAddedField, 0);
+    const sumDash = sorted.reduce((s, x) => s + x.recordsAddedDashboard, 0);
+    const sumComp = sorted.reduce((s, x) => s + x.recordsCompleted, 0);
+    const sumRef = sorted.reduce((s, x) => s + x.recordsRefused, 0);
+    const sumUpd = sorted.reduce((s, x) => s + x.recordsUpdated, 0);
+    const sumVer = sorted.reduce((s, x) => s + x.recordsVerified, 0);
+    const sumTotal = sorted.reduce((s, x) => s + x.totalActions, 0);
+    rows.push(['المجموع', String(sumEmp), String(sumField), String(sumDash), String(sumComp), String(sumRef), String(sumUpd), String(sumVer), String(sumTotal), ''].map(escapeCsvCell));
+    const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `تقرير_القطاعات_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addNotification({ type: 'success', title: 'تم التصدير', message: 'تم تصدير تقرير القطاعات مع صف المجموع' });
+  };
 
   if (loading) {
     return (
@@ -106,7 +156,7 @@ export function Sectors() {
           <PieChart className="w-6 h-6 text-indigo-500 ml-3" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">القطاعات</h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">ترتيب نسبة الإنجاز:</label>
           <select
             value={sortOrder}
@@ -116,6 +166,15 @@ export function Sectors() {
             <option value="desc">من الأعلى إلى الأقل</option>
             <option value="asc">من الأقل إلى الأعلى</option>
           </select>
+          <button
+            type="button"
+            onClick={exportSectorsToCsv}
+            disabled={stats.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            تصدير التقرير (CSV)
+          </button>
         </div>
       </div>
 

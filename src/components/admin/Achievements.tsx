@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trophy, Users } from 'lucide-react';
+import { Trophy, Users, Download } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { UserAchievement, SECTORS, JOB_TITLES } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { Pagination } from '../common/Pagination';
+
+function escapeCsvCell(v: string | number | null | undefined): string {
+  const s = String(v ?? '');
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
 
 const START_DATE = '2000-01-01';
 const REFRESH_INTERVAL_MS = 60000; // تحديث تلقائي كل دقيقة
@@ -86,6 +92,45 @@ export function Achievements() {
 
   const getJobTitleLabel = (job: string | null | undefined) => job || '-';
 
+  const exportAchievementsToCsv = () => {
+    const headers = ['#', 'المستخدم', 'اسم المستخدم', 'الوظيفة', 'القطاع', 'سجلات ميدانية', 'سجلات من الداشبورد', 'سجلات مكتملة', 'سجلات امتناع', 'تحديثات', 'تدقيق', 'الإجمالي', 'آخر نشاط'];
+    const rows: string[][] = [headers.map(escapeCsvCell)];
+    filteredAchievements.forEach((a, i) => {
+      rows.push([
+        i + 1,
+        a.full_name ?? '',
+        a.username ?? '',
+        getJobTitleLabel(a.job_title),
+        a.sector ?? '-',
+        String(a.records_added ?? 0),
+        String(a.records_added_dashboard ?? 0),
+        String(a.records_completed ?? 0),
+        String(a.records_refused ?? 0),
+        String(a.records_updated ?? 0),
+        String(a.records_verified ?? 0),
+        String(getTotalScore(a)),
+        a.last_activity ? formatDateTime(a.last_activity) : '—'
+      ].map(escapeCsvCell));
+    });
+    const sumAdded = filteredAchievements.reduce((s, a) => s + (a.records_added ?? 0), 0);
+    const sumDashboard = filteredAchievements.reduce((s, a) => s + (a.records_added_dashboard ?? 0), 0);
+    const sumCompleted = filteredAchievements.reduce((s, a) => s + (a.records_completed ?? 0), 0);
+    const sumRefused = filteredAchievements.reduce((s, a) => s + (a.records_refused ?? 0), 0);
+    const sumUpdated = filteredAchievements.reduce((s, a) => s + (a.records_updated ?? 0), 0);
+    const sumVerified = filteredAchievements.reduce((s, a) => s + (a.records_verified ?? 0), 0);
+    const sumTotal = filteredAchievements.reduce((s, a) => s + getTotalScore(a), 0);
+    rows.push(['', 'المجموع', '', '', '', String(sumAdded), String(sumDashboard), String(sumCompleted), String(sumRefused), String(sumUpdated), String(sumVerified), String(sumTotal), ''].map(escapeCsvCell));
+    const csv = '\uFEFF' + rows.map(r => r.join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `تقرير_الانجازات_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addNotification({ type: 'success', title: 'تم التصدير', message: `تم تصدير ${filteredAchievements.length} مستخدم مع صف المجموع` });
+  };
+
   const totalItems = filteredAchievements.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -135,6 +180,15 @@ export function Achievements() {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            onClick={exportAchievementsToCsv}
+            disabled={filteredAchievements.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            تصدير التقرير (CSV)
+          </button>
         </div>
       </div>
 
