@@ -4,6 +4,7 @@ import { dbOperations } from '../../lib/supabase';
 import { UserAchievement, SECTORS, JOB_TITLES } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { formatNumberEn } from '../../utils/numberFormatter';
 import { Pagination } from '../common/Pagination';
 
 export type AchievementRecordType = 'records_added' | 'records_added_dashboard' | 'records_completed' | 'records_refused' | 'records_updated' | 'records_verified';
@@ -187,7 +188,7 @@ export function Achievements() {
     a.download = `تقرير_الانجازات_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    addNotification({ type: 'success', title: 'تم التصدير', message: `تم تصدير ${filteredAchievements.length} مستخدم مع صف المجموع` });
+    addNotification({ type: 'success', title: 'تم التصدير', message: `تم تصدير ${formatNumberEn(filteredAchievements.length)} مستخدم مع صف المجموع` });
   };
 
   const totalItems = filteredAchievements.length;
@@ -400,7 +401,7 @@ export function Achievements() {
               )}
             </div>
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
-              عدد السجلات: {recordsList.length}
+              عدد السجلات: {formatNumberEn(recordsList.length)}
             </div>
           </div>
         </div>

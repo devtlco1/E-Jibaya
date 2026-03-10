@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, MapPin, Clock, User, ExternalLink, Navigation, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { formatNumberEn } from '../../utils/numberFormatter';
 
 // Declare mapboxgl as global
 declare global {
@@ -172,8 +173,10 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
   const initializeMap = (location: LocationData) => {
     if (!mapRef.current || mapInstance.current || !window.mapboxgl) return;
 
-    // Set access token
-    window.mapboxgl.accessToken = 'pk.eyJ1IjoiYW1qYWQ5OCIsImEiOiJjbWdodG1vdHUwMXN4MmlyNHA5MTk3a3ppIn0.mR8oPD3VztfmgNUn5RIJEQ';
+    // Set access token from env (VITE_MAPBOX_ACCESS_TOKEN)
+    const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN ?? '';
+    if (!token) return;
+    window.mapboxgl.accessToken = token;
 
     // Create map
     mapInstance.current = new window.mapboxgl.Map({
@@ -300,7 +303,7 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
               مقارنة المواقع الجغرافية
             </h3>
             <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
-              {selectedLocationIndex + 1} من {locations.length}
+              {formatNumberEn(selectedLocationIndex + 1)} من {formatNumberEn(locations.length)}
             </span>
           </div>
           <button
@@ -316,7 +319,7 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
           <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
             <div className="p-4">
               <h4 className="font-medium text-gray-900 dark:text-white mb-4">
-                جميع المواقع ({locations.length})
+                جميع المواقع ({formatNumberEn(locations.length)})
               </h4>
               
               <div className="space-y-3">
@@ -335,7 +338,7 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
                         <div className="flex items-center mb-2">
                           <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            موقع #{index + 1}
+                            موقع #{formatNumberEn(index + 1)}
                           </span>
                         </div>
                         
@@ -351,7 +354,7 @@ export function LocationPopup({ recordId, onClose }: LocationPopupProps) {
                           </div>
                           
                           <div className="text-xs font-mono">
-                            {location.gps_latitude.toFixed(6)}, {location.gps_longitude.toFixed(6)}
+                            {formatNumberEn(location.gps_latitude, { decimals: 6 })}, {formatNumberEn(location.gps_longitude, { decimals: 6 })}
                           </div>
                         </div>
                       </div>

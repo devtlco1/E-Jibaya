@@ -9,6 +9,7 @@ import { PhotoComparison } from './PhotoComparison';
 import { LocationPopup } from './LocationPopup';
 import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield, Download, Maximize2, CheckCircle, XCircle, DollarSign } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { formatNumberEn } from '../../utils/numberFormatter';
 
 /** سجل مقفل فعلياً فقط إذا كان لديه قفل ولم تنتهِ صلاحيته (5 دقائق) */
 function isRecordEffectivelyLocked(r: CollectionRecord): boolean {
@@ -1969,14 +1970,14 @@ export function DataTable({
                           <div className="flex flex-col gap-0.5">
                             {p.total_amount != null && (
                               <span className="text-gray-900 dark:text-white">
-                                المجموع المطلوب: {Number(p.total_amount).toLocaleString('ar-IQ')} د.ع
+                                المجموع المطلوب: {formatNumberEn(Number(p.total_amount))} د.ع
                               </span>
                             )}
                             <span className="font-medium text-gray-900 dark:text-white">
-                              المبلغ المستلم: {Number(p.amount).toLocaleString('ar-IQ')} د.ع
+                              المبلغ المستلم: {formatNumberEn(Number(p.amount))} د.ع
                             </span>
                             <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {new Date(p.collected_at).toLocaleString('ar-IQ')}
+                              {formatDateTime(p.collected_at)}
                             </span>
                           </div>
                           {p.notes && (

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CheckCircle, AlertCircle, XCircle, X, Bell } from 'lucide-react';
+import { formatNumberEn } from '../utils/numberFormatter';
 
 export interface Notification {
   id: string;
@@ -200,7 +201,7 @@ export function NotificationBell({ badgeStyle = 'number' }: { badgeStyle?: Notif
             <h3 className="text-sm sm:text-sm font-semibold text-gray-900 dark:text-white">الإشعارات</h3>
             {notifications.length > 0 && (
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {notifications.length} إشعار
+                {formatNumberEn(notifications.length)} إشعار
               </span>
             )}
           </div>

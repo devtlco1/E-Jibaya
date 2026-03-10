@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX, Search, Download } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatter';
+import { formatNumberEn } from '../../utils/numberFormatter';
 
 interface UserManagementProps {
   onUserStatusChange?: () => void;
@@ -305,7 +306,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     a.download = `users_export_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    addNotification({ type: 'success', title: 'تم التصدير', message: `تم تصدير ${toExport.length} مستخدم` });
+    addNotification({ type: 'success', title: 'تم التصدير', message: `تم تصدير ${formatNumberEn(toExport.length)} مستخدم` });
   };
 
   const loadUsers = async () => {

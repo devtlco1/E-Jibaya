@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Users, FileText, Download } from 'lucide-react';
 import { dbOperations } from '../../lib/supabase';
+import { formatNumberEn } from '../../utils/numberFormatter';
 import { SECTOR_RECORD_PREFIXES } from '../../types';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { User, UserAchievement } from '../../types';
@@ -184,7 +185,7 @@ export function Sectors() {
       </div>
 
       <p className="text-sm text-gray-500 dark:text-gray-400">
-        ملخص حسب مرجع أرقام السجلات (٦٠١ هورة، ٦٠٣ كفاءات، ٦٠٥ تموز، ٦٠٦ زهراء، ٦٠٨ داموك، ٦١٠ خاجية، ٦١٤ و٦١٥ ذاتي ومركزي) — عدد السجلات التابعة للقطاع ونسبة الإنجاز منها
+        ملخص حسب مرجع أرقام السجلات (601 هورة، 603 كفاءات، 605 تموز، 606 زهراء، 608 داموك، 610 خاجية، 614 و615 ذاتي ومركزي) — عدد السجلات التابعة للقطاع ونسبة الإنجاز منها
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -204,36 +205,36 @@ export function Sectors() {
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-700 dark:text-indigo-300">
                   <FileText className="w-4 h-4" />
-                  {s.sectorRecordCount.toLocaleString('ar-IQ')} سجل تابع للقطاع
+                  {formatNumberEn(s.sectorRecordCount)} سجل تابع للقطاع
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                   <Users className="w-4 h-4" />
-                  {s.employeeCount} موظف
+                  {formatNumberEn(s.employeeCount)} موظف
                 </span>
               </div>
             </div>
             <div className="p-5 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات مضافة</span>
-                <span className="font-medium text-gray-900 dark:text-white">{s.recordsAdded}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatNumberEn(s.recordsAdded)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات مكتملة</span>
-                <span className="font-medium text-gray-900 dark:text-white">{s.recordsCompleted}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatNumberEn(s.recordsCompleted)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات امتناع</span>
-                <span className="font-medium text-gray-900 dark:text-white">{s.recordsRefused}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatNumberEn(s.recordsRefused)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">تحديثات</span>
-                <span className="font-medium text-gray-900 dark:text-white">{s.recordsUpdated}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatNumberEn(s.recordsUpdated)}</span>
               </div>
               <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">نسبة الإنجاز من سجلات القطاع</span>
                   <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                    {s.percentageFromSectorRecords.toFixed(1)}%
+                    {formatNumberEn(s.percentageFromSectorRecords, { decimals: 1 })}%
                   </span>
                 </div>
                 <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">

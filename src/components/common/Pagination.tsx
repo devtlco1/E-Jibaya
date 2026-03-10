@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { formatNumberEn } from '../../utils/numberFormatter';
 
 interface PaginationProps {
   currentPage: number;
@@ -73,9 +74,9 @@ export function Pagination({
       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center space-x-2 space-x-reverse">
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            عرض <span className="font-medium">{startItem}</span> إلى{' '}
-            <span className="font-medium">{endItem}</span> من{' '}
-            <span className="font-medium">{totalItems}</span> نتيجة
+            عرض <span className="font-medium">{formatNumberEn(startItem)}</span> إلى{' '}
+            <span className="font-medium">{formatNumberEn(endItem)}</span> من{' '}
+            <span className="font-medium">{formatNumberEn(totalItems)}</span> نتيجة
           </p>
           
           {loading && (
@@ -129,7 +130,7 @@ export function Pagination({
                         : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
                     }`}
                   >
-                    {page}
+                    {typeof page === 'number' ? formatNumberEn(page) : page}
                   </button>
                 )}
               </React.Fragment>

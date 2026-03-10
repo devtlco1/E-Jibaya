@@ -3,6 +3,8 @@ import { Search, User as UserIcon, MapPin, DollarSign, Clock } from 'lucide-reac
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { dbOperations } from '../../lib/supabase';
+import { formatDateTime } from '../../utils/dateFormatter';
+import { formatNumberEn } from '../../utils/numberFormatter';
 import type { CollectionRecord, CollectionPayment } from '../../types';
 
 export function FieldCollectorView() {
@@ -112,7 +114,7 @@ export function FieldCollectorView() {
           {
             type: 'success',
             title: 'تم تسجيل الدفعة',
-            message: `تم تسجيل دفعة بمبلغ ${amountValue.toLocaleString('ar-IQ')} دينار`
+            message: `تم تسجيل دفعة بمبلغ ${formatNumberEn(amountValue)} دينار`
           },
           { showAsToast: true }
         );
@@ -202,14 +204,14 @@ export function FieldCollectorView() {
                   <span className="inline-block mr-1">المطلوب:</span>
                   <span className="inline-block">
                     {searchedRecord.total_amount != null
-                      ? `${searchedRecord.total_amount.toLocaleString('ar-IQ')}`
+                      ? formatNumberEn(searchedRecord.total_amount)
                       : '-'}
                   </span>
                   <span className="inline-block mx-1">/</span>
                   <span className="inline-block mr-1">المدفوع:</span>
                   <span className="inline-block">
                     {searchedRecord.current_amount != null
-                      ? `${searchedRecord.current_amount.toLocaleString('ar-IQ')}`
+                      ? formatNumberEn(searchedRecord.current_amount)
                       : '0'}
                   </span>
                 </div>
@@ -283,10 +285,10 @@ export function FieldCollectorView() {
                   >
                     <div className="flex flex-col">
                       <span className="font-medium text-gray-900 dark:text-white">
-                        {p.amount.toLocaleString('ar-IQ')} دينار
+                        {formatNumberEn(p.amount)} دينار
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {new Date(p.collected_at).toLocaleString('ar-IQ')}
+                        {formatDateTime(p.collected_at)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

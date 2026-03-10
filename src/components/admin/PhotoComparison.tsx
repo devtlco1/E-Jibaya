@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save, XCircle, Ban } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { formatNumberEn } from '../../utils/numberFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { CollectionRecord, RecordPhoto } from '../../types';
@@ -625,7 +626,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
               {(() => {
                 const allPhotos = [...(originalPhotos.meter ? [originalPhotos.meter] : []), ...(originalPhotos.invoice ? [originalPhotos.invoice] : []), ...(originalPhotos.invoice_back ? [originalPhotos.invoice_back] : []), ...photos];
                 const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
-                return `${currentIndex + 1} من ${allPhotos.length}`;
+                return `${formatNumberEn(currentIndex + 1)} من ${formatNumberEn(allPhotos.length)}`;
               })()}
             </span>
           </div>
@@ -730,7 +731,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                             <div className="flex items-center mb-2">
                               <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
                               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                صورة إضافية #{index + 1}
+                                صورة إضافية #{formatNumberEn(index + 1)}
                               </span>
                               {photo.notes && (
                                 <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />
@@ -922,7 +923,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                             <div className="flex items-center mb-2">
                               <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
                               <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                صورة إضافية #{index + 1}
+                                صورة إضافية #{formatNumberEn(index + 1)}
                               </span>
                               {photo.notes && (
                                 <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />

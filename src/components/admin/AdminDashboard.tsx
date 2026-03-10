@@ -13,6 +13,7 @@ import { BackupSystem } from './BackupSystem';
 import { CollectionRecord, FilterState } from '../../types';
 import { useNotifications, NotificationBell } from '../../contexts/NotificationContext';
 import { dbOperations } from '../../lib/supabase';
+import { formatNumberEn } from '../../utils/numberFormatter';
 import { 
   Users, 
   Database, 
@@ -772,7 +773,7 @@ export function AdminDashboard() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">المجموع</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.total?.toLocaleString?.() ?? allRecordsStats.total}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{formatNumberEn(allRecordsStats.total)}</p>
               </div>
             </div>
           </div>
@@ -784,7 +785,7 @@ export function AdminDashboard() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">قيد المراجعة</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.pending?.toLocaleString?.() ?? allRecordsStats.pending}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{formatNumberEn(allRecordsStats.pending)}</p>
               </div>
             </div>
           </div>
@@ -796,7 +797,7 @@ export function AdminDashboard() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">مكتملة</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.completed?.toLocaleString?.() ?? allRecordsStats.completed}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{formatNumberEn(allRecordsStats.completed)}</p>
               </div>
             </div>
           </div>
@@ -808,7 +809,7 @@ export function AdminDashboard() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">امتناع</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.refused?.toLocaleString?.() ?? allRecordsStats.refused}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{formatNumberEn(allRecordsStats.refused)}</p>
               </div>
             </div>
           </div>
@@ -820,7 +821,7 @@ export function AdminDashboard() {
               </div>
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">مقفلة</p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{allRecordsStats.locked?.toLocaleString?.() ?? allRecordsStats.locked}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{formatNumberEn(allRecordsStats.locked)}</p>
               </div>
             </div>
           </div>
@@ -834,7 +835,7 @@ export function AdminDashboard() {
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                   {user?.role === 'branch_manager' ? 'فريقك' : 'المستخدمين'}
                 </p>
-                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{fieldAgentsCount?.toLocaleString?.() ?? fieldAgentsCount}</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{formatNumberEn(fieldAgentsCount)}</p>
               </div>
             </div>
           </div>

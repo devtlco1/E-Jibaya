@@ -15,6 +15,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { formatDate, formatDateTime, formatDateTimeForFilename } from '../../utils/dateFormatter';
+import { formatNumberEn, formatCurrencyEn } from '../../utils/numberFormatter';
 
 interface ReportsProps {
   // لا نحتاج records بعد الآن - سيتم جلبها عند الحاجة
@@ -285,7 +286,7 @@ export function Reports({}: ReportsProps) {
       addNotification({
         type: 'success',
         title: 'تم إنشاء التقرير',
-        message: `تم إنشاء تقرير يحتوي على ${records.length} سجل`
+        message: `تم إنشاء تقرير يحتوي على ${formatNumberEn(records.length)} سجل`
       });
     } catch (error) {
       console.error('Error generating report:', error);
@@ -299,14 +300,12 @@ export function Reports({}: ReportsProps) {
     }
   };
 
-  // دالة لتنسيق الأرقام بالعملة العراقية
+  // دالة لتنسيق الأرقام بالعملة بأرقام إنجليزية
   const formatIraqiCurrency = (amount: number | null | undefined): string => {
     if (amount === null || amount === undefined || isNaN(amount)) {
       return '-';
     }
-    // تحويل الرقم إلى سلسلة مع فواصل
-    const formatted = Math.abs(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, '،');
-    return `${formatted} د.ع`;
+    return formatCurrencyEn(amount, { decimals: 2, suffix: 'د.ع' });
   };
 
   const generateReportHTML = (records: CollectionRecord[]) => {
@@ -369,19 +368,19 @@ export function Reports({}: ReportsProps) {
 
         <div class="stats">
             <div class="stat-card">
-                <h3>${stats.total}</h3>
+                <h3>${formatNumberEn(stats.total)}</h3>
                 <p>إجمالي السجلات</p>
             </div>
             <div class="stat-card">
-                <h3>${stats.pending}</h3>
+                <h3>${formatNumberEn(stats.pending)}</h3>
                 <p>قيد المراجعة</p>
             </div>
             <div class="stat-card">
-                <h3>${stats.completed}</h3>
+                <h3>${formatNumberEn(stats.completed)}</h3>
                 <p>مكتملة</p>
             </div>
             <div class="stat-card">
-                <h3>${stats.refused}</h3>
+                <h3>${formatNumberEn(stats.refused)}</h3>
                 <p>امتناع</p>
             </div>
         </div>
@@ -460,7 +459,7 @@ export function Reports({}: ReportsProps) {
 
         <div class="footer">
             <p>تم إنشاء هذا التقرير بواسطة نظام سجلات المشتركين</p>
-            <p>عدد السجلات في التقرير: ${records.length} سجل</p>
+            <p>عدد السجلات في التقرير: ${formatNumberEn(records.length)} سجل</p>
         </div>
     </div>
 </body>
@@ -613,7 +612,7 @@ export function Reports({}: ReportsProps) {
                         return `
                         <tr>
                             <td>${category}</td>
-                            <td>${stats.count}</td>
+                            <td>${formatNumberEn(stats.count)}</td>
                             <td>${formatIraqiCurrency(stats.totalAmount)}</td>
                             <td class="amount">${formatIraqiCurrency(stats.currentAmount)}</td>
                             <td class="remaining">${formatIraqiCurrency(remaining)}</td>
@@ -622,7 +621,7 @@ export function Reports({}: ReportsProps) {
                     }).join('')}
                     <tr style="background: #f3f4f6; font-weight: bold;">
                         <td>الإجمالي</td>
-                        <td>${recordsWithAmount.length}</td>
+                        <td>${formatNumberEn(recordsWithAmount.length)}</td>
                         <td>${formatIraqiCurrency(totalAmountTotal)}</td>
                         <td class="amount">${formatIraqiCurrency(totalAmount)}</td>
                         <td class="remaining">${formatIraqiCurrency(totalAmountTotal - totalAmount)}</td>
@@ -1019,7 +1018,7 @@ export function Reports({}: ReportsProps) {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">إجمالي السجلات</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumberEn(stats.total)}</p>
             </div>
           </div>
         </div>
@@ -1031,7 +1030,7 @@ export function Reports({}: ReportsProps) {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">قيد المراجعة</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumberEn(stats.pending)}</p>
             </div>
           </div>
         </div>
@@ -1043,7 +1042,7 @@ export function Reports({}: ReportsProps) {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">مكتملة</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completed}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumberEn(stats.completed)}</p>
             </div>
           </div>
         </div>
@@ -1055,7 +1054,7 @@ export function Reports({}: ReportsProps) {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">امتناع</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.refused}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatNumberEn(stats.refused)}</p>
             </div>
           </div>
         </div>
@@ -1165,8 +1164,8 @@ export function Reports({}: ReportsProps) {
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400">
                     {reportType === 'delivery' 
-                      ? `عدد السجلات: ${filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).length}`
-                      : `عدد السجلات: ${filteredRecords.length}`
+                      ? `عدد السجلات: ${formatNumberEn(filteredRecords.filter(r => r.current_amount !== null && r.current_amount !== undefined && r.current_amount > 0).length)}`
+                      : `عدد السجلات: ${formatNumberEn(filteredRecords.length)}`
                     }
                   </p>
                 </div>
@@ -1228,10 +1227,10 @@ export function Reports({}: ReportsProps) {
                                 {record.account_number || 'غير محدد'}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
-                                {record.total_amount ? record.total_amount.toFixed(2) : '-'}
+                                {record.total_amount != null ? formatNumberEn(record.total_amount, { decimals: 2 }) : '-'}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white font-medium text-green-600 dark:text-green-400">
-                                {record.current_amount?.toFixed(2) || '0.00'}
+                                {record.current_amount != null ? formatNumberEn(record.current_amount, { decimals: 2 }) : '0.00'}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-white">
                                 {formatDate(record.submitted_at)}
