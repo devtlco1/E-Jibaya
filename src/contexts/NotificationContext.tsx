@@ -97,7 +97,7 @@ function ToastContainer({ toasts, onRemove }: { toasts: Notification[]; onRemove
   if (toasts.length === 0) return null;
   return (
     <div
-      className="fixed z-[200] space-y-2 inset-x-3 top-3 max-w-[calc(100vw-1.5rem)] sm:inset-x-auto sm:right-4 sm:left-auto sm:top-4 sm:w-[min(90vw,22rem)]"
+      className="fixed z-[9999] space-y-2 inset-x-3 top-3 max-w-[calc(100vw-1.5rem)] sm:inset-x-auto sm:right-4 sm:left-auto sm:top-4 sm:w-[min(90vw,22rem)]"
       dir="rtl"
       aria-label="إشعارات"
     >

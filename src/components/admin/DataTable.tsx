@@ -716,7 +716,7 @@ export function DataTable({
         type: 'error',
         title: 'خطأ',
         message: 'يجب تسجيل الدخول أولاً'
-      });
+      }, { showAsToast: true });
       return;
     }
 
@@ -729,7 +729,7 @@ export function DataTable({
           type: 'error',
           title: 'السجل مقفل',
           message: 'هذا السجل مقفل حالياً من قبل مستخدم آخر'
-        });
+        }, { showAsToast: true });
         return;
       }
 
@@ -782,7 +782,7 @@ export function DataTable({
         type: 'error',
         title: 'خطأ في قفل السجل',
         message: error instanceof Error ? error.message : 'فشل في قفل السجل'
-      });
+      }, { showAsToast: true });
     }
   };
 
@@ -810,7 +810,7 @@ export function DataTable({
             type: 'error',
             title: 'لا يمكن حفظ السجل',
             message: `يجب ملء البيانات التالية أولاً: ${missingFields.map(f => f.name).join('، ')}`
-          });
+          }, { showAsToast: true });
           return;
         }
 
@@ -824,7 +824,7 @@ export function DataTable({
               type: 'error',
               title: 'رقم الحساب غير صحيح',
               message: 'رقم الحساب يجب أن يحتوي على أرقام فقط'
-            });
+            }, { showAsToast: true });
             return;
           }
           
@@ -834,7 +834,7 @@ export function DataTable({
               type: 'error',
               title: 'رقم الحساب طويل جداً',
               message: 'رقم الحساب يجب أن يكون 12 رقم أو أقل'
-            });
+            }, { showAsToast: true });
             return;
           }
 
@@ -847,7 +847,7 @@ export function DataTable({
                 type: 'error',
                 title: 'رقم الحساب موجود',
                 message: `رقم الحساب ${accountNumber} مستخدم بالفعل في سجل آخر. لا يمكن تكرار رقم الحساب.`
-              });
+              }, { showAsToast: true });
               return;
             }
           }
@@ -894,7 +894,7 @@ export function DataTable({
           type: 'error',
           title: 'خطأ في الحفظ',
           message: error instanceof Error ? error.message : 'فشل في حفظ التغييرات'
-        });
+        }, { showAsToast: true });
       }
     }
   };
@@ -924,7 +924,7 @@ export function DataTable({
           type: 'warning',
           title: 'تحذير',
           message: 'تم إلغاء التعديل لكن فشل في إلغاء القفل'
-        });
+        }, { showAsToast: true });
       }
     }
     setEditingRecord(null);
