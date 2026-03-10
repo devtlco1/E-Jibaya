@@ -610,25 +610,6 @@ export function DataTable({
                             return parts.join(' ') || 'غير محدد';
                         })()}</td>
                     </tr>
-                    ${(record.total_amount !== null && record.total_amount !== undefined) ? `
-                    <tr class="amount-row">
-                        <td class="label">المجموع المطلوب</td>
-                        <td class="value">${record.total_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع</td>
-                    </tr>
-                    ` : ''}
-                    ${(record.current_amount !== null && record.current_amount !== undefined) ? `
-                    <tr class="amount-row">
-                        <td class="label">المبلغ المستلم</td>
-                        <td class="value">${record.current_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع</td>
-                    </tr>
-                    ` : ''}
-                    ${((record.total_amount !== null && record.total_amount !== undefined) && 
-                       (record.current_amount !== null && record.current_amount !== undefined)) ? `
-                    <tr class="amount-row">
-                        <td class="label">المبلغ المتبقي</td>
-                        <td class="value">${(record.total_amount - record.current_amount).toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع</td>
-                    </tr>
-                    ` : ''}
                     <tr>
                         <td class="label">الموقع الجغرافي</td>
                         <td class="value">${(record.gps_latitude && record.gps_longitude) ? `${record.gps_latitude}, ${record.gps_longitude}` : 'غير محدد'}</td>
@@ -889,14 +870,11 @@ export function DataTable({
         let updateData: any = {
           ...editForm,
           completed_by: currentUser.id || editingRecord.completed_by,
-          // إضافة معامل الضرب إذا كان موجوداً
           multiplier: editForm.multiplier || null,
-          // المبالغ
-          total_amount: editForm.total_amount ? parseFloat(editForm.total_amount) : null,
-          current_amount: editForm.current_amount ? parseFloat(editForm.current_amount) : null,
-          // حالة الارض
           land_status: editForm.land_status
         };
+        delete updateData.total_amount;
+        delete updateData.current_amount;
 
         // Handle status logic
         updateData.status = editForm.status;
@@ -1407,12 +1385,6 @@ export function DataTable({
                   آخر قراءة
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                  المجموع المطلوب
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                  المبلغ المستلم
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   صورة المقياس
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
@@ -1476,7 +1448,7 @@ export function DataTable({
                 ))
               ) : records.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={14} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     لا توجد سجلات تطابق الفلاتر المحددة
                   </td>
                 </tr>
@@ -1541,26 +1513,6 @@ export function DataTable({
                     onClick={() => handleEdit(record)}
                   >
                     {record.last_reading || (
-                      <span className="text-gray-400 italic">غير محدد</span>
-                    )}
-                  </td>
-                  <td 
-                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden lg:table-cell"
-                    onClick={() => handleEdit(record)}
-                  >
-                    {record.total_amount !== null && record.total_amount !== undefined ? (
-                      <span className="font-medium">{record.total_amount.toFixed(2)}</span>
-                    ) : (
-                      <span className="text-gray-400 italic">غير محدد</span>
-                    )}
-                  </td>
-                  <td 
-                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden lg:table-cell"
-                    onClick={() => handleEdit(record)}
-                  >
-                    {record.current_amount !== null && record.current_amount !== undefined ? (
-                      <span className="font-medium">{record.current_amount.toFixed(2)}</span>
-                    ) : (
                       <span className="text-gray-400 italic">غير محدد</span>
                     )}
                   </td>
@@ -1911,31 +1863,6 @@ export function DataTable({
                         {viewingRecord.last_reading || 'غير محدد'}
                       </p>
                     </div>
-                    {(viewingRecord.total_amount !== null && viewingRecord.total_amount !== undefined) && (
-                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المجموع المطلوب</span>
-                        <p className="text-gray-900 dark:text-white font-semibold">
-                          {viewingRecord.total_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع
-                        </p>
-                      </div>
-                    )}
-                    {(viewingRecord.current_amount !== null && viewingRecord.current_amount !== undefined) && (
-                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
-                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المبلغ المستلم</span>
-                        <p className="text-gray-900 dark:text-white font-semibold text-green-600 dark:text-green-400">
-                          {viewingRecord.current_amount.toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع
-                        </p>
-                      </div>
-                    )}
-                    {((viewingRecord.total_amount !== null && viewingRecord.total_amount !== undefined) && 
-                      (viewingRecord.current_amount !== null && viewingRecord.current_amount !== undefined)) && (
-                      <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-red-200 dark:border-red-700">
-                        <span className="text-gray-500 dark:text-gray-400 block text-xs mb-1">المبلغ المتبقي</span>
-                        <p className="text-gray-900 dark:text-white font-semibold text-red-600 dark:text-red-400">
-                          {(viewingRecord.total_amount - viewingRecord.current_amount).toLocaleString('ar-IQ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} د.ع
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -2020,44 +1947,34 @@ export function DataTable({
                   {viewingPaymentsLoading ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">جاري تحميل سجل الدفعات...</p>
                   ) : viewingPayments.length === 0 ? (
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                      <p>
-                        لا توجد صفوف في سجل الدفعات (الدفعات المسجلة لاحقاً ستظهر هنا).
-                      </p>
-                      {(viewingRecord.current_amount != null && viewingRecord.current_amount > 0) || (viewingRecord.total_amount != null && viewingRecord.total_amount > 0) ? (
-                        <div className="mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-yellow-200 dark:border-yellow-700">
-                          <p className="font-medium text-gray-900 dark:text-white mb-1">المبالغ المسجلة على السجل:</p>
-                          {viewingRecord.total_amount != null && viewingRecord.total_amount > 0 && (
-                            <p>المجموع المطلوب: {Number(viewingRecord.total_amount).toLocaleString('ar-IQ')} دينار</p>
-                          )}
-                          {viewingRecord.current_amount != null && viewingRecord.current_amount > 0 && (
-                            <p>المبلغ المستلم: {Number(viewingRecord.current_amount).toLocaleString('ar-IQ')} دينار</p>
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      لا توجد صفوف في سجل الدفعات (ما يُدخله المحصل سيظهر هنا كصفوف منفصلة).
+                    </p>
                   ) : (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
                       {viewingPayments.map((p) => (
                         <div
                           key={p.id}
-                          className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-yellow-200 dark:border-yellow-700 text-sm"
+                          className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-gray-800 rounded-lg px-3 py-2 border border-yellow-200 dark:border-yellow-700 text-sm"
                         >
-                          <div className="flex flex-col">
+                          <div className="flex flex-col gap-0.5">
+                            {p.total_amount != null && (
+                              <span className="text-gray-900 dark:text-white">
+                                المجموع المطلوب: {Number(p.total_amount).toLocaleString('ar-IQ')} د.ع
+                              </span>
+                            )}
                             <span className="font-medium text-gray-900 dark:text-white">
-                              {p.amount.toLocaleString('ar-IQ')} دينار
+                              المبلغ المستلم: {Number(p.amount).toLocaleString('ar-IQ')} د.ع
                             </span>
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {new Date(p.collected_at).toLocaleString('ar-IQ')}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            {p.notes && (
-                              <span className="text-xs text-gray-600 dark:text-gray-300 max-w-xs line-clamp-2">
-                                {p.notes}
-                              </span>
-                            )}
-                          </div>
+                          {p.notes && (
+                            <span className="text-xs text-gray-600 dark:text-gray-300 max-w-xs line-clamp-2">
+                              {p.notes}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2651,54 +2568,6 @@ export function DataTable({
                           onChange={(e) => setEditForm({ ...editForm, new_home: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
                           placeholder="أدخل الهوم"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 6. المبالغ */}
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                    <h4 className="text-sm font-semibold text-indigo-800 dark:text-indigo-200 mb-4 flex items-center">
-                      <FileText className="w-4 h-4 ml-2" />
-                      المبالغ
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          المجموع المطلوب
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={editForm.total_amount}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // السماح فقط بالأرقام والنقطة العشرية
-                            if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                              setEditForm({ ...editForm, total_amount: value });
-                            }
-                          }}
-                          placeholder="0.00"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          المبلغ المستلم
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={editForm.current_amount}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // السماح فقط بالأرقام والنقطة العشرية
-                            if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                              setEditForm({ ...editForm, current_amount: value });
-                            }
-                          }}
-                          placeholder="0.00"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
                         />
                       </div>
                     </div>

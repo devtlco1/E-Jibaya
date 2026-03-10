@@ -236,7 +236,10 @@ export interface CollectionPayment {
   id: string;
   record_id: string;
   account_number: string | null;
+  /** المبلغ المستلم في هذه الدفعة */
   amount: number;
+  /** المجموع المطلوب كما أدخله المحصل لهذه الدفعة (سجل فقط) */
+  total_amount: number | null;
   collected_at: string;
   collector_id: string | null;
   gps_latitude: number | null;

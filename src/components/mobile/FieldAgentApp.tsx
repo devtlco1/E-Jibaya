@@ -580,6 +580,20 @@ export function FieldAgentApp() {
       }
       
       if (result) {
+        // إضافة صف في سجل الدفعات لما أدخله المحصل (بدون تراكم)
+        const totalVal = totalAmount?.trim() ? parseFloat(totalAmount) : NaN;
+        const receivedVal = currentAmount?.trim() ? parseFloat(currentAmount) : NaN;
+        const hasAmounts = (!Number.isNaN(totalVal) && totalVal >= 0) || (!Number.isNaN(receivedVal) && receivedVal >= 0);
+        if (hasAmounts) {
+          try {
+            await dbOperations.addPaymentToRecord(result.id, {
+              total_amount: !Number.isNaN(totalVal) && totalVal >= 0 ? totalVal : null,
+              amount: !Number.isNaN(receivedVal) && receivedVal >= 0 ? receivedVal : 0,
+              collector_id: user!.id,
+              notes: notes || undefined
+            });
+          } catch (_) {}
+        }
         // حفظ الموقع الأولي في جدول المواقع التاريخية
         if (gpsData) {
           try {
@@ -749,21 +763,24 @@ export function FieldAgentApp() {
 
     const success = await dbOperations.updateRecord(selectedRecord.id, updateData);
 
-    // إذا أدخل المستخدم مبلغاً في "المبلغ المستلم" نعتبره دفعة إضافية ونضيفها تراكمياً (لا نستبدل المبلغ القديم)
-    const additionalAmount = currentAmount?.trim() ? parseFloat(currentAmount) : NaN;
-    if (success && !Number.isNaN(additionalAmount) && additionalAmount > 0) {
+    // سجل الدفعات فقط: ما يكتبه المحصل (المجموع المطلوب + المبلغ المستلم) يُحفظ كصف جديد بدون جمع أو تراكم
+    const totalVal = totalAmount?.trim() ? parseFloat(totalAmount) : NaN;
+    const receivedVal = currentAmount?.trim() ? parseFloat(currentAmount) : NaN;
+    const hasAmounts = (!Number.isNaN(totalVal) && totalVal >= 0) || (!Number.isNaN(receivedVal) && receivedVal >= 0);
+    if (success && hasAmounts) {
       try {
         await dbOperations.addPaymentToRecord(selectedRecord.id, {
-          amount: additionalAmount,
+          total_amount: !Number.isNaN(totalVal) && totalVal >= 0 ? totalVal : null,
+          amount: !Number.isNaN(receivedVal) && receivedVal >= 0 ? receivedVal : 0,
           collector_id: user.id,
           notes: additionalPhotosNotes || undefined
         });
       } catch (paymentErr) {
-        console.warn('Add payment after photos failed:', paymentErr);
+        console.warn('Add payment log failed:', paymentErr);
         addNotification({
           type: 'warning',
           title: 'تم حفظ الصور',
-          message: 'تم حفظ الصور لكن فشل تسجيل المبلغ الإضافي. يمكنك إضافة الدفعة لاحقاً.'
+          message: 'تم حفظ الصور لكن فشل تسجيل سجل المبالغ.'
         }, { showAsToast: true });
       }
     }
@@ -1444,7 +1461,7 @@ export function FieldAgentApp() {
           </h3>
           {selectedRecord && !createNewMode && (
             <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
-              عند إضافة صور لسجل موجود: المبالغ القديمة تُحفظ. إذا أدخلت مبلغاً في «المبلغ المستلم» سيُضاف كدفعة إضافية فقط.
+              ما تكتبه يُسجّل كما هو في سجل الدفعات (كل إدخال = صف جديد، بدون جمع أو تراكم).
             </p>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -865,9 +865,10 @@ export const dbOperations = {
     }
   },
 
-  // إضافة دفعة جديدة لسجل موجود
+  // إضافة صف لسجل الدفعات فقط (ما يكتبه المحصل: المجموع المطلوب + المبلغ المستلم) — بدون تراكم
   async addPaymentToRecord(recordId: string, params: {
     amount: number;
+    total_amount?: number | null;
     collector_id?: string | null;
     notes?: string;
   }): Promise<CollectionPayment | null> {
@@ -877,15 +878,14 @@ export const dbOperations = {
         throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
 
-      const { amount, collector_id, notes } = params;
-      if (!amount || Number.isNaN(amount) || amount <= 0) {
+      const { amount, total_amount, collector_id, notes } = params;
+      if (amount == null || Number.isNaN(amount) || amount < 0) {
         throw new Error('مبلغ الدفعة غير صالح');
       }
 
-      // جلب السجل للحصول على رقم الحساب والمبلغ الحالي
       const { data: record, error: recordError } = await client
         .from('collection_records')
-        .select('id, account_number, current_amount')
+        .select('id, account_number')
         .eq('id', recordId)
         .single();
 
@@ -898,6 +898,7 @@ export const dbOperations = {
         record_id: recordId,
         account_number: record.account_number,
         amount,
+        total_amount: total_amount != null && !Number.isNaN(total_amount) ? total_amount : null,
         collector_id: collector_id ?? null,
         notes: notes || null,
         gps_latitude: null,
@@ -914,19 +915,6 @@ export const dbOperations = {
       if (paymentError || !payment) {
         console.error('Add payment - insert error:', paymentError);
         throw new Error(`فشل في تسجيل الدفعة: ${paymentError?.message || 'خطأ غير معروف'}`);
-      }
-
-      // تحديث المبلغ الحالي في السجل الرئيسي (تراكمي)
-      const previous = typeof record.current_amount === 'number' ? record.current_amount : 0;
-      const newCurrent = previous + amount;
-
-      const { error: updateError } = await client
-        .from('collection_records')
-        .update({ current_amount: newCurrent })
-        .eq('id', recordId);
-
-      if (updateError) {
-        console.error('Add payment - update record current_amount error (payment still created):', updateError);
       }
 
       cacheService.clearRecordsCache();
