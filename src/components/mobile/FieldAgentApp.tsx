@@ -43,11 +43,13 @@ export function FieldAgentApp() {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   
-  // Search functionality
+  // Search functionality — البحث برقم الحساب فقط، وباقي الخيارات معطّلة حتى يتم البحث
   const [searchAccount, setSearchAccount] = useState('');
   const [existingRecords, setExistingRecords] = useState<any[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [createNewMode, setCreateNewMode] = useState(false);
+  const [accountNumberForNew, setAccountNumberForNew] = useState('');
   // بوب أب اختيار تحديث أو تعديل
   const [recordForAction, setRecordForAction] = useState<any>(null);
   // وضع التعديل
@@ -205,35 +207,61 @@ export function FieldAgentApp() {
   };
 
   const handleSearch = async () => {
-    const q = searchAccount.trim();
+    const q = searchAccount.trim().replace(/\s/g, '');
     if (!q) {
       addNotification({
         type: 'warning',
-        title: 'خطأ في البحث',
-        message: 'يرجى إدخال رقم الحساب أو رقم السجل أو اسم المشترك'
-      });
+        title: 'رقم الحساب مطلوب',
+        message: 'يرجى إدخال رقم الحساب أولاً (أرقام فقط)'
+      }, { showAsToast: true });
+      return;
+    }
+    if (!/^\d+$/.test(q)) {
+      addNotification({
+        type: 'warning',
+        title: 'رقم الحساب غير صحيح',
+        message: 'رقم الحساب يجب أن يحتوي على أرقام فقط'
+      }, { showAsToast: true });
+      return;
+    }
+    if (q.length > 12) {
+      addNotification({
+        type: 'warning',
+        title: 'رقم الحساب طويل',
+        message: 'رقم الحساب حد أقصى 12 رقم'
+      }, { showAsToast: true });
       return;
     }
 
     setIsSearching(true);
+    setCreateNewMode(false);
+    setAccountNumberForNew('');
     try {
-      const records = await dbOperations.searchRecordsForFieldAgent(q, 50);
-      setExistingRecords(records);
-      
-      if (records.length === 0) {
+      const record = await dbOperations.getRecordByAccountNumber(q);
+      if (record) {
+        setExistingRecords([record]);
+        addNotification({
+          type: 'success',
+          title: 'تم العثور على السجل',
+          message: record.subscriber_name || record.account_number || q
+        }, { showAsToast: true });
+      } else {
+        setExistingRecords([]);
+        setCreateNewMode(true);
+        setAccountNumberForNew(q);
         addNotification({
           type: 'info',
-          title: 'لا توجد سجلات',
-          message: 'لم يتم العثور على سجلات مطابقة'
-        });
+          title: 'لا يوجد سجل بهذا الرقم',
+          message: 'يمكنك إنشاء سجل جديد برقم الحساب هذا بعد تعبئة البيانات والإرسال'
+        }, { showAsToast: true });
       }
     } catch (error) {
       console.error('Search error:', error);
       addNotification({
         type: 'error',
         title: 'خطأ في البحث',
-        message: 'حدث خطأ أثناء البحث عن السجلات'
-      });
+        message: 'حدث خطأ أثناء البحث عن السجل'
+      }, { showAsToast: true });
     } finally {
       setIsSearching(false);
     }
@@ -423,6 +451,8 @@ export function FieldAgentApp() {
     setSelectedRecord(null);
     setSearchAccount('');
     setExistingRecords([]);
+    setCreateNewMode(false);
+    setAccountNumberForNew('');
   };
 
   const validateForm = () => {
@@ -539,22 +569,62 @@ export function FieldAgentApp() {
         }
       }
 
-      const record: CreateRecordData = {
-        field_agent_id: user!.id,
-        gps_latitude: gpsData?.lat || null,
-        gps_longitude: gpsData?.lng || null,
-        meter_photo_url: meterPhotoUrl,
-        invoice_photo_url: invoicePhotoUrl,
-        invoice_photo_back_url: invoicePhotoBackUrl,
-        notes: notes || null,
-        is_refused: isRefused,
-        total_amount: totalAmount ? parseFloat(totalAmount) : null,
-        current_amount: currentAmount ? parseFloat(currentAmount) : null,
-        category: category,
-        tags: selectedTags.length > 0 ? selectedTags : null
-      };
+      let result: any = null;
 
-      const result = await dbOperations.createRecord(record);
+      // إنشاء سجل جديد برقم الحساب المدخل (إنشاء من واجهة المحصل بعد البحث وعدم العثور على السجل)
+      if (createNewMode && accountNumberForNew) {
+        result = await dbOperations.createRecordFromDashboard({
+          subscriber_name: 'غير محدد',
+          account_number: accountNumberForNew,
+          meter_number: '',
+          region: 'غير محدد',
+          district: '',
+          last_reading: '',
+          category,
+          phase: 'احادي',
+          total_amount: totalAmount ? parseFloat(totalAmount) : null,
+          current_amount: currentAmount ? parseFloat(currentAmount) : null,
+          field_agent_id: user!.id
+        });
+        if (result) {
+          await dbOperations.updateRecord(result.id, {
+            subscriber_name: 'غير محدد',
+            account_number: accountNumberForNew,
+            meter_number: '',
+            region: 'غير محدد',
+            district: '',
+            last_reading: '',
+            status: 'pending',
+            new_zone: null,
+            new_block: null,
+            new_home: null,
+            meter_photo_url: meterPhotoUrl,
+            invoice_photo_url: invoicePhotoUrl,
+            invoice_photo_back_url: invoicePhotoBackUrl,
+            gps_latitude: gpsData?.lat ?? null,
+            gps_longitude: gpsData?.lng ?? null,
+            notes: notes || null,
+            total_amount: totalAmount ? parseFloat(totalAmount) : null,
+            current_amount: currentAmount ? parseFloat(currentAmount) : null
+          });
+        }
+      } else {
+        const record: CreateRecordData = {
+          field_agent_id: user!.id,
+          gps_latitude: gpsData?.lat || null,
+          gps_longitude: gpsData?.lng || null,
+          meter_photo_url: meterPhotoUrl,
+          invoice_photo_url: invoicePhotoUrl,
+          invoice_photo_back_url: invoicePhotoBackUrl,
+          notes: notes || null,
+          is_refused: isRefused,
+          total_amount: totalAmount ? parseFloat(totalAmount) : null,
+          current_amount: currentAmount ? parseFloat(currentAmount) : null,
+          category: category,
+          tags: selectedTags.length > 0 ? selectedTags : null
+        };
+        result = await dbOperations.createRecord(record);
+      }
       
       if (result) {
         // حفظ الموقع الأولي في جدول المواقع التاريخية
@@ -603,6 +673,8 @@ export function FieldAgentApp() {
         
         setSubmitted(true);
         setIsSubmitting(false); // إعادة تعيين حالة الإرسال فوراً بعد النجاح
+        setCreateNewMode(false);
+        setAccountNumberForNew('');
         
         // Reset form after 2 seconds
         setTimeout(() => {
@@ -892,20 +964,27 @@ export function FieldAgentApp() {
 
       {/* Main Content */}
       <div className="p-4 space-y-6">
-        {/* Search for Existing Records */}
+        {/* Search for Existing Records — رقم الحساب فقط، وباقي الخيارات تعمل بعد البحث */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            البحث عن سجلات موجودة
+            البحث برقم الحساب
           </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            أدخل رقم الحساب واضغط بحث. إن وُجد السجل يمكنك تحديثه؛ إن لم يوجد يمكنك إنشاء سجل جديد.
+          </p>
           
           {!selectedRecord ? (
             <div className="space-y-4">
               <div className="flex gap-2">
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={searchAccount}
-                  onChange={(e) => setSearchAccount(e.target.value)}
-                  placeholder="رقم الحساب أو رقم السجل أو اسم المشترك..."
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '' || /^\d*$/.test(v)) setSearchAccount(v.slice(0, 12));
+                  }}
+                  placeholder="رقم الحساب فقط..."
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 />
                 <button
@@ -951,6 +1030,27 @@ export function FieldAgentApp() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+              {createNewMode && accountNumberForNew && (
+                <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-green-900 dark:text-green-200">
+                        إنشاء سجل جديد
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        رقم الحساب: {accountNumberForNew} — لم يُعثَر على سجل. عبّئ البيانات أدناه واضغط إرسال لإنشاء السجل.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleClearSelection}
+                      className="p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                      aria-label="إلغاء"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -1212,8 +1312,17 @@ export function FieldAgentApp() {
           </div>
         )}
 
+        {/* تفعيل النموذج فقط بعد البحث برقم الحساب (سجل موجود أو إنشاء جديد) */}
+        {!(selectedRecord || createNewMode) && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-4 text-center">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              الموقع والصور والمبالغ والإرسال معطّلة حتى تُدخل رقم الحساب وتضغط «بحث».
+            </p>
+          </div>
+        )}
+
         {/* GPS Location */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             تحديد الموقع الحالي <span className="text-red-500">*</span>
           </h3>
@@ -1246,7 +1355,7 @@ export function FieldAgentApp() {
         </div>
 
         {/* Meter Photo */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             صورة المقياس
           </h3>
@@ -1293,7 +1402,7 @@ export function FieldAgentApp() {
         </div>
 
         {/* Invoice Photo */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             صورة الفاتورة <span className="text-red-500">*</span>
           </h3>
@@ -1334,7 +1443,7 @@ export function FieldAgentApp() {
         </div>
 
         {/* Invoice Back Photo */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             صورة ظهر الفاتورة <span className="text-gray-400 text-sm">(اختياري)</span>
           </h3>
@@ -1375,7 +1484,7 @@ export function FieldAgentApp() {
         </div>
 
         {/* Amount Fields */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             المبالغ
           </h3>
@@ -1423,7 +1532,7 @@ export function FieldAgentApp() {
 
         {/* Category Selection - Only show after photos are uploaded */}
         {(meterPhoto || invoicePhoto) && !selectedRecord && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               نوع الصنف
             </h3>
@@ -1443,7 +1552,7 @@ export function FieldAgentApp() {
 
         {/* Notes - Only show when creating new record */}
         {!selectedRecord && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
             <label className="block text-lg font-semibold text-gray-900 dark:text-white mb-4">
               الملاحظات
             </label>
@@ -1459,7 +1568,7 @@ export function FieldAgentApp() {
 
         {/* Tags - تاغات المشاكل - يظهر دائماً عند إنشاء سجل جديد */}
         {!selectedRecord && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
             <label className="block text-lg font-semibold text-gray-900 dark:text-white mb-4">
               تاغات المشاكل (اختياري)
             </label>
@@ -1508,7 +1617,7 @@ export function FieldAgentApp() {
         )}
 
         {/* Refused Button */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+        <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
           {!isRefused ? (
             <button
               onClick={handleRefused}
@@ -1528,11 +1637,11 @@ export function FieldAgentApp() {
           )}
         </div>
 
-        {/* Submit Button */}
-        <div className="pb-6">
+        {/* Submit Button — معطّل حتى يتم البحث برقم الحساب */}
+        <div className={`pb-6 transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !(selectedRecord || createNewMode)}
             className="w-full flex items-center justify-center px-4 py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-semibold text-lg"
           >
             {isSubmitting ? (
