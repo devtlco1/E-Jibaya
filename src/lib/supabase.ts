@@ -1054,7 +1054,7 @@ export const dbOperations = {
       }
 
       if (filters.record_number) {
-        query = query.ilike('record_number', `%${filters.record_number}%`);
+        query = query.eq('record_number', filters.record_number);
       }
 
       if (filters.verification_status) {
@@ -1346,6 +1346,24 @@ export const dbOperations = {
       }));
     } catch (error) {
       console.error('Get achievement records error:', error);
+      return [];
+    }
+  },
+
+  /** أرقام السجلات المميزة في النظام (للقائمة المنسدلة في فلتر سجلات المشتركين) */
+  async getDistinctRecordNumbers(): Promise<string[]> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return [];
+
+      const { data, error } = await client.rpc('get_distinct_record_numbers');
+      if (error) {
+        console.error('Get distinct record numbers error:', error);
+        return [];
+      }
+      return (data || []).map((row: { record_number: string | null }) => row.record_number ?? '').filter(Boolean);
+    } catch (error) {
+      console.error('Get distinct record numbers error:', error);
       return [];
     }
   },

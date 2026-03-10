@@ -161,6 +161,7 @@ export function DataTable({
   const [availableRegions, setAvailableRegions] = useState<string[]>([]);
   const [availableZones, setAvailableZones] = useState<string[]>([]);
   const [availableBlocks, setAvailableBlocks] = useState<string[]>([]);
+  const [availableRecordNumbers, setAvailableRecordNumbers] = useState<string[]>([]);
 
   const { addNotification } = useNotifications();
   const { user: currentUser } = useAuth();
@@ -284,6 +285,10 @@ export function DataTable({
         } else {
           setAvailableBlocks([]);
         }
+
+        // أرقام السجلات المميزة (للقائمة المنسدلة)
+        const recordNumbers = await dbOperations.getDistinctRecordNumbers();
+        setAvailableRecordNumbers(recordNumbers);
       } catch (error) {
         console.error('Error loading available data:', error);
       }
@@ -1115,13 +1120,16 @@ export function DataTable({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   رقم السجل
                 </label>
-                <input
-                  type="text"
+                <select
                   value={filters.record_number}
                   onChange={(e) => onFiltersChange({ ...filters, record_number: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                  placeholder="البحث..."
-                />
+                >
+                  <option value="">جميع أرقام السجلات</option>
+                  {availableRecordNumbers.map((num) => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
               </div>
               
               <div>

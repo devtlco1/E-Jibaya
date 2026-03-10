@@ -488,8 +488,7 @@ export function AdminDashboard() {
       return false;
     }
 
-    if (currentFilters.record_number && 
-        !record.record_number?.includes(currentFilters.record_number)) {
+    if (currentFilters.record_number && record.record_number !== currentFilters.record_number) {
       return false;
     }
 
