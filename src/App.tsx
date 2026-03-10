@@ -15,7 +15,7 @@ function AppFooter({ variant = 'default' }: { variant?: 'default' | 'login' }) {
         <p className="flex flex-wrap items-center justify-center gap-1">
           جميع الحقوق محفوظة ©
           <img src="/logo-abraj.png" alt="أبراج الأنوار" className="h-4 w-auto object-contain inline-block align-middle opacity-90" />
-          شركة أبراج الأنوار للمقاولات والتجارة العامة والوكالات التجارية 2026 · نسخة 1.26.4
+          شركة أبراج الأنوار للمقاولات والتجارة العامة والوكالات التجارية 2026 · نسخة 1.27.0
         </p>
       </footer>
     );
@@ -24,7 +24,7 @@ function AppFooter({ variant = 'default' }: { variant?: 'default' | 'login' }) {
     <footer className="mt-auto py-3 px-4 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
       <div className="flex flex-wrap items-center justify-between gap-3 max-w-6xl mx-auto">
         <div className="flex-shrink-0 text-end">
-          <p>نسخة النظام 1.26.4</p>
+          <p>نسخة النظام 1.27.0</p>
         </div>
         <div className="flex-1 min-w-0 flex flex-col items-center text-center">
           <p className="flex flex-wrap items-center justify-center gap-1">
