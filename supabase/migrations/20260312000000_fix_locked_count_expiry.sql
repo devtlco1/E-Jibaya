@@ -1,5 +1,9 @@
--- عدّ المقفلة: فقط السجلات ذات قفل فعّال (لم تنتهِ صلاحيته)
--- locked_by IS NOT NULL AND (lock_expires_at IS NULL OR lock_expires_at > NOW())
+-- عدّ المقفلة: فقط السجلات ذات قفل فعّال (لم تنتهِ صلاحيته، مدة 5 دقائق)
+-- القفل منتهٍ إذا lock_expires_at IS NULL أو lock_expires_at <= NOW()
+-- locked_by IS NOT NULL AND lock_expires_at IS NOT NULL AND lock_expires_at > NOW()
+
+-- إزالة الدالة أولاً لأن تغيير منطق/نوع الإرجاع يتطلب DROP ثم CREATE
+DROP FUNCTION IF EXISTS public.get_system_stats();
 
 CREATE OR REPLACE FUNCTION public.get_system_stats()
 RETURNS TABLE (
@@ -27,7 +31,8 @@ AS $$
     (SELECT COUNT(*) FROM public.collection_records WHERE verification_status = 'غير مدقق'),
     (SELECT COUNT(*) FROM public.collection_records
      WHERE locked_by IS NOT NULL
-       AND (lock_expires_at IS NULL OR lock_expires_at > NOW()));
+       AND lock_expires_at IS NOT NULL
+       AND lock_expires_at > NOW());
 $$;
 
-COMMENT ON FUNCTION public.get_system_stats() IS 'إحصائيات النظام — عدّ المقفلة يشمل فقط القفل الفعّال (غير منتهي الصلاحية)';
+COMMENT ON FUNCTION public.get_system_stats() IS 'إحصائيات النظام — عدّ المقفلة يشمل فقط القفل الفعّال (lock_expires_at > NOW، مدة 5 دقائق)';

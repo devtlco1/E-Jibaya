@@ -714,6 +714,7 @@ export function FieldAgentApp() {
     }
 
     // Update the record with new data (including photo URLs for main record display)
+    // لا نرسل total_amount ولا current_amount حتى لا نمسح المبالغ القديمة — نحميها ونضيف الجديدة كدفعة فقط
     const updateData: any = {
       subscriber_name: selectedRecord.subscriber_name,
       account_number: selectedRecord.account_number,
@@ -731,9 +732,6 @@ export function FieldAgentApp() {
       new_zone: selectedRecord.new_zone,
       new_block: selectedRecord.new_block,
       new_home: selectedRecord.new_home,
-      // المبالغ
-      total_amount: totalAmount ? parseFloat(totalAmount) : selectedRecord.total_amount,
-      current_amount: currentAmount ? parseFloat(currentAmount) : selectedRecord.current_amount,
       // حالة الأرض (تظهر في الداشبورد)
       land_status: landStatus ?? selectedRecord.land_status ?? null
     };
@@ -750,6 +748,25 @@ export function FieldAgentApp() {
     }
 
     const success = await dbOperations.updateRecord(selectedRecord.id, updateData);
+
+    // إذا أدخل المستخدم مبلغاً في "المبلغ المستلم" نعتبره دفعة إضافية ونضيفها تراكمياً (لا نستبدل المبلغ القديم)
+    const additionalAmount = currentAmount?.trim() ? parseFloat(currentAmount) : NaN;
+    if (success && !Number.isNaN(additionalAmount) && additionalAmount > 0) {
+      try {
+        await dbOperations.addPaymentToRecord(selectedRecord.id, {
+          amount: additionalAmount,
+          collector_id: user.id,
+          notes: additionalPhotosNotes || undefined
+        });
+      } catch (paymentErr) {
+        console.warn('Add payment after photos failed:', paymentErr);
+        addNotification({
+          type: 'warning',
+          title: 'تم حفظ الصور',
+          message: 'تم حفظ الصور لكن فشل تسجيل المبلغ الإضافي. يمكنك إضافة الدفعة لاحقاً.'
+        }, { showAsToast: true });
+      }
+    }
 
     // حفظ الموقع الجديد في جدول المواقع التاريخية إذا كان مختلفاً
     if (success && gpsData && (gpsData.lat !== selectedRecord.gps_latitude || gpsData.lng !== selectedRecord.gps_longitude)) {
@@ -1425,6 +1442,11 @@ export function FieldAgentApp() {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             المبالغ
           </h3>
+          {selectedRecord && !createNewMode && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
+              عند إضافة صور لسجل موجود: المبالغ القديمة تُحفظ. إذا أدخلت مبلغاً في «المبلغ المستلم» سيُضاف كدفعة إضافية فقط.
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

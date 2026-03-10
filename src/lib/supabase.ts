@@ -1561,13 +1561,14 @@ export const dbOperations = {
         return baseQuery;
       };
       
-      // عدّ المقفلة: فقط من لديهم قفل فعّال (لم تنتهِ صلاحيته) — lock_expires_at IS NULL أو lock_expires_at > now
+      // عدّ المقفلة: فقط من لديهم قفل فعّال (لم تنتهِ صلاحيته، مدة 5 دقائق) — lock_expires_at IS NOT NULL و lock_expires_at > now
       const nowIso = new Date().toISOString();
       const lockedQuery = client
         .from('collection_records')
         .select('id', { count: 'exact', head: true })
         .not('locked_by', 'is', null)
-        .or(`lock_expires_at.is.null,lock_expires_at.gt.${nowIso}`);
+        .not('lock_expires_at', 'is', null)
+        .gt('lock_expires_at', nowIso);
 
       const [totalResult, pendingResult, completedResult, verifiedResult, refusedResult, lockedResult] = await Promise.all([
         buildQuery(client.from('collection_records').select('id', { count: 'exact', head: true })),
@@ -2444,20 +2445,18 @@ export const dbOperations = {
         throw new Error(`فشل في جلب بيانات السجل: ${fetchError.message}`);
       }
 
-      // التحقق من القفل الحالي
-      if (existingRecord.locked_by && existingRecord.locked_by !== userId) {
+      // التحقق من القفل الحالي (قفل قديم بدون انتهاء أو منتهي = يُسمح بالاقتحام)
+      if (existingRecord.locked_by && existingRecord.locked_by !== userId && existingRecord.lock_expires_at) {
         const lockExpiry = new Date(existingRecord.lock_expires_at);
         const now = new Date();
-        
-        // إذا كان القفل لا يزال صالحاً
         if (lockExpiry > now) {
           throw new Error('السجل مقفل حالياً من قبل مستخدم آخر');
         }
       }
 
-      // تعيين قفل جديد لمدة 30 دقيقة
+      // تعيين قفل جديد لمدة 5 دقائق
       const lockExpiry = new Date();
-      lockExpiry.setMinutes(lockExpiry.getMinutes() + 30);
+      lockExpiry.setMinutes(lockExpiry.getMinutes() + 5);
 
       const { error } = await client
         .from('collection_records')
@@ -2531,10 +2530,13 @@ export const dbOperations = {
         return { isLocked: false };
       }
 
+      // إذا لم يكن هناك تاريخ انتهاء أو انتهت صلاحية القفل، إلغاؤه تلقائياً
+      if (!data.lock_expires_at) {
+        await this.unlockRecord(recordId, data.locked_by);
+        return { isLocked: false };
+      }
       const lockExpiry = new Date(data.lock_expires_at);
       const now = new Date();
-
-      // إذا انتهت صلاحية القفل، إلغاؤه تلقائياً
       if (lockExpiry <= now) {
         await this.unlockRecord(recordId, data.locked_by);
         return { isLocked: false };
@@ -2558,9 +2560,9 @@ export const dbOperations = {
         throw new Error('فشل في الاتصال بقاعدة البيانات');
       }
 
-      // تمديد القفل لمدة 30 دقيقة إضافية
+      // تمديد القفل لمدة 5 دقائق إضافية
       const lockExpiry = new Date();
-      lockExpiry.setMinutes(lockExpiry.getMinutes() + 30);
+      lockExpiry.setMinutes(lockExpiry.getMinutes() + 5);
 
       const { error } = await client
         .from('collection_records')

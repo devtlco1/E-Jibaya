@@ -177,6 +177,10 @@ export function AdminDashboard() {
     };
   }, [user]);
 
+  // قفل فعّال = لديه locked_by و lock_expires_at ولم تنتهِ الصلاحية (5 دقائق)
+  const isEffectivelyLocked = (r: CollectionRecord) =>
+    !!r.locked_by && !!r.lock_expires_at && new Date(r.lock_expires_at) > new Date();
+
   // تحديث حالة القفل محلياً دون إعادة تحميل التاب
   const updateRecordLockStatus = (recordId: string, updates: Partial<CollectionRecord>) => {
     setRecords(prevRecords => {
@@ -184,8 +188,8 @@ export function AdminDashboard() {
         record.id === recordId ? { ...record, ...updates } : record
       );
 
-      // تحديث عدّاد المقفلة فورياً
-      const newLockedCount = newRecords.filter(r => r.locked_by).length;
+      // تحديث عدّاد المقفلة فورياً (فقط القفل الفعّال)
+      const newLockedCount = newRecords.filter(isEffectivelyLocked).length;
       setAllRecordsStats(prev => ({ ...prev, locked: newLockedCount }));
 
       return newRecords;
@@ -319,7 +323,8 @@ export function AdminDashboard() {
               // تحديث محلي لحالة القفل فقط - دون إعادة تحميل التاب
               updateRecordLockStatus(updatedRecord.id, {
                 locked_by: updatedRecord.locked_by,
-                locked_at: updatedRecord.locked_at
+                locked_at: updatedRecord.locked_at,
+                lock_expires_at: updatedRecord.lock_expires_at ?? null
               });
             } else if (!isVerificationUpdate) {
               addNotification({

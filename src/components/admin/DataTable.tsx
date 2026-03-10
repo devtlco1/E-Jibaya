@@ -10,6 +10,13 @@ import { LocationPopup } from './LocationPopup';
 import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield, Download, Maximize2, CheckCircle, XCircle, DollarSign } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 
+/** سجل مقفل فعلياً فقط إذا كان لديه قفل ولم تنتهِ صلاحيته (5 دقائق) */
+function isRecordEffectivelyLocked(r: CollectionRecord): boolean {
+  if (!r.locked_by) return false;
+  if (!r.lock_expires_at) return false;
+  return new Date(r.lock_expires_at) > new Date();
+}
+
 interface DataTableProps {
   records: CollectionRecord[];
   totalRecords: number;
@@ -761,11 +768,14 @@ export function DataTable({
       // تحديث فوري للقفل في الواجهة
       console.log('Record locked - updating UI immediately');
       
-      // تحديث محلي لحالة القفل
+      // تحديث محلي لحالة القفل (مدة 5 دقائق)
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 5);
       if (onRecordUpdate) {
         onRecordUpdate(record.id, { 
           locked_by: currentUser.id, 
-          locked_at: new Date().toISOString() 
+          locked_at: new Date().toISOString(),
+          lock_expires_at: expiresAt.toISOString()
         });
       }
       
@@ -904,7 +914,8 @@ export function DataTable({
         if (onRecordUpdate) {
           onRecordUpdate(editingRecord.id, { 
             locked_by: null, 
-            locked_at: null 
+            locked_at: null,
+            lock_expires_at: null
           });
         }
         
@@ -934,7 +945,8 @@ export function DataTable({
         if (onRecordUpdate) {
           onRecordUpdate(editingRecord.id, { 
             locked_by: null, 
-            locked_at: null 
+            locked_at: null,
+            lock_expires_at: null
           });
         }
         
@@ -1638,7 +1650,7 @@ export function DataTable({
                     </span>
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {record.locked_by ? (
+                    {isRecordEffectivelyLocked(record) ? (
                       <div className="flex items-center space-x-1 space-x-reverse">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                         <span className="text-xs text-red-600 dark:text-red-400">
@@ -1708,16 +1720,16 @@ export function DataTable({
                           handleEdit(record);
                         }}
                         className={`p-1 ${
-                          record.locked_by && record.locked_by !== currentUser?.id
+                          isRecordEffectivelyLocked(record) && record.locked_by !== currentUser?.id
                             ? 'text-gray-400 cursor-not-allowed'
                             : 'text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300'
                         }`}
                         title={
-                          record.locked_by && record.locked_by !== currentUser?.id
+                          isRecordEffectivelyLocked(record) && record.locked_by !== currentUser?.id
                             ? 'السجل مقفل من قبل مستخدم آخر'
                             : 'تعديل'
                         }
-                        disabled={!!(record.locked_by && record.locked_by !== currentUser?.id)}
+                        disabled={!!(isRecordEffectivelyLocked(record) && record.locked_by !== currentUser?.id)}
                       >
                         <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                       </button>
