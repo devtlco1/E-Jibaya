@@ -1323,10 +1323,11 @@ export function DataTable({
                   value={filters.field_agent_id || ''}
                   onChange={(e) => onFiltersChange({ ...filters, field_agent_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                  disabled={!!filters.branch_manager_id}
                 >
-                  <option value="">جميع المحصلين</option>
-                  {(filters.branch_manager_id && branchManagerFieldAgents.length > 0
+                  <option value="">
+                    {filters.branch_manager_id ? 'جميع المحصلين التابعين لمدير الفرع' : 'جميع المحصلين'}
+                  </option>
+                  {(filters.branch_manager_id
                     ? users.filter(user => user.role === 'field_agent' && branchManagerFieldAgents.includes(user.id))
                     : users.filter(user => user.role === 'field_agent')
                   ).map(user => (
@@ -1355,7 +1356,7 @@ export function DataTable({
                   <option value="">جميع مديري الفروع</option>
                   {branchManagers.map(branchManager => (
                     <option key={branchManager.id} value={branchManager.id}>
-                      {branchManager.full_name}
+                      {branchManager.full_name}{branchManager.sector ? ` — ${branchManager.sector}` : ''}
                     </option>
                   ))}
                 </select>
