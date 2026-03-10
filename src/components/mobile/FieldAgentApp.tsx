@@ -15,7 +15,7 @@ import {
   Search,
   History
 } from 'lucide-react';
-import { CreateRecordData } from '../../types';
+import { CreateRecordData, CollectionRecord } from '../../types';
 import { dbOperations } from '../../lib/supabase';
 import { formatDate } from '../../utils/dateFormatter';
 import { validateImageSize, validateImageType } from '../../utils/imageCompression';
@@ -36,7 +36,7 @@ export function FieldAgentApp() {
   const [totalAmount, setTotalAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('');
   const [category, setCategory] = useState<'منزلي' | 'تجاري' | 'صناعي' | 'زراعي' | 'حكومي'>('منزلي');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [landStatus, setLandStatus] = useState<CollectionRecord['land_status']>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -527,7 +527,6 @@ export function FieldAgentApp() {
         result = await dbOperations.createRecordFromDashboard({
           subscriber_name: 'غير محدد',
           account_number: accountNumberForNew,
-          record_number: accountNumberForNew,
           meter_number: '',
           region: 'غير محدد',
           district: '',
@@ -536,13 +535,13 @@ export function FieldAgentApp() {
           phase: 'احادي',
           total_amount: totalAmount ? parseFloat(totalAmount) : null,
           current_amount: currentAmount ? parseFloat(currentAmount) : null,
+          land_status: landStatus ?? null,
           field_agent_id: user!.id
         });
         if (result) {
           await dbOperations.updateRecord(result.id, {
             subscriber_name: 'غير محدد',
             account_number: accountNumberForNew,
-            record_number: accountNumberForNew,
             meter_number: '',
             region: 'غير محدد',
             district: '',
@@ -558,7 +557,8 @@ export function FieldAgentApp() {
             gps_longitude: gpsData?.lng ?? null,
             notes: notes || null,
             total_amount: totalAmount ? parseFloat(totalAmount) : null,
-            current_amount: currentAmount ? parseFloat(currentAmount) : null
+            current_amount: currentAmount ? parseFloat(currentAmount) : null,
+            land_status: landStatus ?? null
           });
         }
       } else {
@@ -574,7 +574,7 @@ export function FieldAgentApp() {
           total_amount: totalAmount ? parseFloat(totalAmount) : null,
           current_amount: currentAmount ? parseFloat(currentAmount) : null,
           category: category,
-          tags: selectedTags.length > 0 ? selectedTags : null
+          tags: null
         };
         result = await dbOperations.createRecord(record);
       }
@@ -642,7 +642,7 @@ export function FieldAgentApp() {
           setTotalAmount('');
           setCurrentAmount('');
           setCategory('منزلي');
-          setSelectedTags([]);
+          setLandStatus(null);
         }, 2000);
       } else {
         setSubmitError('فشل في إرسال البيانات. يرجى المحاولة مرة أخرى');
@@ -719,6 +719,7 @@ export function FieldAgentApp() {
       account_number: selectedRecord.account_number,
       meter_number: selectedRecord.meter_number,
       region: selectedRecord.region,
+      district: selectedRecord.district ?? '',
       last_reading: selectedRecord.last_reading,
       status: selectedRecord.status,
       gps_latitude: gpsData?.lat || selectedRecord.gps_latitude,
@@ -732,7 +733,9 @@ export function FieldAgentApp() {
       new_home: selectedRecord.new_home,
       // المبالغ
       total_amount: totalAmount ? parseFloat(totalAmount) : selectedRecord.total_amount,
-      current_amount: currentAmount ? parseFloat(currentAmount) : selectedRecord.current_amount
+      current_amount: currentAmount ? parseFloat(currentAmount) : selectedRecord.current_amount,
+      // حالة الأرض (تظهر في الداشبورد)
+      land_status: landStatus ?? selectedRecord.land_status ?? null
     };
 
     // تحديث صور الفاتورة الرئيسية (وجه وظهر) على السجل
@@ -968,7 +971,6 @@ export function FieldAgentApp() {
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             رقم الحساب: {record.account_number}
-                            {record.record_number && ` • رقم السجل: ${record.record_number}`}
                           </p>
                           {record.meter_number && (
                             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -1016,7 +1018,6 @@ export function FieldAgentApp() {
                   </p>
                   <p className="text-sm text-blue-700 dark:text-blue-300">
                     رقم الحساب: {selectedRecord.account_number}
-                    {selectedRecord.record_number && ` • رقم السجل: ${selectedRecord.record_number}`}
                   </p>
                 </div>
                 <button
@@ -1069,7 +1070,7 @@ export function FieldAgentApp() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">رقم السجل</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">رقم السجل (من الداشبورد)</label>
                   <input
                     type="text"
                     value={editForm.record_number ?? ''}
@@ -1229,11 +1230,11 @@ export function FieldAgentApp() {
           </div>
         )}
 
-        {/* حقل رقم السجل عند إنشاء سجل جديد بعد البحث */}
+        {/* حقل رقم الحساب عند إنشاء سجل جديد بعد البحث */}
         {createNewMode && accountNumberForNew && !selectedRecord && (
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              رقم السجل
+              رقم الحساب
             </label>
             <input
               type="text"
@@ -1243,7 +1244,7 @@ export function FieldAgentApp() {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              تم تعبئة رقم السجل تلقائياً من رقم الحساب الذي بحثت عنه.
+              تم تعبئة رقم الحساب تلقائياً من الرقم الذي بحثت عنه. رقم السجل يُضاف من الداشبورد.
             </p>
           </div>
         )}
@@ -1502,39 +1503,31 @@ export function FieldAgentApp() {
           </div>
         )}
 
-        {/* Tags - تاغات المشاكل - يظهر دائماً عند إنشاء سجل جديد */}
-        {!selectedRecord && (
-          <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
-            <label className="block text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              تاغات المشاكل (اختياري)
-            </label>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              اختر التاغات التي تنطبق على هذا السجل:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {['عاطل', 'متلاعب', 'مغلق', 'مهدوم', 'متروك', 'لم يعثر عليه', 'م. بدون مقياس', 'م.على المقياس', 'ق.مشكوك بها'].map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => {
-                    if (selectedTags.includes(tag)) {
-                      setSelectedTags(selectedTags.filter(t => t !== tag));
-                    } else {
-                      setSelectedTags([...selectedTags, tag]);
-                    }
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    selectedTags.includes(tag)
-                      ? 'bg-blue-600 text-white shadow-md scale-105'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 hover:border-blue-400'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
+        {/* حالات الأرض - يظهر عند إنشاء سجل جديد أو تحديث سجل موجود */}
+        <div className={`bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm transition-opacity ${(selectedRecord || createNewMode) ? '' : 'opacity-50 pointer-events-none'}`}>
+          <label className="block text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            حالة الأرض (اختياري)
+          </label>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            اختر الحالة التي تنطبق على هذا السجل وتظهر في الداشبورد:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(['متروك', 'مهدوم', 'لم اعثر عليه', 'ممتنع', 'تجاوز', 'قيد الانشاء', 'مبدل', 'مغلق', 'لايوجد مقياس', 'فحص مقياس', 'فارغ', 'خطاء في القراءة', 'إيقاف قراءة', 'عاطل'] as const).map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setLandStatus(landStatus === opt ? null : opt)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                  landStatus === opt
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                {opt}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Additional Photos Notes - Only show when adding photos to existing record */}
         {selectedRecord && (
