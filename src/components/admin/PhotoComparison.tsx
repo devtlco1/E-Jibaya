@@ -861,7 +861,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                             record_id: recordId,
                             created_at: originalPhotos.invoice_back.photo_date,
                             notes: null,
-                            verified: false
+                            verified: originalPhotos.invoice_back.verified
                           } : null);
                         }}
                         className={`p-4 rounded-lg border cursor-pointer transition-colors ${
@@ -881,6 +881,23 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                             <div className="text-xs text-gray-600 dark:text-gray-400">
                               {formatDate(originalPhotos.invoice_back.photo_date)}
                             </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // نفس تدقيق صورة الفاتورة (وجه) لأنها تشارك نفس العلم invoice_photo_verified
+                                handlePhotoVerification('invoice');
+                              }}
+                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                              title={originalPhotos.invoice_back?.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                            >
+                              {originalPhotos.invoice_back?.verified ? (
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                              )}
+                            </button>
                           </div>
                         </div>
                       </div>
