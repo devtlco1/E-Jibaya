@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { User, CollectionRecord, CreateRecordData, CreateRecordFromDashboardData, UpdateRecordData, UserAchievement, ActivityLog, CreateActivityLogData, RecordPhoto, CollectionPayment } from '../types';
+import { User, CollectionRecord, CreateRecordData, CreateRecordFromDashboardData, UpdateRecordData, UserAchievement, ActivityLog, CreateActivityLogData, RecordPhoto, CollectionPayment, SECTOR_RECORD_PREFIXES } from '../types';
 import { hashPassword, verifyPassword } from '../utils/hash';
 import { rateLimiter } from '../utils/rateLimiter';
 import { cacheService } from '../utils/cache';
@@ -1365,6 +1365,37 @@ export const dbOperations = {
     } catch (error) {
       console.error('Get distinct record numbers error:', error);
       return [];
+    }
+  },
+
+  /** عدد السجلات التابعة لكل قطاع حسب رقم السجل (مرجع: 601 هورة، 606 زهراء، ...) */
+  async getSectorRecordCounts(): Promise<Record<string, number>> {
+    const out: Record<string, number> = {};
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return out;
+
+      for (const [sector, prefixes] of Object.entries(SECTOR_RECORD_PREFIXES)) {
+        if (!prefixes.length) {
+          out[sector] = 0;
+          continue;
+        }
+        const orFilter = prefixes.map(p => `record_number.ilike.${p}%`).join(',');
+        const { count, error } = await client
+          .from('collection_records')
+          .select('id', { count: 'exact', head: true })
+          .or(orFilter);
+        if (error) {
+          console.warn(`getSectorRecordCounts ${sector}:`, error);
+          out[sector] = 0;
+        } else {
+          out[sector] = count ?? 0;
+        }
+      }
+      return out;
+    } catch (error) {
+      console.error('Get sector record counts error:', error);
+      return out;
     }
   },
 
