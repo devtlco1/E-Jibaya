@@ -1089,8 +1089,8 @@ export function DataTable({
         
         {showFilters && (
           <div className="p-4 space-y-4">
-            {/* الصف الأول: اسم المشترك، رقم الحساب، رقم المقياس */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* الصف الأول: اسم المشترك، رقم الحساب، رقم المقياس، رقم المقياس */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   اسم المشترك
@@ -1148,7 +1148,7 @@ export function DataTable({
             </div>
 
             {/* الصف الثاني: المنطقة، الزون، البلوك */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   المنطقة
@@ -1201,8 +1201,8 @@ export function DataTable({
               </div>
             </div>
 
-            {/* الصف الثالث: حالة الارض، الحالة، التدقيق */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* الصف الثالث: حالة الارض، الحالة، التدقيق، الصور المرفوضة */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   حالة الارض
@@ -1279,7 +1279,7 @@ export function DataTable({
             </div>
 
             {/* الصف الرابع: الصنف، نوع المقياس، المحصل الميداني */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   الصنف
@@ -1340,8 +1340,8 @@ export function DataTable({
               </div>
             </div>
 
-            {/* الصف الخامس: مدير الفرع */}
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+            {/* الصف الخامس: مدير الفرع، ترتيب العرض */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   مدير الفرع
@@ -1360,6 +1360,20 @@ export function DataTable({
                       {branchManager.full_name}{branchManager.sector ? ` — ${branchManager.sector}` : ''}
                     </option>
                   ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  ترتيب العرض
+                </label>
+                <select
+                  value={filters.sort_order || ''}
+                  onChange={(e) => onFiltersChange({ ...filters, sort_order: e.target.value as any })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                >
+                  <option value="">الافتراضي</option>
+                  <option value="latest">الأحدث أولاً (أحدث تحديث/إنشاء)</option>
+                  <option value="oldest">الأقدم أولاً</option>
                 </select>
               </div>
             </div>

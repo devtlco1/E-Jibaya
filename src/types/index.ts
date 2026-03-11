@@ -191,6 +191,8 @@ export interface FilterState {
   sector: string;
   // الوظيفة
   job_title: string;
+  // ترتيب عرض السجلات في الجدول
+  sort_order?: '' | 'latest' | 'oldest';
 }
 
 export interface UserAchievement {

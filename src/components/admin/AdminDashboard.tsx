@@ -96,7 +96,9 @@ export function AdminDashboard() {
     // المحصل الميداني
     field_agent_id: '',
     // مدير الفرع
-    branch_manager_id: ''
+    branch_manager_id: '',
+    // ترتيب عرض السجلات
+    sort_order: ''
   });
   const [allRecordsStats, setAllRecordsStats] = useState({
     total: 0,
@@ -126,7 +128,8 @@ export function AdminDashboard() {
     phase: '',
     land_status: '',
     field_agent_id: '',
-    branch_manager_id: ''
+    branch_manager_id: '',
+    sort_order: ''
   });
 
   // Sync filtersRef whenever filters state changes

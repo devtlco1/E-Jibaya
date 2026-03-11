@@ -401,13 +401,28 @@ export const dbOperations = {
         }
       });
 
-      // Add pagination
+      // Add pagination + sorting
       const from = (page - 1) * limit;
       const to = from + limit - 1;
-      
-      query = query
-        .order('submitted_at', { ascending: false })
-        .range(from, to);
+
+      const sortOrder = filters.sort_order as '' | 'latest' | 'oldest' | undefined;
+      if (sortOrder === 'latest') {
+        // الأحدث أولاً: حسب آخر تحديث أو إنشاء
+        query = query
+          .order('updated_at', { ascending: false, nullsLast: true })
+          .order('submitted_at', { ascending: false })
+          .range(from, to);
+      } else if (sortOrder === 'oldest') {
+        // الأقدم أولاً
+        query = query
+          .order('submitted_at', { ascending: true })
+          .range(from, to);
+      } else {
+        // الافتراضي: الأحدث حسب submitted_at
+        query = query
+          .order('submitted_at', { ascending: false })
+          .range(from, to);
+      }
 
       const { data, error, count } = await query;
 
