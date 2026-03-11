@@ -245,7 +245,6 @@ export function Achievements() {
             تصدير التقرير (CSV)
           </button>
         </div>
-      </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
