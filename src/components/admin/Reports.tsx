@@ -736,8 +736,8 @@ export function Reports({}: ReportsProps) {
         
         {showFilters && (
           <div className="p-6 space-y-4">
-          {/* الصف الأول: التواريخ والمحصل الميداني */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* الصف الأول: التواريخ ومدير الفرع */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 من تاريخ
@@ -788,7 +788,7 @@ export function Reports({}: ReportsProps) {
           </div>
 
           {/* الصف: رقم السجل، المنطقة، الزون، البلوك */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 رقم السجل
@@ -857,8 +857,8 @@ export function Reports({}: ReportsProps) {
             </div>
           </div>
 
-          {/* الصف الرابع: الحالة، التدقيق، الصور المرفوضة */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* الصف الرابع: الحالة، التدقيق، حالة الارض، الصور المرفوضة */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الحالة
@@ -934,7 +934,7 @@ export function Reports({}: ReportsProps) {
           </div>
 
           {/* الصف الخامس: الصنف، نوع المقياس، المحصل الميداني */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الصنف
