@@ -834,27 +834,27 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
     <div className="space-y-6">
       {/* Actions (top-right) */}
       <div className="flex items-center justify-end flex-wrap gap-2">
-          <button
-            onClick={handleExportUsers}
-            className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"
-          >
-            <Download className="w-4 h-4 ml-2" />
-            تصدير
-          </button>
-          <button
-            onClick={() => {
-              setNewUser({ username: '', password: '', full_name: '', role: 'field_agent', sector: '', job_title: '' });
-              setShowCreateForm(true);
-            }}
-            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
-          >
-            <UserPlus className="w-4 h-4 ml-2" />
-            إضافة مستخدم جديد
-          </button>
+        <button
+          onClick={handleExportUsers}
+          className="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          <Download className="w-4 h-4 ml-2" />
+          تصدير
+        </button>
+        <button
+          onClick={() => {
+            setNewUser({ username: '', password: '', full_name: '', role: 'field_agent', sector: '', job_title: '' });
+            setShowCreateForm(true);
+          }}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          <UserPlus className="w-4 h-4 ml-2" />
+          إضافة مستخدم جديد
+        </button>
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
