@@ -147,20 +147,17 @@ export function Sectors() {
     addNotification({ type: 'success', title: 'تم التصدير', message: 'تم تصدير تقرير القطاعات مع صف المجموع' });
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20">
-        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center">
           <PieChart className="w-6 h-6 text-indigo-500 ml-3" />
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">القطاعات</h2>
+          {loading && (
+            <span className="ml-3 text-xs text-gray-400 dark:text-gray-500">
+              جاري تحميل الإحصائيات...
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">ترتيب نسبة الإنجاز (من سجلات القطاع):</label>
@@ -205,42 +202,50 @@ export function Sectors() {
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-700 dark:text-indigo-300">
                   <FileText className="w-4 h-4" />
-                  {formatNumberEn(s.sectorRecordCount)} سجل تابع للقطاع
+                  {loading ? '...' : `${formatNumberEn(s.sectorRecordCount)} سجل تابع للقطاع`}
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                   <Users className="w-4 h-4" />
-                  {formatNumberEn(s.employeeCount)} موظف
+                  {loading ? '...' : `${formatNumberEn(s.employeeCount)} موظف`}
                 </span>
               </div>
             </div>
             <div className="p-5 space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات مضافة</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatNumberEn(s.recordsAdded)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {loading ? '...' : formatNumberEn(s.recordsAdded)}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات مكتملة</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatNumberEn(s.recordsCompleted)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {loading ? '...' : formatNumberEn(s.recordsCompleted)}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات امتناع</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatNumberEn(s.recordsRefused)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {loading ? '...' : formatNumberEn(s.recordsRefused)}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">تحديثات</span>
-                <span className="font-medium text-gray-900 dark:text-white">{formatNumberEn(s.recordsUpdated)}</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {loading ? '...' : formatNumberEn(s.recordsUpdated)}
+                </span>
               </div>
               <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">نسبة الإنجاز من سجلات القطاع</span>
                   <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                    {formatNumberEn(s.percentageFromSectorRecords, { decimals: 1 })}%
+                    {loading ? '...' : `${formatNumberEn(s.percentageFromSectorRecords, { decimals: 1 })}%`}
                   </span>
                 </div>
                 <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-indigo-600 rounded-full transition-all"
-                    style={{ width: `${Math.min(s.percentageFromSectorRecords, 100)}%` }}
+                    style={{ width: loading ? '0%' : `${Math.min(s.percentageFromSectorRecords, 100)}%` }}
                   />
                 </div>
               </div>
