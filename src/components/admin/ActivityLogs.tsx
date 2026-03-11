@@ -29,9 +29,9 @@ export function ActivityLogs() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  // Optimize items per page for mobile
+  // عدد الحركات في الصفحة الأولى (Lazy load حقيقي عبر الـ pagination)
   const [itemsPerPage, setItemsPerPage] = useState(() => {
-    return window.innerWidth <= 768 ? 10 : 10;
+    return window.innerWidth <= 768 ? 20 : 50;
   });
   const [totalLogs, setTotalLogs] = useState(0);
   const [totalPages, setTotalPages] = useState(0);

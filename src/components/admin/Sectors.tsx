@@ -36,6 +36,7 @@ type SortOrder = 'asc' | 'desc';
 export function Sectors() {
   const [stats, setStats] = useState<SectorStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRecordCounts, setLoadingRecordCounts] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [sectorRecordCounts, setSectorRecordCounts] = useState<Record<string, number>>({});
@@ -47,17 +48,16 @@ export function Sectors() {
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
     try {
       const endDate = new Date().toISOString().slice(0, 10);
-      const [usersData, achievementsData, recordCounts] = await Promise.all([
+      // أولاً: تحميل المستخدمين والانجازات (سريع نسبياً)
+      setLoading(true);
+      const [usersData, achievementsData] = await Promise.all([
         dbOperations.getUsers(),
-        dbOperations.getUsersAchievements('2000-01-01', endDate),
-        dbOperations.getSectorRecordCounts()
+        dbOperations.getUsersAchievements('2000-01-01', endDate)
       ]);
       setUsers(usersData);
       setAchievements(achievementsData);
-      setSectorRecordCounts(recordCounts);
     } catch (error) {
       addNotification({
         type: 'error',
@@ -66,6 +66,21 @@ export function Sectors() {
       });
     } finally {
       setLoading(false);
+    }
+
+    // ثانياً: تحميل عدد السجلات لكل قطاع بشكل منفصل (قد يكون أبطأ)
+    try {
+      setLoadingRecordCounts(true);
+      const recordCounts = await dbOperations.getSectorRecordCounts();
+      setSectorRecordCounts(recordCounts);
+    } catch (error) {
+      addNotification({
+        type: 'error',
+        title: 'خطأ',
+        message: error instanceof Error ? error.message : 'فشل في تحميل بيانات القطاعات'
+      });
+    } finally {
+      setLoadingRecordCounts(false);
     }
   };
 
@@ -182,18 +197,20 @@ export function Sectors() {
           .map((s) => (
           <div
             key={s.sector}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+            className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden ${
+              loadingRecordCounts ? 'opacity-70' : ''
+            }`}
           >
             <div className="p-5 bg-gradient-to-l from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">{s.sector}</h3>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-700 dark:text-indigo-300">
                   <FileText className="w-4 h-4" />
-                  {loading ? '...' : `${formatNumberEn(s.sectorRecordCount)} سجل تابع للقطاع`}
+                  {loadingRecordCounts ? '...' : `${formatNumberEn(s.sectorRecordCount)} سجل تابع للقطاع`}
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                   <Users className="w-4 h-4" />
-                  {loading ? '...' : `${formatNumberEn(s.employeeCount)} موظف`}
+                  {formatNumberEn(s.employeeCount)} موظف
                 </span>
               </div>
             </div>
@@ -201,38 +218,38 @@ export function Sectors() {
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات مضافة</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {loading ? '...' : formatNumberEn(s.recordsAdded)}
+                  {formatNumberEn(s.recordsAdded)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات مكتملة</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {loading ? '...' : formatNumberEn(s.recordsCompleted)}
+                  {formatNumberEn(s.recordsCompleted)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">سجلات امتناع</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {loading ? '...' : formatNumberEn(s.recordsRefused)}
+                  {formatNumberEn(s.recordsRefused)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-gray-400">تحديثات</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {loading ? '...' : formatNumberEn(s.recordsUpdated)}
+                  {formatNumberEn(s.recordsUpdated)}
                 </span>
               </div>
               <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">نسبة الإنجاز من سجلات القطاع</span>
                   <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                    {loading ? '...' : `${formatNumberEn(s.percentageFromSectorRecords, { decimals: 1 })}%`}
+                    {loadingRecordCounts ? '...' : `${formatNumberEn(s.percentageFromSectorRecords, { decimals: 1 })}%`}
                   </span>
                 </div>
                 <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-indigo-600 rounded-full transition-all"
-                    style={{ width: loading ? '0%' : `${Math.min(s.percentageFromSectorRecords, 100)}%` }}
+                    style={{ width: loadingRecordCounts ? '0%' : `${Math.min(s.percentageFromSectorRecords, 100)}%` }}
                   />
                 </div>
               </div>
