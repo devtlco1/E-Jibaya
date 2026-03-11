@@ -1403,12 +1403,6 @@ export function DataTable({
                   المنطقة
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                  المقاطعة
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
-                  آخر قراءة
-                </th>
-                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                   صورة المقياس
                 </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
@@ -1472,7 +1466,7 @@ export function DataTable({
                 ))
               ) : records.length === 0 ? (
                 <tr>
-                  <td colSpan={14} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={12} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     لا توجد سجلات تطابق الفلاتر المحددة
                   </td>
                 </tr>
@@ -1521,22 +1515,6 @@ export function DataTable({
                     onClick={() => handleEdit(record)}
                   >
                     {record.region || (
-                      <span className="text-gray-400 italic">غير محدد</span>
-                    )}
-                  </td>
-                  <td 
-                    className="px-3 sm:px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate cursor-pointer hidden lg:table-cell"
-                    onClick={() => handleEdit(record)}
-                  >
-                    {record.district || (
-                      <span className="text-gray-400 italic">غير محدد</span>
-                    )}
-                  </td>
-                  <td 
-                    className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white cursor-pointer hidden md:table-cell"
-                    onClick={() => handleEdit(record)}
-                  >
-                    {record.last_reading || (
                       <span className="text-gray-400 italic">غير محدد</span>
                     )}
                   </td>
