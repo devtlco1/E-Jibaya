@@ -518,16 +518,6 @@ export function BackupSystem() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Database className="w-6 h-6 text-blue-600 dark:text-blue-400 ml-3" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            النسخ الاحتياطي
-          </h2>
-        </div>
-      </div>
-
       {/* System Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -589,10 +579,6 @@ export function BackupSystem() {
               إنشاء نسخة احتياطية
             </h3>
           </div>
-          
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            قم بإنشاء نسخة احتياطية كاملة من جميع البيانات والصور كملفات عادية
-          </p>
 
           <button
             onClick={createBackup}

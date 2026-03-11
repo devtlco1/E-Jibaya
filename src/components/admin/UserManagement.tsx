@@ -832,12 +832,8 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          إدارة المستخدمين
-        </h2>
-        <div className="flex items-center gap-2">
+      {/* Actions (top-right) */}
+      <div className="flex items-center justify-end flex-wrap gap-2">
           <button
             onClick={handleExportUsers}
             className="flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors font-medium"

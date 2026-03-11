@@ -280,19 +280,6 @@ export function ActivityLogs() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <Activity className="w-6 h-6 text-blue-600 dark:text-blue-400 ml-3" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            سجل الحركات
-          </h2>
-        </div>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          إجمالي الحركات: {totalLogs}
-        </div>
-      </div>
-
       {/* Activity Logs Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

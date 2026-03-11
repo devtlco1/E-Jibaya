@@ -198,12 +198,7 @@ export function Achievements() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center">
-          <Trophy className="w-6 h-6 text-amber-500 ml-3" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">الانجازات</h2>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center justify-end flex-wrap gap-3">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">الوظيفة:</label>
           <select
             value={jobFilter}
