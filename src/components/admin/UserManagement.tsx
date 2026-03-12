@@ -5,7 +5,7 @@ import { useNotifications } from '../../contexts/NotificationContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
-import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX, Search, Download } from 'lucide-react';
+import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX, Search, Download, Filter } from 'lucide-react';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatNumberEn } from '../../utils/numberFormatter';
 
@@ -854,14 +854,14 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <button
             type="button"
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
           >
-            <Search className="w-4 h-4 ml-2" />
+            <Filter className="w-4 h-4 ml-2" />
             {showFilters ? 'إخفاء الفلاتر' : 'إظهار الفلاتر'}
           </button>
         </div>

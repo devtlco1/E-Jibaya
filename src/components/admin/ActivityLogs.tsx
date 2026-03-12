@@ -21,7 +21,9 @@ import {
   Download,
   Target,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Filter,
+  Search
 } from 'lucide-react';
 import { formatDateTime, formatDate, formatTime } from '../../utils/dateFormatter';
 
@@ -29,14 +31,14 @@ export function ActivityLogs() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  // عدد الحركات في الصفحة الأولى (Lazy load حقيقي عبر الـ pagination)
-  const [itemsPerPage, setItemsPerPage] = useState(() => {
-    return window.innerWidth <= 768 ? 20 : 50;
-  });
+  // عدد الحركات في الصفحة (موحد مع بقية النظام)
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalLogs, setTotalLogs] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [users, setUsers] = useState<any[]>([]);
   const [viewingLog, setViewingLog] = useState<ActivityLog | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { addNotification } = useNotifications();
 
@@ -210,6 +212,21 @@ export function ActivityLogs() {
     }
   };
 
+  const filteredLogs = logs.filter((log) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    const msg = formatLogMessage(log).toLowerCase();
+    const userName = getUserName(log.user_id).toLowerCase();
+    const actionText = getActionText(log.action).toLowerCase();
+    const targetName = (log.target_name || '').toLowerCase();
+    return (
+      msg.includes(q) ||
+      userName.includes(q) ||
+      actionText.includes(q) ||
+      targetName.includes(q)
+    );
+  });
+
   const formatLogMessage = (log: ActivityLog) => {
     const userName = getUserName(log.user_id);
     const actionText = getActionText(log.action);
@@ -280,6 +297,51 @@ export function ActivityLogs() {
 
   return (
     <div className="space-y-6">
+      {/* Filters */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <Filter className="w-4 h-4 ml-2" />
+            {showFilters ? 'إخفاء الفلاتر' : 'إظهار الفلاتر'}
+          </button>
+        </div>
+
+        {showFilters && (
+          <div className="p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  بحث في الحركات
+                </label>
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="ابحث باسم المستخدم، نوع الحركة أو النص..."
+                    className="w-full pr-10 pl-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Activity Logs Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -334,14 +396,14 @@ export function ActivityLogs() {
                     </td>
                   </tr>
                 ))
-              ) : logs.length === 0 ? (
+              ) : filteredLogs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                     لا توجد حركات مسجلة
                   </td>
                 </tr>
               ) : (
-                logs.map((log) => (
+                filteredLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       <div className="flex items-center">
