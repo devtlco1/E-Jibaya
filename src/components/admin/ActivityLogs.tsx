@@ -22,6 +22,7 @@ import {
   Target,
   FileText,
   MessageSquare,
+  GitMerge,
   Filter,
   Search
 } from 'lucide-react';
@@ -160,6 +161,8 @@ export function ActivityLogs() {
         return <Settings className="w-4 h-4 text-gray-600" />;
       case 'security_audit':
         return <Shield className="w-4 h-4 text-red-600" />;
+      case 'merge_records':
+        return <GitMerge className="w-4 h-4 text-indigo-600" />;
       default:
         return <Activity className="w-4 h-4 text-gray-600" />;
     }
@@ -192,6 +195,7 @@ export function ActivityLogs() {
       case 'restore_data': return 'استعادة البيانات';
       case 'system_maintenance': return 'صيانة النظام';
       case 'security_audit': return 'مراجعة أمنية';
+      case 'merge_records': return 'دمج سجلات';
       default: return action;
     }
   };
@@ -274,6 +278,12 @@ export function ActivityLogs() {
     
     if (log.action === 'import_data') {
       return `${userName} قام باستيراد البيانات`;
+    }
+
+    if (log.action === 'merge_records') {
+      const details = log.details as any;
+      const acc = details?.account_number || 'غير معروف';
+      return `${userName} قام بدمج سجلي جباية لرقم الحساب ${acc} مع الإبقاء على سجل واحد فقط ونقل الصور والبيانات إليه.`;
     }
     
     if (log.action === 'backup_data') {

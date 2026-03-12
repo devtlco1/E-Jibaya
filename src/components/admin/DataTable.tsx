@@ -1027,6 +1027,25 @@ export function DataTable({
         console.warn('Failed to delete merged-away record:', delError);
       }
 
+      // تسجيل الحركة في سجل الحركات
+      try {
+        await dbOperations.createActivityLog({
+          user_id: currentUser.id,
+          action: 'merge_records',
+          target_type: 'record',
+          target_id: keepOriginal.id,
+          target_name: keep.subscriber_name || keep.account_number || 'سجل جباية',
+          details: {
+            from_record_id: removeOriginal.id,
+            to_record_id: keepOriginal.id,
+            account_number: updateData.account_number,
+            kept_photos_from: hasPhotos(keep) ? keepOriginal.id : null
+          }
+        });
+      } catch (logError) {
+        console.warn('Failed to log merge_records activity:', logError);
+      }
+
       // إلغاء قفل السجل الذي كان مفتوح للتعديل (قد يكون هو الذي حذفناه)
       try {
         await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
