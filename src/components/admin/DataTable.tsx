@@ -1335,75 +1335,78 @@ export function DataTable({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   حالة الارض
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.land_status || ''}
-                  onChange={(e) => onFiltersChange({ ...filters, land_status: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع حالات الارض</option>
-                  <option value="متروك">متروك</option>
-                  <option value="مهدوم">مهدوم</option>
-                  <option value="لم اعثر عليه">لم اعثر عليه</option>
-                  <option value="ممتنع">ممتنع</option>
-                  <option value="إيقاف قراءة">إيقاف قراءة</option>
-                  <option value="عاطل">عاطل</option>
-                  <option value="تجاوز">تجاوز</option>
-                  <option value="قيد الانشاء">قيد الانشاء</option>
-                  <option value="مبدل">مبدل</option>
-                  <option value="مغلق">مغلق</option>
-                  <option value="لايوجد مقياس">لايوجد مقياس</option>
-                  <option value="فحص مقياس">فحص مقياس</option>
-                  <option value="فارغ">فارغ</option>
-                  <option value="خطاء في القراءة">خطاء في القراءة</option>
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, land_status: val })}
+                  options={[
+                    { value: '', label: 'جميع حالات الارض' },
+                    { value: 'متروك', label: 'متروك' },
+                    { value: 'مهدوم', label: 'مهدوم' },
+                    { value: 'لم اعثر عليه', label: 'لم اعثر عليه' },
+                    { value: 'ممتنع', label: 'ممتنع' },
+                    { value: 'إيقاف قراءة', label: 'إيقاف قراءة' },
+                    { value: 'عاطل', label: 'عاطل' },
+                    { value: 'تجاوز', label: 'تجاوز' },
+                    { value: 'قيد الانشاء', label: 'قيد الانشاء' },
+                    { value: 'مبدل', label: 'مبدل' },
+                    { value: 'مغلق', label: 'مغلق' },
+                    { value: 'لايوجد مقياس', label: 'لايوجد مقياس' },
+                    { value: 'فحص مقياس', label: 'فحص مقياس' },
+                    { value: 'فارغ', label: 'فارغ' },
+                    { value: 'خطاء في القراءة', label: 'خطاء في القراءة' }
+                  ]}
+                  placeholder="جميع حالات الارض"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   الحالة
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.status}
-                  onChange={(e) => onFiltersChange({ ...filters, status: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع الحالات</option>
-                  <option value="pending">قيد المراجعة</option>
-                  <option value="completed">مكتمل</option>
-                  <option value="refused">امتنع</option>
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, status: val })}
+                  options={[
+                    { value: '', label: 'جميع الحالات' },
+                    { value: 'pending', label: 'قيد المراجعة' },
+                    { value: 'completed', label: 'مكتمل' },
+                    { value: 'refused', label: 'امتنع' }
+                  ]}
+                  placeholder="جميع الحالات"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   التدقيق
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.verification_status}
-                  onChange={(e) => onFiltersChange({ ...filters, verification_status: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع حالات التدقيق</option>
-                  <option value="مدقق">مدقق</option>
-                  <option value="غير مدقق">غير مدقق</option>
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, verification_status: val })}
+                  options={[
+                    { value: '', label: 'جميع حالات التدقيق' },
+                    { value: 'مدقق', label: 'مدقق' },
+                    { value: 'غير مدقق', label: 'غير مدقق' }
+                  ]}
+                  placeholder="جميع حالات التدقيق"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   الصور المرفوضة
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.rejected_photos || ''}
-                  onChange={(e) => onFiltersChange({ ...filters, rejected_photos: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">الكل</option>
-                  <option value="any">يوجد صور مرفوضة</option>
-                  <option value="none">لا توجد صور مرفوضة</option>
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, rejected_photos: val as any })}
+                  options={[
+                    { value: '', label: 'الكل' },
+                    { value: 'any', label: 'يوجد صور مرفوضة' },
+                    { value: 'none', label: 'لا توجد صور مرفوضة' }
+                  ]}
+                  placeholder="الكل"
+                />
               </div>
-
             </div>
 
             {/* الصف الرابع: الصنف، نوع المقياس، المحصل الميداني */}
@@ -1412,59 +1415,64 @@ export function DataTable({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   الصنف
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.category}
-                  onChange={(e) => onFiltersChange({ ...filters, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع الأصناف</option>
-                  <option value="منزلي">منزلي</option>
-                  <option value="تجاري">تجاري</option>
-                  <option value="صناعي">صناعي</option>
-                  <option value="زراعي">زراعي</option>
-                  <option value="حكومي">حكومي</option>
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, category: val })}
+                  options={[
+                    { value: '', label: 'جميع الأصناف' },
+                    { value: 'منزلي', label: 'منزلي' },
+                    { value: 'تجاري', label: 'تجاري' },
+                    { value: 'صناعي', label: 'صناعي' },
+                    { value: 'زراعي', label: 'زراعي' },
+                    { value: 'حكومي', label: 'حكومي' }
+                  ]}
+                  placeholder="جميع الأصناف"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   نوع المقياس
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.phase}
-                  onChange={(e) => onFiltersChange({ ...filters, phase: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع الأنواع</option>
-                  <option value="احادي">احادي</option>
-                  <option value="ثلاثي">ثلاثي</option>
-                  <option value="سي تي">سي تي</option>
-                  <option value="المحولة الخاصة">المحولة الخاصة</option>
-                  <option value="مقياس الكتروني">مقياس الكتروني</option>
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, phase: val })}
+                  options={[
+                    { value: '', label: 'جميع الأنواع' },
+                    { value: 'احادي', label: 'احادي' },
+                    { value: 'ثلاثي', label: 'ثلاثي' },
+                    { value: 'سي تي', label: 'سي تي' },
+                    { value: 'المحولة الخاصة', label: 'المحولة الخاصة' },
+                    { value: 'مقياس الكتروني', label: 'مقياس الكتروني' }
+                  ]}
+                  placeholder="جميع الأنواع"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   المحصل الميداني
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.field_agent_id || ''}
-                  onChange={(e) => onFiltersChange({ ...filters, field_agent_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">
-                    {filters.branch_manager_id ? 'جميع المحصلين التابعين لمدير الفرع' : 'جميع المحصلين'}
-                  </option>
-                  {(filters.branch_manager_id
-                    ? users.filter(user => user.role === 'field_agent' && branchManagerFieldAgents.includes(user.id))
-                    : users.filter(user => user.role === 'field_agent')
-                  ).map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.full_name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, field_agent_id: val })}
+                  options={[
+                    {
+                      value: '',
+                      label: filters.branch_manager_id
+                        ? 'جميع المحصلين التابعين لمدير الفرع'
+                        : 'جميع المحصلين'
+                    },
+                    ...(
+                      filters.branch_manager_id
+                        ? users.filter(user => user.role === 'field_agent' && branchManagerFieldAgents.includes(user.id))
+                        : users.filter(user => user.role === 'field_agent')
+                    ).map(user => ({ value: user.id, label: user.full_name }))
+                  ]}
+                  placeholder={filters.branch_manager_id
+                    ? 'جميع المحصلين التابعين لمدير الفرع'
+                    : 'جميع المحصلين'}
+                />
               </div>
             </div>
 
@@ -1474,35 +1482,38 @@ export function DataTable({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   مدير الفرع
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.branch_manager_id || ''}
-                  onChange={(e) => {
-                    const newFilters = { ...filters, branch_manager_id: e.target.value, field_agent_id: '' };
+                  onChange={(val) => {
+                    const newFilters = { ...filters, branch_manager_id: val, field_agent_id: '' };
                     onFiltersChange(newFilters);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع مديري الفروع</option>
-                  {branchManagers.map(branchManager => (
-                    <option key={branchManager.id} value={branchManager.id}>
-                      {branchManager.full_name}{branchManager.sector ? ` — ${branchManager.sector}` : ''}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'جميع مديري الفروع' },
+                    ...branchManagers.map(branchManager => ({
+                      value: branchManager.id,
+                      label: branchManager.sector
+                        ? `${branchManager.full_name} — ${branchManager.sector}`
+                        : branchManager.full_name
+                    }))
+                  ]}
+                  placeholder="جميع مديري الفروع"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   ترتيب العرض
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.sort_order || ''}
-                  onChange={(e) => onFiltersChange({ ...filters, sort_order: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">الافتراضي</option>
-                  <option value="latest">الأحدث أولاً (أحدث تحديث/إنشاء)</option>
-                  <option value="oldest">الأقدم أولاً</option>
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, sort_order: val as any })}
+                  options={[
+                    { value: '', label: 'الافتراضي' },
+                    { value: 'latest', label: 'الأحدث أولاً (أحدث تحديث/إنشاء)' },
+                    { value: 'oldest', label: 'الأقدم أولاً' }
+                  ]}
+                  placeholder="الافتراضي"
+                />
               </div>
             </div>
           </div>
