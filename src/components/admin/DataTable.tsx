@@ -955,22 +955,39 @@ export function DataTable({
 
   const handleConfirmMergeDuplicateAccount = async () => {
     if (!editingRecord || !currentUser) return;
-    const existing = duplicateAccountMerge.existing;
-    if (!existing) return;
+    const other = duplicateAccountMerge.existing;
+    if (!other) return;
 
     try {
-      // جلب نسخة أحدث من السجل الحالي لضمان الحصول على روابط الصور الحديثة
-      let sourceLatest: any = null;
-      try {
-        sourceLatest = await dbOperations.getRecordById(editingRecord.id);
-      } catch (fetchError) {
-        console.warn('Failed to fetch latest source record before merge:', fetchError);
+      // جلب السجلين من قاعدة البيانات (للتأكد من الصور)
+      const [currentFresh, otherFresh] = await Promise.all([
+        dbOperations.getRecordById(editingRecord.id),
+        dbOperations.getRecordById(other.id)
+      ]);
+
+      const currentRec: any = currentFresh || editingRecord;
+      const otherRec: any = otherFresh || other;
+
+      const hasPhotos = (rec: any) =>
+        !!(rec?.meter_photo_url || rec?.invoice_photo_url || rec?.invoice_photo_back_url);
+
+      // نحدد من هو السجل الذي سنحتفظ به (الأولوية لصاحب الصور)
+      let keep = otherRec;
+      let keepOriginal = other;
+      let remove = currentRec;
+      let removeOriginal = editingRecord;
+
+      if (hasPhotos(currentRec) && !hasPhotos(otherRec)) {
+        keep = currentRec;
+        keepOriginal = editingRecord;
+        remove = otherRec;
+        removeOriginal = other;
       }
 
       let updateData: any = {
         ...editForm,
-        account_number: (existing.account_number || '').trim(),
-        completed_by: currentUser.id || existing.completed_by,
+        account_number: (editForm.account_number || keep.account_number || '').toString().trim(),
+        completed_by: currentUser.id || keep.completed_by,
         multiplier: editForm.multiplier || null,
         land_status: editForm.land_status
       };
@@ -980,9 +997,16 @@ export function DataTable({
       updateData.status = editForm.status;
       updateData.is_refused = editForm.status === 'refused';
 
-      // نقل صور السجل الحالي إلى السجل القديم (إن وجدت)
+      // نضمن بقاء روابط الصور لصاحب الصور
+      if (hasPhotos(keep)) {
+        if (keep.meter_photo_url) updateData.meter_photo_url = keep.meter_photo_url;
+        if (keep.invoice_photo_url) updateData.invoice_photo_url = keep.invoice_photo_url;
+        if (keep.invoice_photo_back_url) updateData.invoice_photo_back_url = keep.invoice_photo_back_url;
+      }
+
+      // نقل الصور الإضافية (record_photos) من السجل الذي سنحذفه إلى السجل الذي سنحتفظ به
       try {
-        const moved = await dbOperations.moveRecordPhotos(editingRecord.id, existing.id);
+        const moved = await dbOperations.moveRecordPhotos(removeOriginal.id, keepOriginal.id);
         if (!moved) {
           addNotification(
             { type: 'warning', title: 'تنبيه', message: 'تعذر نقل الصور الإضافية تلقائياً (record_photos).' },
@@ -993,15 +1017,17 @@ export function DataTable({
         console.warn('Failed to move record photos during merge:', movePhotosError);
       }
 
-      // نقل روابط الصور الأساسية من السجل الحالي إلى السجل القديم (إن وجدت)
-      const src = (sourceLatest as any) || (editingRecord as any);
-      if (src?.meter_photo_url) updateData.meter_photo_url = src.meter_photo_url;
-      if (src?.invoice_photo_url) updateData.invoice_photo_url = src.invoice_photo_url;
-      if (src?.invoice_photo_back_url) updateData.invoice_photo_back_url = src.invoice_photo_back_url;
+      // تحديث السجل الذي قررنا الإبقاء عليه
+      await onUpdateRecord(keepOriginal.id, updateData);
 
-      await onUpdateRecord(existing.id, updateData);
+      // حذف السجل الآخر (حتى لا يبقى تكرار)
+      try {
+        await dbOperations.deleteRecord(removeOriginal.id);
+      } catch (delError) {
+        console.warn('Failed to delete merged-away record:', delError);
+      }
 
-      // إلغاء قفل السجل الحالي الذي كان مفتوح للتعديل (لأننا دمجنا التغييرات داخل السجل القديم)
+      // إلغاء قفل السجل الذي كان مفتوح للتعديل (قد يكون هو الذي حذفناه)
       try {
         await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
         if (onRecordUpdate) {

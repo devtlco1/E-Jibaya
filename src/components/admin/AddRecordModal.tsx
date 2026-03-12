@@ -43,72 +43,6 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
   const { user } = useAuth();
   const { addNotification } = useNotifications();
 
-  const handleMergeDuplicate = async () => {
-    if (!duplicateRecord) return;
-    if (submitting) return;
-
-    setSubmitting(true);
-    try {
-      const mergedUpdates: any = {
-        subscriber_name: form.subscriber_name.trim() || duplicateRecord.subscriber_name || '',
-        account_number: duplicateRecord.account_number || form.account_number.trim(),
-        record_number: form.record_number.trim() || null,
-        meter_number: form.meter_number.trim() || duplicateRecord.meter_number || '',
-        region: form.region.trim() || duplicateRecord.region || '',
-        district: form.district.trim() || duplicateRecord.district || '',
-        last_reading: form.last_reading.trim() || duplicateRecord.last_reading || '',
-        new_zone: form.new_zone.trim() || null,
-        new_block: form.new_block.trim() || null,
-        new_home: form.new_home.trim() || null,
-        category: form.category ?? duplicateRecord.category ?? null,
-        phase: form.phase ?? duplicateRecord.phase ?? null,
-        multiplier: form.multiplier.trim() || null,
-        total_amount: form.total_amount ? parseFloat(form.total_amount) : null,
-        current_amount: form.current_amount ? parseFloat(form.current_amount) : null,
-        land_status: form.land_status ?? duplicateRecord.land_status ?? null,
-        status: form.status,
-        is_refused: form.status === 'refused',
-        field_agent_id: user?.id ?? duplicateRecord.field_agent_id ?? null
-      };
-
-      const ok = await dbOperations.updateRecord(duplicateRecord.id, mergedUpdates);
-      if (!ok) {
-        throw new Error('فشل في دمج السجل');
-      }
-
-      if (user) {
-        try {
-          await dbOperations.createActivityLog({
-            user_id: user.id,
-            action: 'merge_duplicate_record',
-            target_type: 'record',
-            target_id: duplicateRecord.id,
-            target_name: duplicateRecord.subscriber_name || duplicateRecord.account_number || 'سجل',
-            details: {
-              account_number: duplicateRecord.account_number ?? null,
-              merged_from_dashboard: true
-            }
-          });
-        } catch (logError) {
-          console.warn('Failed to log activity:', logError);
-        }
-      }
-
-      addNotification({ type: 'success', title: 'تم بنجاح', message: 'تم دمج السجل وتحديث البيانات على السجل القديم.' });
-      setDuplicateRecord(null);
-      onSuccess();
-      onClose();
-    } catch (error) {
-      addNotification({
-        type: 'error',
-        title: 'خطأ',
-        message: error instanceof Error ? error.message : 'فشل في دمج السجل'
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleCheckAccount = async () => {
     const val = checkAccountInput.trim();
     if (!val) {
@@ -541,14 +475,16 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
         setDuplicateRecord(null);
         setCheckStatus('idle');
       }}
-      onConfirm={handleMergeDuplicate}
-      title="رقم الحساب متكرر"
-      message={
-        duplicateRecord
-          ? `رقم الحساب ${duplicateRecord.account_number} مستخدم بالفعل في سجل قديم. تريد دمج البيانات الجديدة وتحديث السجل القديم؟`
-          : ''
-      }
-      confirmText={submitting ? 'جاري الدمج...' : 'دمج'}
+      onConfirm={() => {
+        if (duplicateRecord && onEditExisting) {
+          onEditExisting(duplicateRecord);
+          onClose();
+        }
+        setDuplicateRecord(null);
+      }}
+      title="الحساب موجود"
+      message={duplicateRecord ? `رقم الحساب ${duplicateRecord.account_number} موجود بالفعل. هل تريد تعديل السجل الموجود؟` : ''}
+      confirmText="تعديل"
       cancelText="إلغاء"
       type="warning"
     />
