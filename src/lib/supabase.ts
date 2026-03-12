@@ -2027,6 +2027,34 @@ export const dbOperations = {
     }
   },
 
+  /**
+   * نقل كل الصور الإضافية (record_photos) من سجل إلى سجل آخر
+   * يستخدم عند دمج السجلات لتظهر الصور الحديثة على السجل المدموج.
+   */
+  async moveRecordPhotos(sourceRecordId: string, targetRecordId: string): Promise<boolean> {
+    try {
+      const client = checkSupabaseConnection();
+      if (!client) return false;
+
+      if (!sourceRecordId || !targetRecordId || sourceRecordId === targetRecordId) return true;
+
+      const { error } = await client
+        .from('record_photos')
+        .update({ record_id: targetRecordId })
+        .eq('record_id', sourceRecordId);
+
+      if (error) {
+        console.error('Move record photos error:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Move record photos error:', error);
+      return false;
+    }
+  },
+
   // Get active field agents count
   async getActiveFieldAgentsCount(): Promise<number> {
     try {

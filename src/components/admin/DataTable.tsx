@@ -972,6 +972,18 @@ export function DataTable({
       updateData.status = editForm.status;
       updateData.is_refused = editForm.status === 'refused';
 
+      // نقل صور السجل الحالي إلى السجل القديم (إن وجدت)
+      try {
+        await dbOperations.moveRecordPhotos(editingRecord.id, existing.id);
+      } catch (movePhotosError) {
+        console.warn('Failed to move record photos during merge:', movePhotosError);
+      }
+
+      // نقل روابط الصور الأساسية من السجل الحالي إلى السجل القديم (إن وجدت)
+      if ((editingRecord as any).meter_photo_url) updateData.meter_photo_url = (editingRecord as any).meter_photo_url;
+      if ((editingRecord as any).invoice_photo_url) updateData.invoice_photo_url = (editingRecord as any).invoice_photo_url;
+      if ((editingRecord as any).invoice_photo_back_url) updateData.invoice_photo_back_url = (editingRecord as any).invoice_photo_back_url;
+
       await onUpdateRecord(existing.id, updateData);
 
       // إلغاء قفل السجل الحالي الذي كان مفتوح للتعديل (لأننا دمجنا التغييرات داخل السجل القديم)
