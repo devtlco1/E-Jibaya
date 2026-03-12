@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { dbOperations } from '../../lib/supabase';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
+import { SearchableSelect } from '../common/SearchableSelect';
 import { PhotoComparison } from './PhotoComparison';
 import { LocationPopup } from './LocationPopup';
 import { Eye, CreditCard as Edit, Trash2, MapPin, X, Save, ExternalLink, Filter, ZoomIn, ZoomOut, RotateCcw, Images, FileText, User, Camera, MessageSquare, Shield, Download, Maximize2, CheckCircle, XCircle, DollarSign } from 'lucide-react';
@@ -1253,16 +1254,15 @@ export function DataTable({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   رقم السجل
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.record_number}
-                  onChange={(e) => onFiltersChange({ ...filters, record_number: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع أرقام السجلات</option>
-                  {availableRecordNumbers.map((num) => (
-                    <option key={num} value={num}>{num}</option>
-                  ))}
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, record_number: val })}
+                  options={[
+                    { value: '', label: 'جميع أرقام السجلات' },
+                    ...availableRecordNumbers.map((num) => ({ value: num, label: num }))
+                  ]}
+                  placeholder="جميع أرقام السجلات"
+                />
               </div>
               
               <div>
@@ -1285,51 +1285,47 @@ export function DataTable({
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   المنطقة
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.region}
-                  onChange={(e) => onFiltersChange({ ...filters, region: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع المناطق</option>
-                  {availableRegions.map(region => (
-                    <option key={region} value={region}>{region}</option>
-                  ))}
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, region: val })}
+                  options={[
+                    { value: '', label: 'جميع المناطق' },
+                    ...availableRegions.map(region => ({ value: region, label: region }))
+                  ]}
+                  placeholder="جميع المناطق"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   الزون
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.new_zone}
-                  onChange={(e) => {
-                    onFiltersChange({ ...filters, new_zone: e.target.value, new_block: '' });
+                  onChange={(val) => {
+                    onFiltersChange({ ...filters, new_zone: val, new_block: '' });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                >
-                  <option value="">جميع الزونات</option>
-                  {availableZones.map(zone => (
-                    <option key={zone} value={zone}>{zone}</option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'جميع الزونات' },
+                    ...availableZones.map(zone => ({ value: zone, label: zone }))
+                  ]}
+                  placeholder="جميع الزونات"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   البلوك
                 </label>
-                <select
+                <SearchableSelect
                   value={filters.new_block}
-                  onChange={(e) => onFiltersChange({ ...filters, new_block: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                  disabled={!filters.new_zone}
-                >
-                  <option value="">جميع البلوكات</option>
-                  {availableBlocks.map(block => (
-                    <option key={block} value={block}>{block}</option>
-                  ))}
-                </select>
+                  onChange={(val) => onFiltersChange({ ...filters, new_block: val })}
+                  options={[
+                    { value: '', label: 'جميع البلوكات' },
+                    ...availableBlocks.map(block => ({ value: block, label: block }))
+                  ]}
+                  placeholder="جميع البلوكات"
+                />
               </div>
             </div>
 
