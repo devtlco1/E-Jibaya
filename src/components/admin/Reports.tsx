@@ -757,24 +757,24 @@ export function Reports({}: ReportsProps) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 مدير الفرع
               </label>
-              <select
+              <SearchableSelect
                 value={filters.branchManager}
-                onChange={(e) => {
-                  setFilters({ 
-                    ...filters, 
-                    branchManager: e.target.value,
-                    fieldAgent: '' // إعادة تعيين المحصل الميداني عند تغيير مدير الفرع
+                onChange={(val) => {
+                  setFilters({
+                    ...filters,
+                    branchManager: val,
+                    fieldAgent: ''
                   });
                 }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">جميع مديري الفروع</option>
-                {branchManagers.map(bm => (
-                  <option key={bm.id} value={bm.id}>
-                    {bm.full_name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'جميع مديري الفروع' },
+                  ...branchManagers.map((bm: any) => ({
+                    value: bm.id,
+                    label: bm.full_name
+                  }))
+                ]}
+                placeholder="جميع مديري الفروع"
+              />
             </div>
           </div>
 
@@ -796,55 +796,51 @@ export function Reports({}: ReportsProps) {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 المنطقة
               </label>
-              <select
+              <SearchableSelect
                 value={filters.region}
-                onChange={(e) => setFilters({ ...filters, region: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">جميع المناطق</option>
-                {availableRegions.map(region => (
-                  <option key={region} value={region}>{region}</option>
-                ))}
-              </select>
+                onChange={(val) => setFilters({ ...filters, region: val })}
+                options={[
+                  { value: '', label: 'جميع المناطق' },
+                  ...availableRegions.map(region => ({ value: region, label: region }))
+                ]}
+                placeholder="جميع المناطق"
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 الزون
               </label>
-              <select
+              <SearchableSelect
                 value={filters.new_zone}
-                onChange={(e) => {
-                  setFilters({ 
-                    ...filters, 
-                    new_zone: e.target.value,
-                    new_block: '' // إعادة تعيين البلوك عند تغيير الزون
+                onChange={(val) => {
+                  setFilters({
+                    ...filters,
+                    new_zone: val,
+                    new_block: ''
                   });
                 }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">جميع الزونات</option>
-                {availableZones.map(zone => (
-                  <option key={zone} value={zone}>{zone}</option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'جميع الزونات' },
+                  ...availableZones.map(zone => ({ value: zone, label: zone }))
+                ]}
+                placeholder="جميع الزونات"
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 البلوك
               </label>
-              <select
+              <SearchableSelect
                 value={filters.new_block}
-                onChange={(e) => setFilters({ ...filters, new_block: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                disabled={!filters.new_zone}
-              >
-                <option value="">جميع البلوكات</option>
-                {availableBlocks.map(block => (
-                  <option key={block} value={block}>{block}</option>
-                ))}
-              </select>
+                onChange={(val) => setFilters({ ...filters, new_block: val })}
+                options={[
+                  { value: '', label: 'جميع البلوكات' },
+                  ...availableBlocks.map(block => ({ value: block, label: block }))
+                ]}
+                placeholder="جميع البلوكات"
+              />
             </div>
           </div>
 
