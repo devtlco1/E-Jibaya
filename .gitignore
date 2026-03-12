@@ -30,3 +30,6 @@ DATA/
 
 # Backup (نسخ احتياطي محلي)
 backup/
+
+# Supabase temp artifacts
+supabase/.temp/

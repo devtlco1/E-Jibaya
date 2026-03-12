@@ -43,68 +43,59 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
   const { user } = useAuth();
   const { addNotification } = useNotifications();
 
-  const buildMergeUpdates = () => {
-    const updates: any = {};
-    const t = (v: string) => v.trim();
-
-    if (t(form.subscriber_name)) updates.subscriber_name = t(form.subscriber_name);
-    if (t(form.account_number)) updates.account_number = t(form.account_number);
-    if (t(form.record_number)) updates.record_number = t(form.record_number);
-    if (t(form.meter_number)) updates.meter_number = t(form.meter_number);
-    if (t(form.region)) updates.region = t(form.region);
-    if (t(form.district)) updates.district = t(form.district);
-    if (t(form.last_reading)) updates.last_reading = t(form.last_reading);
-
-    if (t(form.new_zone)) updates.new_zone = t(form.new_zone);
-    if (t(form.new_block)) updates.new_block = t(form.new_block);
-    if (t(form.new_home)) updates.new_home = t(form.new_home);
-
-    if (form.category) updates.category = form.category;
-    if (form.phase) updates.phase = form.phase;
-    if (t(form.multiplier)) updates.multiplier = t(form.multiplier);
-
-    if (form.total_amount !== '') updates.total_amount = form.total_amount ? parseFloat(form.total_amount) : null;
-    if (form.current_amount !== '') updates.current_amount = form.current_amount ? parseFloat(form.current_amount) : null;
-
-    if (form.land_status) updates.land_status = form.land_status;
-    if (form.status) updates.status = form.status;
-
-    // عند الدمج نعتبر التحديث من المستخدم الحالي (إن وُجد)
-    if (user?.id) updates.field_agent_id = user.id;
-
-    return updates;
-  };
-
   const handleMergeDuplicate = async () => {
-    const existing = duplicateRecord;
-    if (!existing) return;
+    if (!duplicateRecord) return;
+    if (submitting) return;
+
     setSubmitting(true);
     try {
-      const updates = buildMergeUpdates();
-      // لا نحدّث بـ object فارغ
-      if (Object.keys(updates).length === 0) {
-        addNotification({ type: 'warning', title: 'تنبيه', message: 'لا توجد بيانات جديدة لدمجها' });
-        return;
-      }
+      const mergedUpdates: any = {
+        subscriber_name: form.subscriber_name.trim() || duplicateRecord.subscriber_name || '',
+        account_number: duplicateRecord.account_number || form.account_number.trim(),
+        record_number: form.record_number.trim() || null,
+        meter_number: form.meter_number.trim() || duplicateRecord.meter_number || '',
+        region: form.region.trim() || duplicateRecord.region || '',
+        district: form.district.trim() || duplicateRecord.district || '',
+        last_reading: form.last_reading.trim() || duplicateRecord.last_reading || '',
+        new_zone: form.new_zone.trim() || null,
+        new_block: form.new_block.trim() || null,
+        new_home: form.new_home.trim() || null,
+        category: form.category ?? duplicateRecord.category ?? null,
+        phase: form.phase ?? duplicateRecord.phase ?? null,
+        multiplier: form.multiplier.trim() || null,
+        total_amount: form.total_amount ? parseFloat(form.total_amount) : null,
+        current_amount: form.current_amount ? parseFloat(form.current_amount) : null,
+        land_status: form.land_status ?? duplicateRecord.land_status ?? null,
+        status: form.status,
+        is_refused: form.status === 'refused',
+        field_agent_id: user?.id ?? duplicateRecord.field_agent_id ?? null
+      };
 
-      await dbOperations.updateRecord(existing.id, updates);
+      const ok = await dbOperations.updateRecord(duplicateRecord.id, mergedUpdates);
+      if (!ok) {
+        throw new Error('فشل في دمج السجل');
+      }
 
       if (user) {
         try {
           await dbOperations.createActivityLog({
             user_id: user.id,
-            action: 'merge_record',
+            action: 'merge_duplicate_record',
             target_type: 'record',
-            target_id: existing.id,
-            target_name: existing.subscriber_name || existing.account_number || 'سجل',
-            details: { merged_from_dashboard: true, account_number: existing.account_number }
+            target_id: duplicateRecord.id,
+            target_name: duplicateRecord.subscriber_name || duplicateRecord.account_number || 'سجل',
+            details: {
+              account_number: duplicateRecord.account_number ?? null,
+              merged_from_dashboard: true
+            }
           });
         } catch (logError) {
-          console.warn('Failed to log merge activity:', logError);
+          console.warn('Failed to log activity:', logError);
         }
       }
 
-      addNotification({ type: 'success', title: 'تم الدمج', message: 'تم تحديث السجل القديم بالمعلومات الجديدة' });
+      addNotification({ type: 'success', title: 'تم بنجاح', message: 'تم دمج السجل وتحديث البيانات على السجل القديم.' });
+      setDuplicateRecord(null);
       onSuccess();
       onClose();
     } catch (error) {
@@ -115,7 +106,6 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
       });
     } finally {
       setSubmitting(false);
-      setDuplicateRecord(null);
     }
   };
 
@@ -551,13 +541,14 @@ export function AddRecordModal({ onClose, onSuccess, onEditExisting }: AddRecord
         setDuplicateRecord(null);
         setCheckStatus('idle');
       }}
-      onConfirm={() => {
-        // دمج البيانات الجديدة داخل السجل القديم
-        void handleMergeDuplicate();
-      }}
-      title="الحساب موجود"
-      message={duplicateRecord ? `رقم الحساب ${duplicateRecord.account_number} موجود بالفعل. تريد دمج البيانات الجديدة داخل السجل القديم؟` : ''}
-      confirmText="دمج"
+      onConfirm={handleMergeDuplicate}
+      title="رقم الحساب متكرر"
+      message={
+        duplicateRecord
+          ? `رقم الحساب ${duplicateRecord.account_number} مستخدم بالفعل في سجل قديم. تريد دمج البيانات الجديدة وتحديث السجل القديم؟`
+          : ''
+      }
+      confirmText={submitting ? 'جاري الدمج...' : 'دمج'}
       cancelText="إلغاء"
       type="warning"
     />
