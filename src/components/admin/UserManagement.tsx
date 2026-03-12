@@ -44,6 +44,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
   const [sectorFilter, setSectorFilter] = useState('');
   const [jobTitleFilter, setJobTitleFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Branch Manager Field Agents Management
   const [branchManagerFieldAgents, setBranchManagerFieldAgents] = useState<string[]>([]);
@@ -853,8 +854,20 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          >
+            <Search className="w-4 h-4 ml-2" />
+            {showFilters ? 'إخفاء الفلاتر' : 'إظهار الفلاتر'}
+          </button>
+        </div>
+
+        {showFilters && (
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -946,6 +959,7 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
             </select>
           </div>
         </div>
+        )}
       </div>
 
       {/* Users Table */}
