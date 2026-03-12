@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Pagination } from '../common/Pagination';
 import { UserPlus, CreditCard as Edit, Trash2, Eye, EyeOff, Save, X, Shield, Users, User as UserIcon, Calendar, UserCheck, UserX, Search, Download, Filter } from 'lucide-react';
+import { SearchableSelect } from '../common/SearchableSelect';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatNumberEn } from '../../utils/numberFormatter';
 
@@ -900,18 +901,19 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               الدور
             </label>
-            <select
+            <SearchableSelect
               value={roleFilter}
-              onChange={(e) => handleRoleFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-            >
-              <option value="">جميع الأدوار</option>
-              <option value="admin">مدير</option>
-              <option value="employee">موظف</option>
-              <option value="branch_manager">مدير فرع</option>
-              <option value="field_agent">محصل ميداني</option>
-              <option value="high_loads">الأحمال العالية</option>
-            </select>
+              onChange={handleRoleFilterChange}
+              options={[
+                { value: '', label: 'جميع الأدوار' },
+                { value: 'admin', label: 'مدير' },
+                { value: 'employee', label: 'موظف' },
+                { value: 'branch_manager', label: 'مدير فرع' },
+                { value: 'field_agent', label: 'محصل ميداني' },
+                { value: 'high_loads', label: 'الأحمال العالية' }
+              ]}
+              placeholder="جميع الأدوار"
+            />
           </div>
 
           {/* Status Filter */}
@@ -919,44 +921,47 @@ export function UserManagement({ onUserStatusChange }: UserManagementProps) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               الحالة
             </label>
-            <select
+            <SearchableSelect
               value={statusFilter}
-              onChange={(e) => handleStatusFilterChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-            >
-              <option value="">جميع الحالات</option>
-              <option value="active">نشط</option>
-              <option value="inactive">معطل</option>
-              <option value="deleted">محذوف</option>
-            </select>
+              onChange={handleStatusFilterChange}
+              options={[
+                { value: '', label: 'جميع الحالات' },
+                { value: 'active', label: 'نشط' },
+                { value: 'inactive', label: 'معطل' },
+                { value: 'deleted', label: 'محذوف' }
+              ]}
+              placeholder="جميع الحالات"
+            />
           </div>
           {/* Sector Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               القطاع
             </label>
-            <select
+            <SearchableSelect
               value={sectorFilter}
-              onChange={(e) => { setSectorFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-            >
-              <option value="">جميع القطاعات</option>
-              {SECTORS.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+              onChange={(val) => { setSectorFilter(val); setCurrentPage(1); }}
+              options={[
+                { value: '', label: 'جميع القطاعات' },
+                ...SECTORS.map(s => ({ value: s, label: s }))
+              ]}
+              placeholder="جميع القطاعات"
+            />
           </div>
           {/* Job Title Filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               الوظيفة
             </label>
-            <select
+            <SearchableSelect
               value={jobTitleFilter}
-              onChange={(e) => { setJobTitleFilter(e.target.value); setCurrentPage(1); }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-            >
-              <option value="">جميع الوظائف</option>
-              {JOB_TITLES.map(j => <option key={j} value={j}>{j}</option>)}
-            </select>
+              onChange={(val) => { setJobTitleFilter(val); setCurrentPage(1); }}
+              options={[
+                { value: '', label: 'جميع الوظائف' },
+                ...JOB_TITLES.map(j => ({ value: j, label: j }))
+              ]}
+              placeholder="جميع الوظائف"
+            />
           </div>
         </div>
         )}
