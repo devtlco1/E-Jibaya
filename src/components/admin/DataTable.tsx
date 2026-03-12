@@ -156,6 +156,11 @@ export function DataTable({
     recordId: '',
     recordName: ''
   });
+  const [duplicateAccountMerge, setDuplicateAccountMerge] = useState<{
+    isOpen: boolean;
+    existing: CollectionRecord | null;
+    attemptedAccountNumber: string;
+  }>({ isOpen: false, existing: null, attemptedAccountNumber: '' });
   const [users, setUsers] = useState<any[]>([]);
   const [branchManagers, setBranchManagers] = useState<any[]>([]);
   const [branchManagerFieldAgents, setBranchManagerFieldAgents] = useState<string[]>([]);
@@ -862,11 +867,11 @@ export function DataTable({
           if (accountNumber !== originalAccount) {
             const existing = await dbOperations.getRecordByAccountNumber(accountNumber);
             if (existing && existing.id !== editingRecord.id) {
-              addNotification({
-                type: 'error',
-                title: 'رقم الحساب موجود',
-                message: `رقم الحساب ${accountNumber} مستخدم بالفعل في سجل آخر. لا يمكن تكرار رقم الحساب.`
-              }, { showAsToast: true });
+              setDuplicateAccountMerge({
+                isOpen: true,
+                existing,
+                attemptedAccountNumber: accountNumber
+              });
               return;
             }
           }
@@ -946,6 +951,61 @@ export function DataTable({
       }
     }
     setEditingRecord(null);
+  };
+
+  const handleConfirmMergeDuplicateAccount = async () => {
+    if (!editingRecord || !currentUser) return;
+    const existing = duplicateAccountMerge.existing;
+    if (!existing) return;
+
+    try {
+      let updateData: any = {
+        ...editForm,
+        account_number: (existing.account_number || '').trim(),
+        completed_by: currentUser.id || existing.completed_by,
+        multiplier: editForm.multiplier || null,
+        land_status: editForm.land_status
+      };
+      delete updateData.total_amount;
+      delete updateData.current_amount;
+
+      updateData.status = editForm.status;
+      updateData.is_refused = editForm.status === 'refused';
+
+      await onUpdateRecord(existing.id, updateData);
+
+      // إلغاء قفل السجل الحالي الذي كان مفتوح للتعديل (لأننا دمجنا التغييرات داخل السجل القديم)
+      try {
+        await dbOperations.unlockRecord(editingRecord.id, currentUser.id);
+        if (onRecordUpdate) {
+          onRecordUpdate(editingRecord.id, {
+            locked_by: null,
+            locked_at: null,
+            lock_expires_at: null
+          });
+        }
+      } catch (unlockError) {
+        console.warn('Failed to unlock current editing record after merge:', unlockError);
+      }
+
+      addNotification(
+        { type: 'success', title: 'تم الدمج', message: 'تم تحديث السجل القديم بالمعلومات الجديدة.' },
+        { showAsToast: true }
+      );
+
+      setDuplicateAccountMerge({ isOpen: false, existing: null, attemptedAccountNumber: '' });
+      setEditingRecord(null);
+    } catch (error) {
+      console.error('Error merging duplicate account record:', error);
+      addNotification(
+        {
+          type: 'error',
+          title: 'خطأ في الدمج',
+          message: error instanceof Error ? error.message : 'فشل في دمج السجل'
+        },
+        { showAsToast: true }
+      );
+    }
   };
 
   const handleView = (record: CollectionRecord) => {
@@ -1742,6 +1802,21 @@ export function DataTable({
         confirmText="حذف"
         cancelText="إلغاء"
         type="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={duplicateAccountMerge.isOpen}
+        onClose={() => setDuplicateAccountMerge({ isOpen: false, existing: null, attemptedAccountNumber: '' })}
+        onConfirm={handleConfirmMergeDuplicateAccount}
+        title="رقم الحساب متكرر"
+        message={
+          duplicateAccountMerge.existing
+            ? `رقم الحساب ${duplicateAccountMerge.attemptedAccountNumber} مستخدم بالفعل في سجل قديم. تريد دمج التغييرات وتحديث السجل القديم؟`
+            : ''
+        }
+        confirmText="دمج"
+        cancelText="إلغاء"
+        type="warning"
       />
 
       {/* View Modal */}
