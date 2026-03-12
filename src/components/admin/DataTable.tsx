@@ -959,6 +959,14 @@ export function DataTable({
     if (!existing) return;
 
     try {
+      // جلب نسخة أحدث من السجل الحالي لضمان الحصول على روابط الصور الحديثة
+      let sourceLatest: any = null;
+      try {
+        sourceLatest = await dbOperations.getRecordById(editingRecord.id);
+      } catch (fetchError) {
+        console.warn('Failed to fetch latest source record before merge:', fetchError);
+      }
+
       let updateData: any = {
         ...editForm,
         account_number: (existing.account_number || '').trim(),
@@ -974,15 +982,22 @@ export function DataTable({
 
       // نقل صور السجل الحالي إلى السجل القديم (إن وجدت)
       try {
-        await dbOperations.moveRecordPhotos(editingRecord.id, existing.id);
+        const moved = await dbOperations.moveRecordPhotos(editingRecord.id, existing.id);
+        if (!moved) {
+          addNotification(
+            { type: 'warning', title: 'تنبيه', message: 'تعذر نقل الصور الإضافية تلقائياً (record_photos).' },
+            { showAsToast: true }
+          );
+        }
       } catch (movePhotosError) {
         console.warn('Failed to move record photos during merge:', movePhotosError);
       }
 
       // نقل روابط الصور الأساسية من السجل الحالي إلى السجل القديم (إن وجدت)
-      if ((editingRecord as any).meter_photo_url) updateData.meter_photo_url = (editingRecord as any).meter_photo_url;
-      if ((editingRecord as any).invoice_photo_url) updateData.invoice_photo_url = (editingRecord as any).invoice_photo_url;
-      if ((editingRecord as any).invoice_photo_back_url) updateData.invoice_photo_back_url = (editingRecord as any).invoice_photo_back_url;
+      const src = (sourceLatest as any) || (editingRecord as any);
+      if (src?.meter_photo_url) updateData.meter_photo_url = src.meter_photo_url;
+      if (src?.invoice_photo_url) updateData.invoice_photo_url = src.invoice_photo_url;
+      if (src?.invoice_photo_back_url) updateData.invoice_photo_back_url = src.invoice_photo_back_url;
 
       await onUpdateRecord(existing.id, updateData);
 
