@@ -125,8 +125,12 @@ export function ActivityLogs() {
         return <Shield className="w-4 h-4 text-orange-600" />;
       case 'create_record':
         return <Plus className="w-4 h-4 text-green-600" />;
+      case 'edit_record':
+        return <Edit className="w-4 h-4 text-blue-600" />;
       case 'update_record':
         return <Edit className="w-4 h-4 text-blue-600" />;
+      case 'verify_record':
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'delete_record':
         return <Trash2 className="w-4 h-4 text-red-600" />;
       case 'view_record':
@@ -177,7 +181,9 @@ export function ActivityLogs() {
       case 'delete_user': return 'حذف مستخدم';
       case 'toggle_user_status': return 'تغيير حالة مستخدم';
       case 'create_record': return 'إنشاء سجل';
+      case 'edit_record': return 'تعديل سجل (ميداني)';
       case 'update_record': return 'تعديل سجل';
+      case 'verify_record': return 'تدقيق سجل';
       case 'delete_record': return 'حذف سجل';
       case 'view_record': return 'عرض سجل';
       case 'add_photos_to_record': return 'إضافة صور للسجل';
@@ -196,7 +202,7 @@ export function ActivityLogs() {
       case 'system_maintenance': return 'صيانة النظام';
       case 'security_audit': return 'مراجعة أمنية';
       case 'merge_records': return 'دمج سجلات';
-      default: return action;
+      default: return 'عملية أخرى';
     }
   };
 
@@ -212,7 +218,7 @@ export function ActivityLogs() {
       case 'import': return 'استيراد';
       case 'security': return 'أمان';
       case 'maintenance': return 'صيانة';
-      default: return targetType;
+      default: return 'عنصر';
     }
   };
 
