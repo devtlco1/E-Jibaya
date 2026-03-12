@@ -222,22 +222,7 @@ export function ActivityLogs() {
     }
   };
 
-  const filteredLogs = logs.filter((log) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.trim().toLowerCase();
-    const msg = formatLogMessage(log).toLowerCase();
-    const userName = getUserName(log.user_id).toLowerCase();
-    const actionText = getActionText(log.action).toLowerCase();
-    const targetName = (log.target_name || '').toLowerCase();
-    return (
-      msg.includes(q) ||
-      userName.includes(q) ||
-      actionText.includes(q) ||
-      targetName.includes(q)
-    );
-  });
-
-  const formatLogMessage = (log: ActivityLog) => {
+  function formatLogMessage(log: ActivityLog): string {
     const userName = getUserName(log.user_id);
     const actionText = getActionText(log.action);
     const targetType = getTargetTypeText(log.target_type);
@@ -309,7 +294,22 @@ export function ActivityLogs() {
     }
     
     return `${userName} قام بـ ${actionText} ${targetType}: ${targetName}`;
-  };
+  }
+
+  const filteredLogs = logs.filter((log) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    const msg = formatLogMessage(log).toLowerCase();
+    const userName = getUserName(log.user_id).toLowerCase();
+    const actionText = getActionText(log.action).toLowerCase();
+    const targetName = (log.target_name || '').toLowerCase();
+    return (
+      msg.includes(q) ||
+      userName.includes(q) ||
+      actionText.includes(q) ||
+      targetName.includes(q)
+    );
+  });
 
   return (
     <div className="space-y-6">
