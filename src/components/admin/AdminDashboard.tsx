@@ -336,8 +336,9 @@ export function AdminDashboard() {
                 title: 'تحديث سجل',
                 message: `تم تحديث السجل: ${updatedRecord.subscriber_name || 'غير محدد'}`
               });
-              
-              // Refresh current page
+              // دمج التحديث محلياً فوراً (مثلاً روابط الصور) حتى لا يظهر السجل بدون صور حتى ينتهي loadRecords
+              setRecords(prev => prev.map(r => r.id === updatedRecord.id ? { ...r, ...updatedRecord } : r));
+              // ثم إعادة تحميل الصفحة للتأكد من تطابق البيانات
               loadRecords();
             }
             

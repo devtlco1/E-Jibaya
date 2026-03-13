@@ -1827,7 +1827,8 @@ export const dbOperations = {
     }
   },
 
-  // Create storage buckets and folders
+  // Ensure storage is ready for uploads. Bucket must exist in Supabase (created via dashboard/migration);
+  // listing/creating buckets from the client is restricted by RLS, so we only verify connection.
   async initializeStorage(): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
@@ -1835,48 +1836,12 @@ export const dbOperations = {
         console.error('Supabase client not available');
         return false;
       }
-
-      console.log('Initializing storage...');
-
-      // Check if photos bucket exists
-      const { data: buckets, error: bucketsError } = await client.storage.listBuckets();
-      if (bucketsError) {
-        console.error('Error listing buckets:', bucketsError);
-        console.error('This might indicate that storage is not properly configured or migrations have not been run');
-        return false;
-      }
-      
-      console.log('Available buckets:', buckets?.map((b: any) => b.name) || []);
-      
-      const photosBucket = buckets?.find((bucket: any) => bucket.name === 'photos');
-      if (!photosBucket) {
-        console.warn('Photos bucket not found in API response. Available buckets:', buckets?.map((b: any) => b.name) || []);
-        console.log('Attempting to create photos bucket...');
-        
-        // Try to create the bucket
-        const { data: newBucket, error: createError } = await client.storage.createBucket('photos', {
-          public: true,
-          fileSizeLimit: 10485760, // 10MB
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
-        });
-        
-        if (createError) {
-          console.error('Failed to create photos bucket:', createError);
-          console.log('Bucket might exist but not accessible via API. Proceeding anyway...');
-          // Don't return false here - let the upload attempt proceed
-        } else {
-          console.log('Photos bucket created successfully:', newBucket);
-        }
-      } else {
-        console.log('Photos bucket found:', photosBucket);
-      }
-
-      console.log('Storage initialization successful');
+      // Bucket "photos" is created server-side. Client cannot list/create buckets due to RLS.
+      // Uploads will succeed if the bucket exists and policies allow.
       return true;
     } catch (error) {
       console.error('Storage initialization error:', error);
-      console.log('Proceeding anyway - bucket might exist but not accessible via API');
-      return true; // Don't fail the entire process
+      return false;
     }
   },
 
