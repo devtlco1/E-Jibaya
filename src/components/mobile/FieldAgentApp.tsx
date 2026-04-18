@@ -344,6 +344,38 @@ export function FieldAgentApp() {
         if (uploaded) invoiceBackUrl = uploaded;
       }
 
+      if (meterUrl && editRecord.meter_photo_url && editRecord.meter_photo_url !== meterUrl) {
+        await dbOperations.archiveReplacedMainPhotoIfNeeded(
+          editRecord.id,
+          'meter',
+          editRecord.meter_photo_url,
+          meterUrl,
+          user.id
+        );
+      }
+      if (invoiceUrl && editRecord.invoice_photo_url && editRecord.invoice_photo_url !== invoiceUrl) {
+        await dbOperations.archiveReplacedMainPhotoIfNeeded(
+          editRecord.id,
+          'invoice',
+          editRecord.invoice_photo_url,
+          invoiceUrl,
+          user.id
+        );
+      }
+      if (
+        invoiceBackUrl &&
+        editRecord.invoice_photo_back_url &&
+        editRecord.invoice_photo_back_url !== invoiceBackUrl
+      ) {
+        await dbOperations.archiveReplacedMainPhotoIfNeeded(
+          editRecord.id,
+          'invoice_back',
+          editRecord.invoice_photo_back_url,
+          invoiceBackUrl,
+          user.id
+        );
+      }
+
       const updateData: any = {
         subscriber_name: editForm.subscriber_name || editRecord.subscriber_name,
         account_number: editForm.account_number || editRecord.account_number,
@@ -363,6 +395,7 @@ export function FieldAgentApp() {
         meter_photo_url: meterUrl ?? null,
         invoice_photo_url: invoiceUrl ?? null,
         invoice_photo_back_url: invoiceBackUrl ?? null,
+        ...(hasNewPhotos ? { verification_status: 'غير مدقق' as const } : {}),
       };
 
       const recordId = editRecord.id;
@@ -693,9 +726,20 @@ export function FieldAgentApp() {
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       
       meterPhotoUrl = await dbOperations.uploadPhoto(file, filePath);
-      
+
       if (meterPhotoUrl) {
-        await dbOperations.addPhotoToRecord(selectedRecord.id, 'meter', meterPhotoUrl, user.id, additionalPhotosNotes);
+        const prev = selectedRecord.meter_photo_url;
+        if (prev && prev !== meterPhotoUrl) {
+          await dbOperations.archiveReplacedMainPhotoIfNeeded(
+            selectedRecord.id,
+            'meter',
+            prev,
+            meterPhotoUrl,
+            user.id,
+            additionalPhotosNotes || undefined
+          );
+        }
+        // الصورة الجديدة تُحفظ على الحقل الرئيسي فقط (لا نكررها في record_photos)
       }
     }
 
@@ -710,9 +754,19 @@ export function FieldAgentApp() {
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       
       invoicePhotoUrl = await dbOperations.uploadPhoto(file, filePath);
-      
+
       if (invoicePhotoUrl) {
-        await dbOperations.addPhotoToRecord(selectedRecord.id, 'invoice', invoicePhotoUrl, user.id, additionalPhotosNotes);
+        const prev = selectedRecord.invoice_photo_url;
+        if (prev && prev !== invoicePhotoUrl) {
+          await dbOperations.archiveReplacedMainPhotoIfNeeded(
+            selectedRecord.id,
+            'invoice',
+            prev,
+            invoicePhotoUrl,
+            user.id,
+            additionalPhotosNotes || undefined
+          );
+        }
       }
     }
 
@@ -725,6 +779,19 @@ export function FieldAgentApp() {
       const blob = await response.blob();
       const file = new File([blob], fileName, { type: 'image/jpeg' });
       invoicePhotoBackUrl = await dbOperations.uploadPhoto(file, filePath);
+      if (invoicePhotoBackUrl) {
+        const prev = selectedRecord.invoice_photo_back_url;
+        if (prev && prev !== invoicePhotoBackUrl) {
+          await dbOperations.archiveReplacedMainPhotoIfNeeded(
+            selectedRecord.id,
+            'invoice_back',
+            prev,
+            invoicePhotoBackUrl,
+            user.id,
+            additionalPhotosNotes || undefined
+          );
+        }
+      }
     }
 
     // Update the record with new data (including photo URLs for main record display)
@@ -759,6 +826,10 @@ export function FieldAgentApp() {
     }
     if (meterPhotoUrl) {
       updateData.meter_photo_url = meterPhotoUrl;
+    }
+
+    if (meterPhotoUrl || invoicePhotoUrl || invoicePhotoBackUrl) {
+      updateData.verification_status = 'غير مدقق';
     }
 
     const success = await dbOperations.updateRecord(selectedRecord.id, updateData);

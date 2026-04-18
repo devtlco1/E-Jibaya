@@ -1898,6 +1898,51 @@ export const dbOperations = {
     }
   },
 
+  /**
+   * عند استبدال صورة على السجل الرئيسي (meter / invoice / ظهر الفاتورة)، نحفظ الرابط القديم
+   * في record_photos حتى لا تُفقد عند التحديث — الصورة الجديدة تبقى على الحقول الرئيسية.
+   */
+  async archiveReplacedMainPhotoIfNeeded(
+    recordId: string,
+    slot: 'meter' | 'invoice' | 'invoice_back',
+    previousUrl: string | null | undefined,
+    newUrl: string | null | undefined,
+    userId: string,
+    extraNotes?: string
+  ): Promise<boolean> {
+    try {
+      const prev = (previousUrl || '').trim();
+      const next = (newUrl || '').trim();
+      if (!prev || !next || prev === next) return true;
+
+      const client = checkSupabaseConnection();
+      if (!client) return false;
+
+      const { data: dup } = await client
+        .from('record_photos')
+        .select('id')
+        .eq('record_id', recordId)
+        .eq('photo_url', prev)
+        .maybeSingle();
+      if (dup) return true;
+
+      const photoType: 'meter' | 'invoice' =
+        slot === 'meter' ? 'meter' : 'invoice';
+      const slotLabel =
+        slot === 'invoice_back'
+          ? 'ظهر فاتورة (أرشفة تلقائية عند استبدال الصورة)'
+          : slot === 'invoice'
+            ? 'وجه فاتورة (أرشفة تلقائية عند استبدال الصورة)'
+            : 'مقياس (أرشفة تلقائية عند استبدال الصورة)';
+      const notes = [slotLabel, extraNotes].filter(Boolean).join(' — ');
+
+      return await this.addPhotoToRecord(recordId, photoType, prev, userId, notes);
+    } catch (error) {
+      console.error('archiveReplacedMainPhotoIfNeeded error:', error);
+      return false;
+    }
+  },
+
   async getRecordPhotos(recordId: string): Promise<RecordPhoto[]> {
     try {
       const client = checkSupabaseConnection();
