@@ -1908,7 +1908,7 @@ export const dbOperations = {
     previousUrl: string | null | undefined,
     newUrl: string | null | undefined,
     userId: string,
-    extraNotes?: string
+    _extraNotes?: string
   ): Promise<boolean> {
     try {
       const prev = (previousUrl || '').trim();
@@ -1928,15 +1928,11 @@ export const dbOperations = {
 
       const photoType: 'meter' | 'invoice' =
         slot === 'meter' ? 'meter' : 'invoice';
-      const slotLabel =
-        slot === 'invoice_back'
-          ? 'ظهر فاتورة (أرشفة تلقائية عند استبدال الصورة)'
-          : slot === 'invoice'
-            ? 'وجه فاتورة (أرشفة تلقائية عند استبدال الصورة)'
-            : 'مقياس (أرشفة تلقائية عند استبدال الصورة)';
-      const notes = [slotLabel, extraNotes].filter(Boolean).join(' — ');
+      // علامات داخلية فقط لتمييز ظهر الفاتورة في الواجهة؛ لا نعرضها للمستخدم
+      const notes =
+        slot === 'invoice_back' ? 'ARCH:BACK' : slot === 'invoice' ? 'ARCH:FACE' : null;
 
-      return await this.addPhotoToRecord(recordId, photoType, prev, userId, notes);
+      return await this.addPhotoToRecord(recordId, photoType, prev, userId, notes ?? undefined);
     } catch (error) {
       console.error('archiveReplacedMainPhotoIfNeeded error:', error);
       return false;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, FileText, MessageSquare, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save, XCircle, Ban } from 'lucide-react';
+import { X, FileText, ZoomIn, ZoomOut, RotateCw, Maximize2, CheckCircle, Circle, Save, XCircle, Ban } from 'lucide-react';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { formatNumberEn } from '../../utils/numberFormatter';
 import { dbOperations } from '../../lib/supabase';
@@ -226,26 +226,15 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                   : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center mb-2">
-                    <FileText className={`w-4 h-4 ml-2 ${titleColor}`} />
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">{row.rowLabel}</span>
-                    {row.notes && <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />}
-                  </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{formatDate(row.sortDate)}</div>
-                  {row.notes && (
-                    <div className="text-xs text-red-600 dark:text-red-400 font-bold mt-1 truncate">{row.notes}</div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
+              <div className="flex items-start gap-2 min-w-0">
+                <div className="flex shrink-0 items-center gap-0.5 pt-0.5" dir="ltr">
                   <button
                     type="button"
                     onClick={e => {
                       e.stopPropagation();
                       toggleTimelineVerified(category, row);
                     }}
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
                     title={row.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
                   >
                     {row.verified ? (
@@ -260,7 +249,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                       e.stopPropagation();
                       toggleTimelineRejected(category, row);
                     }}
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shrink-0"
                     title={row.rejected ? 'إلغاء الرفض' : 'رفض الصورة'}
                   >
                     {row.rejected ? (
@@ -269,6 +258,15 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                       <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
                     )}
                   </button>
+                </div>
+                <div className="min-w-0 flex-1 text-right">
+                  <div className="flex items-center justify-end gap-2 mb-1">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {row.rowLabel}
+                    </span>
+                    <FileText className={`w-4 h-4 shrink-0 ${titleColor}`} />
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{formatDate(row.sortDate)}</div>
                 </div>
               </div>
             </div>

@@ -1,10 +1,11 @@
 import { CollectionRecord, RecordPhoto } from '../../types';
 
-/** يطابق نص الأرشفة في supabase.ts لظهر الفاتورة */
-const NOTE_INVOICE_BACK = 'ظهر فاتورة';
-
 export function isRecordPhotoInvoiceBack(p: RecordPhoto): boolean {
-  return p.photo_type === 'invoice' && (p.notes || '').includes(NOTE_INVOICE_BACK);
+  const n = p.notes || '';
+  return (
+    p.photo_type === 'invoice' &&
+    (n.includes('ARCH:BACK') || n.includes('ظهر فاتورة'))
+  );
 }
 
 export function isRecordPhotoInvoiceFace(p: RecordPhoto): boolean {
