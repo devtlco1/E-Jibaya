@@ -350,7 +350,11 @@ export function FieldAgentApp() {
           'meter',
           editRecord.meter_photo_url,
           meterUrl,
-          user.id
+          user.id,
+          {
+            verified: !!editRecord.meter_photo_verified,
+            rejected: !!editRecord.meter_photo_rejected,
+          }
         );
       }
       if (invoiceUrl && editRecord.invoice_photo_url && editRecord.invoice_photo_url !== invoiceUrl) {
@@ -359,7 +363,11 @@ export function FieldAgentApp() {
           'invoice',
           editRecord.invoice_photo_url,
           invoiceUrl,
-          user.id
+          user.id,
+          {
+            verified: !!editRecord.invoice_photo_verified,
+            rejected: !!editRecord.invoice_photo_rejected,
+          }
         );
       }
       if (
@@ -372,7 +380,11 @@ export function FieldAgentApp() {
           'invoice_back',
           editRecord.invoice_photo_back_url,
           invoiceBackUrl,
-          user.id
+          user.id,
+          {
+            verified: !!editRecord.invoice_back_photo_verified,
+            rejected: !!editRecord.invoice_back_photo_rejected,
+          }
         );
       }
 
@@ -397,6 +409,19 @@ export function FieldAgentApp() {
         invoice_photo_back_url: invoiceBackUrl ?? null,
         ...(hasNewPhotos ? { verification_status: 'غير مدقق' as const } : {}),
       };
+
+      if ((meterUrl ?? null) !== (editRecord.meter_photo_url ?? null)) {
+        updateData.meter_photo_verified = false;
+        updateData.meter_photo_rejected = false;
+      }
+      if ((invoiceUrl ?? null) !== (editRecord.invoice_photo_url ?? null)) {
+        updateData.invoice_photo_verified = false;
+        updateData.invoice_photo_rejected = false;
+      }
+      if ((invoiceBackUrl ?? null) !== (editRecord.invoice_photo_back_url ?? null)) {
+        updateData.invoice_back_photo_verified = false;
+        updateData.invoice_back_photo_rejected = false;
+      }
 
       const recordId = editRecord.id;
       const recordName = editRecord.subscriber_name || editRecord.account_number;
@@ -736,7 +761,10 @@ export function FieldAgentApp() {
             prev,
             meterPhotoUrl,
             user.id,
-            additionalPhotosNotes || undefined
+            {
+              verified: !!selectedRecord.meter_photo_verified,
+              rejected: !!selectedRecord.meter_photo_rejected,
+            }
           );
         }
         // الصورة الجديدة تُحفظ على الحقل الرئيسي فقط (لا نكررها في record_photos)
@@ -764,7 +792,10 @@ export function FieldAgentApp() {
             prev,
             invoicePhotoUrl,
             user.id,
-            additionalPhotosNotes || undefined
+            {
+              verified: !!selectedRecord.invoice_photo_verified,
+              rejected: !!selectedRecord.invoice_photo_rejected,
+            }
           );
         }
       }
@@ -788,7 +819,10 @@ export function FieldAgentApp() {
             prev,
             invoicePhotoBackUrl,
             user.id,
-            additionalPhotosNotes || undefined
+            {
+              verified: !!selectedRecord.invoice_back_photo_verified,
+              rejected: !!selectedRecord.invoice_back_photo_rejected,
+            }
           );
         }
       }
@@ -820,12 +854,27 @@ export function FieldAgentApp() {
     // تحديث صور الفاتورة الرئيسية (وجه وظهر) على السجل
     if (invoicePhotoUrl) {
       updateData.invoice_photo_url = invoicePhotoUrl;
+      const prevInv = (selectedRecord.invoice_photo_url || '').trim();
+      if (prevInv !== invoicePhotoUrl.trim()) {
+        updateData.invoice_photo_verified = false;
+        updateData.invoice_photo_rejected = false;
+      }
     }
     if (invoicePhotoBackUrl) {
       updateData.invoice_photo_back_url = invoicePhotoBackUrl;
+      const prevBack = (selectedRecord.invoice_photo_back_url || '').trim();
+      if (prevBack !== invoicePhotoBackUrl.trim()) {
+        updateData.invoice_back_photo_verified = false;
+        updateData.invoice_back_photo_rejected = false;
+      }
     }
     if (meterPhotoUrl) {
       updateData.meter_photo_url = meterPhotoUrl;
+      const prevMeter = (selectedRecord.meter_photo_url || '').trim();
+      if (prevMeter !== meterPhotoUrl.trim()) {
+        updateData.meter_photo_verified = false;
+        updateData.meter_photo_rejected = false;
+      }
     }
 
     if (meterPhotoUrl || invoicePhotoUrl || invoicePhotoBackUrl) {

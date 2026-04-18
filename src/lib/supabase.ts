@@ -1846,18 +1846,27 @@ export const dbOperations = {
   },
 
   // Photo Management
-  async addPhotoToRecord(recordId: string, photoType: 'meter' | 'invoice', photoUrl: string, userId: string, notes?: string): Promise<boolean> {
+  async addPhotoToRecord(
+    recordId: string,
+    photoType: 'meter' | 'invoice',
+    photoUrl: string,
+    userId: string,
+    notes?: string,
+    opts?: { verified?: boolean; rejected?: boolean }
+  ): Promise<boolean> {
     try {
       const client = checkSupabaseConnection();
       if (!client) return false;
 
-      console.log('Adding photo to record:', { recordId, photoType, photoUrl, userId, notes });
+      console.log('Adding photo to record:', { recordId, photoType, photoUrl, userId, notes, opts });
 
       const insertData: any = {
         record_id: recordId,
         photo_type: photoType,
         photo_url: photoUrl,
-        notes: notes || null
+        notes: notes || null,
+        verified: opts?.verified ?? false,
+        rejected: opts?.rejected ?? false,
       };
 
       // إضافة created_by فقط إذا كان موجود في الجدول
@@ -1902,13 +1911,16 @@ export const dbOperations = {
    * عند استبدال صورة على السجل الرئيسي (meter / invoice / ظهر الفاتورة)، نحفظ الرابط القديم
    * في record_photos حتى لا تُفقد عند التحديث — الصورة الجديدة تبقى على الحقول الرئيسية.
    */
+  /**
+   * @param preserveFromMain — حالة التدقيق/الرفض للصورة الحالية على السجل قبل الاستبدال (تُنسخ لصف الأرشفة)
+   */
   async archiveReplacedMainPhotoIfNeeded(
     recordId: string,
     slot: 'meter' | 'invoice' | 'invoice_back',
     previousUrl: string | null | undefined,
     newUrl: string | null | undefined,
     userId: string,
-    _extraNotes?: string
+    preserveFromMain?: { verified: boolean; rejected: boolean }
   ): Promise<boolean> {
     try {
       const prev = (previousUrl || '').trim();
@@ -1932,7 +1944,13 @@ export const dbOperations = {
       const notes =
         slot === 'invoice_back' ? 'ARCH:BACK' : slot === 'invoice' ? 'ARCH:FACE' : null;
 
-      return await this.addPhotoToRecord(recordId, photoType, prev, userId, notes ?? undefined);
+      const verified = preserveFromMain?.verified ?? false;
+      const rejected = preserveFromMain?.rejected ?? false;
+
+      return await this.addPhotoToRecord(recordId, photoType, prev, userId, notes ?? undefined, {
+        verified,
+        rejected,
+      });
     } catch (error) {
       console.error('archiveReplacedMainPhotoIfNeeded error:', error);
       return false;
