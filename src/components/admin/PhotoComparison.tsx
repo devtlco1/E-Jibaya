@@ -476,13 +476,13 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-4 space-x-reverse">
+        <div className="flex items-center justify-between gap-3 p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               مقارنة الصور - {record.subscriber_name || 'غير محدد'}
               {record.record_number && ` (رقم السجل: ${record.record_number})`}
             </h3>
-            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm shrink-0">
               {(() => {
                 if (allPhotosFlat.length === 0) return '0 من 0';
                 const currentIndex = allPhotosFlat.findIndex(p => p.id === selectedPhoto?.id);
@@ -491,12 +491,29 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
               })()}
             </span>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {hasUnsavedChanges && (
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isUpdatingStatus}
+                className="flex items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-green-700 disabled:bg-gray-400"
+              >
+                <Save className="h-4 w-4 shrink-0" />
+                <span className="whitespace-nowrap">
+                  {isUpdatingStatus ? 'جاري الحفظ...' : 'حفظ تدقيق الصور'}
+                </span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              title="إغلاق"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -612,20 +629,6 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
             )}
           </div>
         </div>
-
-        {/* زر الحفظ */}
-        {hasUnsavedChanges && (
-          <div className="fixed bottom-4 right-4 z-50">
-            <button
-              onClick={handleSave}
-              disabled={isUpdatingStatus}
-              className="flex items-center space-x-2 space-x-reverse bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg shadow-lg transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              <span>{isUpdatingStatus ? 'جاري الحفظ...' : 'حفظ تدقيق الصور'}</span>
-            </button>
-          </div>
-        )}
 
       </div>
     </div>
