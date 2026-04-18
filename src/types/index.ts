@@ -69,9 +69,12 @@ export interface CollectionRecord {
   // تدقيق الصور
   meter_photo_verified: boolean;
   invoice_photo_verified: boolean;
+  /** تدقيق صورة ظهر الفاتورة (الحقل الرئيسي) */
+  invoice_back_photo_verified?: boolean;
   // رفض الصور
   meter_photo_rejected?: boolean;
   invoice_photo_rejected?: boolean;
+  invoice_back_photo_rejected?: boolean;
   // حالة التدقيق
   verification_status: 'غير مدقق' | 'مدقق' | null;
   // المبالغ
@@ -135,7 +138,11 @@ export interface UpdateRecordData {
   // حقول التحقق من الصور
   meter_photo_verified?: boolean;
   invoice_photo_verified?: boolean;
+  invoice_back_photo_verified?: boolean;
   verification_status?: 'غير مدقق' | 'مدقق' | null;
+  meter_photo_rejected?: boolean;
+  invoice_photo_rejected?: boolean;
+  invoice_back_photo_rejected?: boolean;
   // المبالغ
   total_amount?: number | null;
   current_amount?: number | null;

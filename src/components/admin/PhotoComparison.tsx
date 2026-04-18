@@ -5,6 +5,19 @@ import { formatNumberEn } from '../../utils/numberFormatter';
 import { dbOperations } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { CollectionRecord, RecordPhoto } from '../../types';
+import {
+  buildMeterTimeline,
+  buildInvoiceFaceTimeline,
+  buildInvoiceBackTimeline,
+  computeVerificationAggregates,
+  pickFirstTimelineRow,
+  timelineRowToRecordPhoto,
+  MAIN_METER_ID,
+  MAIN_INVOICE_FACE_ID,
+  MAIN_INVOICE_BACK_ID,
+  type TimelineRow,
+  type ViewerCategory,
+} from './photoComparisonTimelines';
 
 interface PhotoComparisonProps {
   recordId: string;
@@ -18,7 +31,7 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   const [record, setRecord] = useState<CollectionRecord | null>(null);
   const [photos, setPhotos] = useState<RecordPhoto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPhotoType, setSelectedPhotoType] = useState<'meter' | 'invoice'>('meter');
+  const [viewerCategory, setViewerCategory] = useState<ViewerCategory>('meter');
   const [selectedPhoto, setSelectedPhoto] = useState<RecordPhoto | null>(null);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -26,24 +39,13 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, initialPosition: { x: 0, y: 0 } });
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [originalPhotos, setOriginalPhotos] = useState<{ meter: any; invoice: any; invoice_back?: any }>({ meter: null, invoice: null, invoice_back: null });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
 
   useEffect(() => {
     loadRecordData();
   }, [recordId]);
-
-  // Monitor photos changes to update verification status
-  useEffect(() => {
-    if (record && photos.length > 0) {
-      // Check if any new photos were added (unverified)
-      const hasUnverifiedPhotos = photos.some(photo => !photo.verified);
-      if (hasUnverifiedPhotos && record.verification_status === 'مدقق') {
-        // If record was verified but has unverified photos, change to unverified
-        updateVerificationStatus();
-      }
-    }
-  }, [photos, record]);
 
   // Monitor for new photos being added
   useEffect(() => {
@@ -72,50 +74,13 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       setRecord(recordData);
       setPhotos(photosData);
       initialVerificationStatusRef.current = recordData?.verification_status ?? null;
-      
-      // Update original photos with verification status
-      if (recordData) {
-        setOriginalPhotos({
-          meter: recordData.meter_photo_url ? {
-            id: 'meter-original',
-            record_id: recordData.id,
-            photo_type: 'meter',
-            photo_url: recordData.meter_photo_url,
-            photo_date: recordData.submitted_at,
-            created_by: recordData.field_agent_id,
-            created_at: recordData.submitted_at,
-            notes: null,
-            verified: recordData.meter_photo_verified || false
-          } : null,
-          invoice: recordData.invoice_photo_url ? {
-            id: 'invoice-original',
-            record_id: recordData.id,
-            photo_type: 'invoice',
-            photo_url: recordData.invoice_photo_url,
-            photo_date: recordData.submitted_at,
-            created_by: recordData.field_agent_id,
-            created_at: recordData.submitted_at,
-            notes: null,
-            verified: recordData.invoice_photo_verified || false
-          } : null,
-          invoice_back: recordData.invoice_photo_back_url ? {
-            id: 'invoice-back-original',
-            record_id: recordData.id,
-            photo_type: 'invoice',
-            photo_url: recordData.invoice_photo_back_url,
-            photo_date: recordData.submitted_at,
-            created_by: recordData.field_agent_id,
-            created_at: recordData.submitted_at,
-            notes: null,
-            verified: recordData.invoice_photo_verified || false
-          } : null
-        });
-      }
-      
-      // Set first photo as selected
-      if (photosData.length > 0) {
-        setSelectedPhoto(photosData[0]);
-        setSelectedPhotoType(photosData[0].photo_type);
+
+      const first = pickFirstTimelineRow(recordData, photosData);
+      if (first) {
+        setViewerCategory(first.category);
+        setSelectedPhoto(timelineRowToRecordPhoto(recordId, first.row, first.category));
+      } else {
+        setSelectedPhoto(null);
       }
     } catch (error) {
       console.error('Error loading record data:', error);
@@ -130,50 +95,12 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
       const { record: recordData, photos: photosData } = await dbOperations.getRecordWithPhotos(recordId);
       setRecord(recordData);
       setPhotos(photosData);
-      
-      // Update original photos with verification status
-      if (recordData) {
-        setOriginalPhotos({
-          meter: recordData.meter_photo_url ? {
-            id: 'meter-original',
-            record_id: recordData.id,
-            photo_type: 'meter',
-            photo_url: recordData.meter_photo_url,
-            photo_date: recordData.submitted_at,
-            created_by: recordData.field_agent_id,
-            created_at: recordData.submitted_at,
-            notes: null,
-            verified: recordData.meter_photo_verified || false
-          } : null,
-          invoice: recordData.invoice_photo_url ? {
-            id: 'invoice-original',
-            record_id: recordData.id,
-            photo_type: 'invoice',
-            photo_url: recordData.invoice_photo_url,
-            photo_date: recordData.submitted_at,
-            created_by: recordData.field_agent_id,
-            created_at: recordData.submitted_at,
-            notes: null,
-            verified: recordData.invoice_photo_verified || false
-          } : null,
-          invoice_back: recordData.invoice_photo_back_url ? {
-            id: 'invoice-back-original',
-            record_id: recordData.id,
-            photo_type: 'invoice',
-            photo_url: recordData.invoice_photo_back_url,
-            photo_date: recordData.submitted_at,
-            created_by: recordData.field_agent_id,
-            created_at: recordData.submitted_at,
-            notes: null,
-            verified: recordData.invoice_photo_verified || false
-          } : null
-        });
+
+      const first = pickFirstTimelineRow(recordData, photosData);
+      if (first) {
+        setViewerCategory(first.category);
+        setSelectedPhoto(timelineRowToRecordPhoto(recordId, first.row, first.category));
       }
-      
-      // Update verification status after refresh
-      setTimeout(() => {
-        updateVerificationStatus();
-      }, 100);
     } catch (error) {
       console.error('Error refreshing data:', error);
     }
@@ -184,47 +111,6 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
   const formatDate = (dateString: string) => {
     return formatDateTime(dateString);
   };
-
-  // Update original photos when record changes
-  useEffect(() => {
-    if (!record) {
-      setOriginalPhotos({ meter: null, invoice: null, invoice_back: null });
-      return;
-    }
-    
-    setOriginalPhotos({
-      meter: record.meter_photo_url ? {
-        id: 'original-meter',
-        photo_url: record.meter_photo_url,
-        photo_type: 'meter' as const,
-        photo_date: record.submitted_at,
-        created_by: record.field_agent_id,
-        created_at: record.submitted_at,
-        notes: null,
-        verified: record.meter_photo_verified || false
-      } : null,
-      invoice: record.invoice_photo_url ? {
-        id: 'original-invoice',
-        photo_url: record.invoice_photo_url,
-        photo_type: 'invoice' as const,
-        photo_date: record.submitted_at,
-        created_by: record.field_agent_id,
-        created_at: record.submitted_at,
-        notes: null,
-        verified: record.invoice_photo_verified || false
-      } : null,
-      invoice_back: record.invoice_photo_back_url ? {
-        id: 'invoice-back-original',
-        photo_url: record.invoice_photo_back_url,
-        photo_type: 'invoice' as const,
-        photo_date: record.submitted_at,
-        created_by: record.field_agent_id,
-        created_at: record.submitted_at,
-        notes: null,
-        verified: record.invoice_photo_verified || false
-      } : null
-    });
-  }, [record, record?.meter_photo_verified, record?.invoice_photo_verified]);
 
   // دوال التحكم في التكبير والحركة
   const handleZoomIn = () => {
@@ -241,179 +127,155 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     setRotation(0);
   };
 
-  const handlePhotoVerification = async (photoType: 'meter' | 'invoice') => {
-    if (!record || isUpdatingStatus) {
-      console.log('Photo verification blocked - record:', !!record, 'isUpdating:', isUpdatingStatus);
-      return;
-    }
-
-    try {
-      setIsUpdatingStatus(true);
-      console.log(`Starting photo verification for ${photoType}`);
-      
-      const currentValue = record[`${photoType}_photo_verified` as keyof CollectionRecord] as boolean;
-      const newValue = !currentValue;
-      
-      const updateData: any = {};
-      updateData[`${photoType}_photo_verified`] = newValue;
-
-      console.log(`${photoType} photo verification toggled`);
-      console.log('Current value:', currentValue);
-      console.log('New value:', newValue);
-      console.log('Update data:', updateData);
-
-      // Update local state only (no database update yet)
-      setRecord(prev => prev ? {
-        ...prev,
-        [`${photoType}_photo_verified`]: !prev[`${photoType}_photo_verified` as keyof CollectionRecord]
-      } : null);
-
-      // Update originalPhotos state
-      setOriginalPhotos(prev => ({
-        ...prev,
-        [photoType]: prev[photoType] ? {
-          ...prev[photoType],
-          verified: newValue
-        } : null
-      }));
-
-      // Mark as having unsaved changes
-      setHasUnsavedChanges(true);
-
-      console.log(`${photoType} photo verification toggled (local only)`);
-      
-      // Update verification status locally
-      updateVerificationStatus();
-    } catch (error) {
-      console.error('Error updating photo verification:', error);
-    } finally {
-      setIsUpdatingStatus(false);
-    }
+  const recomputeRecordVerificationStatus = (nextRecord: CollectionRecord, nextPhotos: RecordPhoto[]) => {
+    const { allVerified, anyRejected } = computeVerificationAggregates(nextRecord, nextPhotos);
+    const nextStatus = allVerified && !anyRejected ? 'مدقق' : 'غير مدقق';
+    if (nextRecord.verification_status === nextStatus) return nextRecord;
+    setHasUnsavedChanges(true);
+    return { ...nextRecord, verification_status: nextStatus };
   };
 
-  const handlePhotoRejection = (photoType: 'meter' | 'invoice') => {
+  const toggleTimelineVerified = (category: ViewerCategory, row: TimelineRow) => {
     if (!record) return;
-    // قلب حالة الرفض محلياً
-    const key = `${photoType}_photo_rejected` as keyof CollectionRecord;
-    const current = (record as any)[key] as boolean | undefined;
-    setRecord(prev => prev ? { ...prev, [key]: !current } as any : prev);
+    if (row.source === 'record' && row.dbPhotoId) {
+      setPhotos(prev => {
+        const nextPhotos = prev.map(p =>
+          p.id === row.dbPhotoId ? { ...p, verified: !p.verified } : p
+        );
+        setRecord(r => (r ? recomputeRecordVerificationStatus(r, nextPhotos) : r));
+        return nextPhotos;
+      });
+    } else {
+      setRecord(prev => {
+        if (!prev) return prev;
+        let r = prev;
+        if (category === 'meter' && row.id === MAIN_METER_ID) {
+          r = { ...prev, meter_photo_verified: !prev.meter_photo_verified };
+        } else if (category === 'invoice_face' && row.id === MAIN_INVOICE_FACE_ID) {
+          r = { ...prev, invoice_photo_verified: !prev.invoice_photo_verified };
+        } else if (category === 'invoice_back' && row.id === MAIN_INVOICE_BACK_ID) {
+          r = {
+            ...prev,
+            invoice_back_photo_verified: !(prev.invoice_back_photo_verified ?? false),
+          };
+        }
+        return recomputeRecordVerificationStatus(r, photosRef.current);
+      });
+    }
     setHasUnsavedChanges(true);
   };
 
-  const handleAdditionalPhotoRejection = async (photoId: string) => {
-    if (!record || isUpdatingStatus) {
-      console.log('Additional photo rejection blocked - record:', !!record, 'isUpdating:', isUpdatingStatus);
-      return;
-    }
-    try {
-      setIsUpdatingStatus(true);
-      
-      // Find the photo and toggle its rejected status
-      const photoIndex = photos.findIndex(p => p.id === photoId);
-      if (photoIndex === -1) return;
-      
-      const photo = photos[photoIndex];
-      const newRejectedStatus = !photo.rejected;
-      
-      // Update photo locally
-      setPhotos(prev => prev.map(p => 
-        p.id === photoId ? { ...p, rejected: newRejectedStatus } : p
-      ));
-      
-      setHasUnsavedChanges(true);
-      console.log(`Additional photo ${photoId} rejection toggled (local only):`, newRejectedStatus);
-      
-      // Update verification status
-      updateVerificationStatus();
-    } catch (error) {
-      console.error('Error updating additional photo rejection:', error);
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
-
-  const handleAdditionalPhotoVerification = async (photoId: string) => {
-    try {
-      const photo = photos.find(p => p.id === photoId);
-      if (!photo) return;
-
-      const newVerifiedStatus = !photo.verified;
-      
-      // Update local state only (no database update yet)
-      setPhotos(prev => prev.map(p => 
-        p.id === photoId ? { ...p, verified: newVerifiedStatus } : p
-      ));
-
-      // Mark as having unsaved changes
-      setHasUnsavedChanges(true);
-
-      console.log(`Additional photo ${photoId} verification toggled to ${newVerifiedStatus} (local only)`);
-      
-      // Update verification status locally
-      updateVerificationStatus();
-    } catch (error) {
-      console.error('Error updating additional photo verification:', error);
-    }
-  };
-
-  // Function to update verification status when all photos are verified
-  const updateVerificationStatus = async () => {
-    if (!record || isUpdatingStatus) {
-      console.log('updateVerificationStatus blocked - record:', !!record, 'isUpdating:', isUpdatingStatus);
-      return;
-    }
-
-    try {
-      setIsUpdatingStatus(true);
-      console.log('Starting updateVerificationStatus');
-      
-      // Get current state
-      const currentRecord = record;
-      const currentPhotos = photos;
-      
-      console.log('=== Verification Status Debug ===');
-      console.log('Current record:', {
-        meter_photo_verified: currentRecord.meter_photo_verified,
-        invoice_photo_verified: currentRecord.invoice_photo_verified,
-        verification_status: currentRecord.verification_status
+  const toggleTimelineRejected = (category: ViewerCategory, row: TimelineRow) => {
+    if (!record) return;
+    if (row.source === 'record' && row.dbPhotoId) {
+      setPhotos(prev => {
+        const nextPhotos = prev.map(p =>
+          p.id === row.dbPhotoId
+            ? { ...p, rejected: !(p as RecordPhoto & { rejected?: boolean }).rejected }
+            : p
+        );
+        setRecord(r => (r ? recomputeRecordVerificationStatus(r, nextPhotos) : r));
+        return nextPhotos;
       });
-      console.log('Current photos:', currentPhotos.map(p => ({ id: p.id, verified: p.verified })));
-      
-      // Check if main photos are verified
-      const mainPhotosVerified = currentRecord.meter_photo_verified && currentRecord.invoice_photo_verified;
-      console.log('Main photos verified:', mainPhotosVerified);
-      
-      // Check if all additional photos are verified
-      const allAdditionalPhotosVerified = currentPhotos.length === 0 || currentPhotos.every(photo => photo.verified);
-      console.log('Additional photos verified:', allAdditionalPhotosVerified);
-      console.log('Additional photos count:', currentPhotos.length);
-      
-      // Record is verified only if both main photos AND all additional photos are verified
-      const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
-      const newStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
-      
-      console.log('Is all verified:', isAllVerified);
-      console.log('New status:', newStatus);
-      console.log('Current status:', currentRecord.verification_status);
-      
-      if (currentRecord.verification_status !== newStatus) {
-        // Update local state only (no database update yet)
-        setRecord(prev => prev ? {
-          ...prev,
-          verification_status: newStatus
-        } : null);
-        
-        // Mark as having unsaved changes
-        setHasUnsavedChanges(true);
-        
-        console.log(`Verification status updated locally: ${newStatus}`);
-      }
-      
-      setIsUpdatingStatus(false);
-    } catch (error) {
-      console.error('Error updating verification status:', error);
-      setIsUpdatingStatus(false);
+    } else {
+      setRecord(prev => {
+        if (!prev) return prev;
+        let r = prev;
+        if (category === 'meter' && row.id === MAIN_METER_ID) {
+          r = { ...prev, meter_photo_rejected: !prev.meter_photo_rejected };
+        } else if (category === 'invoice_face' && row.id === MAIN_INVOICE_FACE_ID) {
+          r = { ...prev, invoice_photo_rejected: !prev.invoice_photo_rejected };
+        } else if (category === 'invoice_back' && row.id === MAIN_INVOICE_BACK_ID) {
+          r = {
+            ...prev,
+            invoice_back_photo_rejected: !(prev.invoice_back_photo_rejected ?? false),
+          };
+        }
+        return recomputeRecordVerificationStatus(r, photosRef.current);
+      });
     }
+    setHasUnsavedChanges(true);
+  };
+
+  const selectTimelineRow = (category: ViewerCategory, row: TimelineRow) => {
+    setViewerCategory(category);
+    setSelectedPhoto(timelineRowToRecordPhoto(recordId, row, category));
+  };
+
+  const renderTimelineSection = (
+    title: string,
+    titleColor: string,
+    category: ViewerCategory,
+    rows: TimelineRow[]
+  ) => {
+    if (rows.length === 0) return null;
+    return (
+      <div>
+        <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+          <FileText className={`w-4 h-4 ml-2 ${titleColor}`} />
+          {title}
+        </h5>
+        <div className="space-y-3">
+          {rows.map(row => (
+            <div
+              key={`${category}-${row.id}`}
+              onClick={() => selectTimelineRow(category, row)}
+              className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                selectedPhoto?.id === row.id && viewerCategory === category
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                  : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center mb-2">
+                    <FileText className={`w-4 h-4 ml-2 ${titleColor}`} />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{row.rowLabel}</span>
+                    {row.notes && <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{formatDate(row.sortDate)}</div>
+                  {row.notes && (
+                    <div className="text-xs text-red-600 dark:text-red-400 font-bold mt-1 truncate">{row.notes}</div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      toggleTimelineVerified(category, row);
+                    }}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    title={row.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
+                  >
+                    {row.verified ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      toggleTimelineRejected(category, row);
+                    }}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    title={row.rejected ? 'إلغاء الرفض' : 'رفض الصورة'}
+                  >
+                    {row.rejected ? (
+                      <XCircle className="w-5 h-5 text-red-600" />
+                    ) : (
+                      <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const handleSave = async () => {
@@ -421,27 +283,22 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
 
     try {
       setIsUpdatingStatus(true);
-      
-      // Calculate verification status before saving
-      const mainPhotosVerified = record.meter_photo_verified && record.invoice_photo_verified;
-      const allAdditionalPhotosVerified = photos.length === 0 || photos.every(photo => photo.verified);
-      const isAllVerified = mainPhotosVerified && allAdditionalPhotosVerified;
-      const calculatedStatus = isAllVerified ? 'مدقق' : 'غير مدقق';
-      
-      // Prepare updates for database
+
+      const { allVerified, anyRejected } = computeVerificationAggregates(record, photos);
+      const calculatedStatus = allVerified && !anyRejected ? 'مدقق' : 'غير مدقق';
+
       const updates: any = {
         meter_photo_verified: record.meter_photo_verified,
         invoice_photo_verified: record.invoice_photo_verified,
+        invoice_back_photo_verified: record.invoice_back_photo_verified ?? false,
         verification_status: calculatedStatus,
-        // حفظ حالات الرفض
         meter_photo_rejected: record.meter_photo_rejected || false,
-        invoice_photo_rejected: record.invoice_photo_rejected || false
+        invoice_photo_rejected: record.invoice_photo_rejected || false,
+        invoice_back_photo_rejected: record.invoice_back_photo_rejected ?? false,
       };
 
       console.log('=== Saving to Database ===');
       console.log('Calculated verification status:', calculatedStatus);
-      console.log('Main photos verified:', mainPhotosVerified);
-      console.log('Additional photos verified:', allAdditionalPhotosVerified);
       console.log('Updates to save:', updates);
       console.log('Photos to save:', photos.map(p => ({ id: p.id, verified: p.verified })));
 
@@ -612,6 +469,11 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
     );
   }
 
+  const meterTimeline = buildMeterTimeline(record, photos);
+  const invoiceFaceTimeline = buildInvoiceFaceTimeline(record, photos);
+  const invoiceBackTimeline = buildInvoiceBackTimeline(record, photos);
+  const allPhotosFlat = [...meterTimeline, ...invoiceFaceTimeline, ...invoiceBackTimeline];
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden">
@@ -624,9 +486,10 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
             </h3>
             <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
               {(() => {
-                const allPhotos = [...(originalPhotos.meter ? [originalPhotos.meter] : []), ...(originalPhotos.invoice ? [originalPhotos.invoice] : []), ...(originalPhotos.invoice_back ? [originalPhotos.invoice_back] : []), ...photos];
-                const currentIndex = allPhotos.findIndex(photo => photo.id === selectedPhoto?.id);
-                return `${formatNumberEn(currentIndex + 1)} من ${formatNumberEn(allPhotos.length)}`;
+                if (allPhotosFlat.length === 0) return '0 من 0';
+                const currentIndex = allPhotosFlat.findIndex(p => p.id === selectedPhoto?.id);
+                const idx = currentIndex >= 0 ? currentIndex : 0;
+                return `${formatNumberEn(idx + 1)} من ${formatNumberEn(allPhotosFlat.length)}`;
               })()}
             </span>
           </div>
@@ -644,335 +507,25 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
           <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
             <div className="p-4">
               <div className="space-y-4">
-                {/* صور المقياس */}
-                <div>
-                  <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
-                    صور المقياس
-                  </h5>
-                  <div className="space-y-3">
-                    {originalPhotos.meter && (
-                      <div
-                        onClick={() => {
-                          setSelectedPhotoType('meter');
-                          setSelectedPhoto(originalPhotos.meter ? {
-                            ...originalPhotos.meter,
-                            record_id: recordId,
-                            created_at: originalPhotos.meter.photo_date,
-                            notes: null,
-                            verified: false
-                          } : null);
-                        }}
-                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                          selectedPhotoType === 'meter' && selectedPhoto?.id === 'original-meter'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                الصورة الأصلية
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              {formatDate(originalPhotos.meter.photo_date)}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePhotoVerification('meter');
-                            }}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                            title={originalPhotos.meter?.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                            >
-                              {originalPhotos.meter?.verified ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                              )}
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handlePhotoRejection('meter'); }}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                              title={(record?.meter_photo_rejected ? 'إلغاء الرفض' : 'رفض الصورة')}
-                            >
-                              {record?.meter_photo_rejected ? (
-                                <XCircle className="w-5 h-5 text-red-600" />
-                              ) : (
-                                <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* صور المقياس الإضافية */}
-                    {photos.filter(photo => photo.photo_type === 'meter').map((photo, index) => (
-                      <div
-                        key={photo.id}
-                        onClick={() => {
-                          setSelectedPhotoType('meter');
-                          setSelectedPhoto(photo);
-                        }}
-                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                          selectedPhoto?.id === photo.id
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                صورة إضافية #{formatNumberEn(index + 1)}
-                              </span>
-                              {photo.notes && (
-                                <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              {formatDate(photo.created_at)}
-                            </div>
-                            {photo.notes && (
-                              <div className="text-xs text-red-600 dark:text-red-400 font-bold mt-1 truncate">
-                                {photo.notes}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex space-x-1 space-x-reverse">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAdditionalPhotoVerification(photo.id);
-                              }}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                              title={photo.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                            >
-                              {photo.verified ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                              )}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAdditionalPhotoRejection(photo.id);
-                              }}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                              title={photo.rejected ? 'إلغاء الرفض' : 'رفض الصورة'}
-                            >
-                              {photo.rejected ? (
-                                <XCircle className="w-5 h-5 text-red-600" />
-                              ) : (
-                                <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* فاصل */}
-                <div className="border-t border-gray-300 dark:border-gray-600 my-4"></div>
-
-                {/* صور الفاتورة */}
-                <div>
-                  <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
-                    <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
-                    صور الفاتورة
-                  </h5>
-                  <div className="space-y-3">
-                    {originalPhotos.invoice && (
-                      <div
-                        onClick={() => {
-                          setSelectedPhotoType('invoice');
-                          setSelectedPhoto(originalPhotos.invoice ? {
-                            ...originalPhotos.invoice,
-                            record_id: recordId,
-                            created_at: originalPhotos.invoice.photo_date,
-                            notes: null,
-                            verified: false
-                          } : null);
-                        }}
-                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                          selectedPhotoType === 'invoice' && selectedPhoto?.id === 'original-invoice'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                صورة الفاتورة (وجه)
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              {formatDate(originalPhotos.invoice.photo_date)}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePhotoVerification('invoice');
-                            }}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                            title={originalPhotos.invoice?.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                            >
-                              {originalPhotos.invoice?.verified ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                              )}
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handlePhotoRejection('invoice'); }}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                              title={(record?.invoice_photo_rejected ? 'إلغاء الرفض' : 'رفض الصورة')}
-                            >
-                              {record?.invoice_photo_rejected ? (
-                                <XCircle className="w-5 h-5 text-red-600" />
-                              ) : (
-                                <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {originalPhotos.invoice_back && (
-                      <div
-                        onClick={() => {
-                          setSelectedPhotoType('invoice');
-                          setSelectedPhoto(originalPhotos.invoice_back ? {
-                            ...originalPhotos.invoice_back,
-                            record_id: recordId,
-                            created_at: originalPhotos.invoice_back.photo_date,
-                            notes: null,
-                            verified: originalPhotos.invoice_back.verified
-                          } : null);
-                        }}
-                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                          selectedPhoto?.id === 'invoice-back-original'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                صورة الفاتورة (ظهر)
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              {formatDate(originalPhotos.invoice_back.photo_date)}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // نفس تدقيق صورة الفاتورة (وجه) لأنها تشارك نفس العلم invoice_photo_verified
-                                handlePhotoVerification('invoice');
-                              }}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                              title={originalPhotos.invoice_back?.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                            >
-                              {originalPhotos.invoice_back?.verified ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* صور الفاتورة الإضافية */}
-                    {photos.filter(photo => photo.photo_type === 'invoice').map((photo, index) => (
-                      <div
-                        key={photo.id}
-                        onClick={() => {
-                          setSelectedPhotoType('invoice');
-                          setSelectedPhoto(photo);
-                        }}
-                        className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                          selectedPhoto?.id === photo.id
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-800'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center mb-2">
-                              <FileText className="w-4 h-4 text-green-600 dark:text-green-400 ml-2" />
-                              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                صورة إضافية #{formatNumberEn(index + 1)}
-                              </span>
-                              {photo.notes && (
-                                <MessageSquare className="w-3 h-3 text-blue-500 ml-1" />
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              {formatDate(photo.created_at)}
-                            </div>
-                            {photo.notes && (
-                              <div className="text-xs text-red-600 dark:text-red-400 font-bold mt-1 truncate">
-                                {photo.notes}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex space-x-1 space-x-reverse">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAdditionalPhotoVerification(photo.id);
-                              }}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                              title={photo.verified ? 'إلغاء التدقيق' : 'تدقيق الصورة'}
-                            >
-                              {photo.verified ? (
-                                <CheckCircle className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-gray-400 hover:text-green-500" />
-                              )}
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAdditionalPhotoRejection(photo.id);
-                              }}
-                              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                              title={photo.rejected ? 'إلغاء الرفض' : 'رفض الصورة'}
-                            >
-                              {photo.rejected ? (
-                                <XCircle className="w-5 h-5 text-red-600" />
-                              ) : (
-                                <Ban className="w-5 h-5 text-gray-400 hover:text-red-500" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                {renderTimelineSection('صورة المقياس', 'text-blue-600 dark:text-blue-400', 'meter', meterTimeline)}
+                {meterTimeline.length > 0 && invoiceFaceTimeline.length > 0 ? (
+                  <div className="border-t border-gray-300 dark:border-gray-600 my-4" />
+                ) : null}
+                {renderTimelineSection(
+                  'صورة الفاتورة (وجه)',
+                  'text-green-600 dark:text-green-400',
+                  'invoice_face',
+                  invoiceFaceTimeline
+                )}
+                {invoiceFaceTimeline.length > 0 && invoiceBackTimeline.length > 0 ? (
+                  <div className="border-t border-gray-300 dark:border-gray-600 my-4" />
+                ) : null}
+                {renderTimelineSection(
+                  'صورة الفاتورة (ظهر)',
+                  'text-amber-600 dark:text-amber-400',
+                  'invoice_back',
+                  invoiceBackTimeline
+                )}
               </div>
             </div>
           </div>
@@ -995,7 +548,13 @@ export function PhotoComparison({ recordId, onClose, onRecordUpdate }: PhotoComp
                 >
                   <img
                     src={selectedPhoto.photo_url}
-                    alt={`${selectedPhoto.photo_type === 'meter' ? 'صورة المقياس' : 'صورة الفاتورة'}`}
+                    alt={
+                      viewerCategory === 'meter'
+                        ? 'صورة المقياس'
+                        : viewerCategory === 'invoice_face'
+                          ? 'صورة الفاتورة وجه'
+                          : 'صورة الفاتورة ظهر'
+                    }
                     className="max-w-full max-h-full object-contain select-none"
                     style={{ 
                       transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg) scale(${zoom})`,
